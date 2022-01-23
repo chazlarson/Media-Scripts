@@ -1,4 +1,4 @@
-# PLex-Meta Manager scripts
+# Plex-Meta Manager scripts
 
 Misc scripts and tools. Undocumented scripts probably do what I need them to but aren't finished yet.
 
