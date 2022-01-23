@@ -25,8 +25,11 @@ TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 `collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]
 
 ## Usage
-1. Install requirements
-2. run with `python top-n-actor-coll.py`
+1. clone repo
+1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
+1. Copy `.env.example` to `.env`
+1. Edit .env to suit
+3. Run with `python top-n-actor-coll.py`
 
 ```
 connecting...
