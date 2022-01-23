@@ -21,7 +21,8 @@ TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 `CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in you library you're not thinking about Clint.
 
 `template.tmpl` - this is the beginning of the target metadata file
-`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders]
+
+`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]
 
 ## Usage
 1. Install requirements
@@ -32,6 +33,21 @@ connecting...
 getting movies...
 looping over 2819 movies...
 [==--------------------------------------] 5.4% ... Annihilation
+```
+
+It will got through all your movies, and then at the end print out the top TOP_COUNT and produce a yml file.
+
+```
+38      2231-Samuel L. Jackson
+26      500-Tom Cruise
+25      64-Gary Oldman
+25      192-Morgan Freeman
+23      884-Steve Buscemi
+22      62-Bruce Willis
+22      31-Tom Hanks
+21      19278-Bill Hader
+21      2888-Will Smith
+21      16483-Sylvester Stallone
 ```
 
 In my 4K movie library, the script produces:
