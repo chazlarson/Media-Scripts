@@ -29,7 +29,7 @@ TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
 1. Copy `.env.example` to `.env`
 1. Edit .env to suit
-3. Run with `python top-n-actor-coll.py`
+1. Run with `python top-n-actor-coll.py`
 
 ```
 connecting...
@@ -38,7 +38,7 @@ looping over 2819 movies...
 [==--------------------------------------] 5.4% ... Annihilation
 ```
 
-It will got through all your movies, and then at the end print out the top TOP_COUNT and produce a yml file.
+It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT and produce a yml file.
 
 ```
 38      2231-Samuel L. Jackson
