@@ -5,7 +5,9 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 ## top-n-actor-coll.py
 
 Connects to a plex library, grabs all the movies.
-For each movie, gets the cast from TMDB; keeps track across all movie how many times it sees each actor.
+
+For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.
+
 At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
 
 Config variables in .env:
