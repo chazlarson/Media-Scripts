@@ -2,7 +2,7 @@
 # Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 # Copy this into your PMM directory [I'm assuming you have those requirements installed]
 # update the three fields in ALL_UPPER_CASE just below
-# then run it with: python get_collections.py
+# then run it with: python extract_collections.py
 # script will grab some details from each collection and write a metadata file that you could use with PMM
 # Also grabs artwork and background.
 # This is extremely naive; it doesn't recreate filters, just grabs a list of everything in each collection.
