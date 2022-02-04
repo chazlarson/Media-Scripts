@@ -20,7 +20,7 @@ CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 ```
 
-`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.
+`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
 
 `template.tmpl` - this is the beginning of the target metadata file
 
