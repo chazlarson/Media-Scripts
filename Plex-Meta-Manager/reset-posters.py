@@ -1,14 +1,9 @@
-from collections import Counter
-from typing import Collection
 from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbv3api import TMDb
-from tmdbv3api import Movie
-from tmdbv3api import TV
-from tmdbv3api import Configuration
+from tmdbapis import TMDbAPIs
 import requests
 import pathlib
 # import tvdb_v4_official
@@ -26,14 +21,10 @@ TOP_COUNT = int(os.getenv('TOP_COUNT'))
 # Commented out until this doesn't throw a 400
 # tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
 
-tmdb = TMDb()
-tmdb.api_key = TMDB_KEY
-
-tmdbMovie = Movie()
-tmdbTV = TV()
-tmdbConfig = Configuration()
+tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
 tmdb_str = 'tmdb://'
+tvdb_str = 'tvdb://'
 
 local_dir = f"{os.getcwd()}/posters"
 
@@ -45,11 +36,15 @@ movie_dir = f"{local_dir}/movies"
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
-def getTMDBID(theList):
+def getTID(theList):
+    tmid = None
+    tvid = None
     for guid in theList:
         if tmdb_str in guid.id:
-            return guid.id.replace(tmdb_str,'')
-    return None
+            tmid = guid.id.replace(tmdb_str,'')
+        if tvdb_str in guid.id:
+            tvid = guid.id.replace(tvdb_str,'')
+    return tmid, tvid
 
 def progress(count, total, status=''):
     bar_len = 40
@@ -63,8 +58,8 @@ def progress(count, total, status=''):
     sys.stdout.flush()
 
 print("tmdb config...")
-tmdbInfo = tmdbConfig.info()
-base_url = tmdbInfo.images.secure_base_url
+
+base_url = tmdb.configuration().secure_base_image_url
 size_str = 'original'
 
 print(f"connecting to {PLEX_URL}...")
@@ -76,26 +71,33 @@ print(f"looping over {item_total} items...")
 item_count = 1
 for item in items:
     tmpDict = {}
-    theID = getTMDBID(item.guids)
+    tmdb_id, tvdb_id = getTID(item.guids)
     item_count = item_count + 1
     try:
         progress(item_count, item_total, item.title)
         pp = None
         if item.TYPE == 'show':
-            pp = tmdbTV.details(theID).poster_path
+            try:
+                pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
+            except:
+                pp = "NONE"
             tgt_dir = show_dir
         else:
-            pp = tmdbMovie.details(theID).poster_path
+            pp = tmdb.movie(tmdb_id).poster_path
             tgt_dir = movie_dir
 
         if pp is not None:
-            ext = pathlib.Path(pp).suffix
-            posterURL = f"{base_url}{size_str}{pp}"
-            local_file = f"{tgt_dir}/{item.ratingKey}{ext}"
-            if not os.path.exists(local_file):
-                r = requests.get(posterURL, allow_redirects=True)
-                open(f"{local_file}", 'wb').write(r.content)
-            item.uploadPoster(filepath=local_file)
+            if pp == "NONE":
+                posters = item.posters()
+                item.setPoster(posters[0])
+            else:
+                ext = pathlib.Path(pp).suffix
+                posterURL = f"{base_url}{size_str}{pp}"
+                local_file = f"{tgt_dir}/{item.ratingKey}{ext}"
+                if not os.path.exists(local_file):
+                    r = requests.get(posterURL, allow_redirects=True)
+                    open(f"{local_file}", 'wb').write(r.content)
+                item.uploadPoster(filepath=local_file)
         else:
             progress(item_count, item_total, "unknown type: " + item.title)
 

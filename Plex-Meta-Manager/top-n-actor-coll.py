@@ -5,9 +5,7 @@ import os
 from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbv3api import TMDb
-from tmdbv3api import Movie
-from tmdbv3api import TV
+from tmdbapis import TMDbAPIs
 
 load_dotenv()
 
@@ -15,26 +13,28 @@ PLEX_URL = os.getenv('PLEX_URL')
 PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 TMDB_KEY = os.getenv('TMDB_KEY')
+TVDB_KEY = os.getenv('TVDB_KEY')
 CAST_DEPTH = int(os.getenv('CAST_DEPTH'))
 TOP_COUNT = int(os.getenv('TOP_COUNT'))
 
-tmdb = TMDb()
-tmdb.api_key = TMDB_KEY
-
-tmdbMovie = Movie()
-tmdbTV = TV()
+tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
 tmdb_str = 'tmdb://'
+tvdb_str = 'tvdb://'
 
 METADATA_TITLE = f"{LIBRARY_NAME} Top {TOP_COUNT} Actors.yml"
 
 actors = Counter()
 
-def getTMDBID(theList):
+def getTID(theList):
+    tmid = None
+    tvid = None
     for guid in theList:
         if tmdb_str in guid.id:
-            return guid.id.replace(tmdb_str,'')
-    return None
+            tmid = guid.id.replace(tmdb_str,'')
+        if tvdb_str in guid.id:
+            tvid = guid.id.replace(tvdb_str,'')
+    return tmid, tvid
 
 def progress(count, total, status=''):
     bar_len = 40
@@ -56,24 +56,24 @@ print(f"looping over {item_total} items...")
 item_count = 1
 for item in items:
     tmpDict = {}
-    theID = getTMDBID(item.guids)
+    tmdb_id, tvdb_id = getTID(item.guids)
     item_count = item_count + 1
     try:
         progress(item_count, item_total, item.title)
         cast = ""
         if item.TYPE == 'show':
-            cast = tmdbTV.details(theID).credits['cast']
+            cast = tmdb.tv_show(tmdb_id).cast
         else:
-            cast = tmdbMovie.details(theID).casts['cast']
+            cast = tmdb.movie(tmdb_id).casts['cast']
         count = 0
         for actor in cast:
             if count < CAST_DEPTH:
                 count = count + 1
-                if actor['known_for_department'] == 'Acting':
-                    tmpDict[f"{actor['id']}-{actor['name']}"] = 1
+                if actor.known_for_department == 'Acting':
+                    tmpDict[f"{actor.id}-{actor.name}"] = 1
         actors.update(tmpDict)
     except Exception as ex:
-        progress(item_count, item_total, "EX: " + movie.title)
+        progress(item_count, item_total, "EX: " + item.title)
 
 
 print("\r\r")
