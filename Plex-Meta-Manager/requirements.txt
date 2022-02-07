@@ -3,3 +3,4 @@ tmdbapis
 tmdbv3api
 python-dotenv
 tvdb_v4_official
+ruamel.yaml

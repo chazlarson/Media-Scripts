@@ -7,6 +7,7 @@ import sys
 import textwrap
 from tmdbapis import TMDbAPIs
 
+from dotenv import load_dotenv
 load_dotenv()
 
 PLEX_URL = os.getenv('PLEX_URL')

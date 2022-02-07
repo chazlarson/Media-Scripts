@@ -2,6 +2,15 @@
 
 Misc scripts and tools. Undocumented scripts probably do what I need them to but aren't finished yet.
 
+## Setup
+
+1. clone repo
+1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
+1. Copy `.env.example` to `.env`
+1. Edit .env to suit
+
+All these scripts use the same `.env` and requirements.
+
 ## top-n-actor-coll.py
 
 Connects to a plex library, grabs all the movies.
@@ -10,27 +19,22 @@ For each movie, gets the cast from TMDB; keeps track across all movies how many 
 
 At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
 
-Config variables in .env:
+Script-specific variables in .env:
 ```
-TMDB_KEY=TMDB_API_KEY           ### YOUR TMDB API KEY
-PLEX_URL=https://plex.domin.tld ### PLEX URL
-PLEX_TOKEN=PLEX-TOKEN           ### PLEX TOKEN
-MOVIE_LIBRARY_NAME=Movies       ### LIBRARY TO TARGET
 CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 ```
 
 `CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
 
+`TOP_COUNT` is the number of actors to dump into the metadata file at the end.
+
 `template.tmpl` - this is the beginning of the target metadata file
 
 `collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]
 
-## Usage
-1. clone repo
-1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-1. Copy `.env.example` to `.env`
-1. Edit .env to suit
+### Usage
+1. setup as above
 1. Run with `python top-n-actor-coll.py`
 
 ```
@@ -99,3 +103,62 @@ collections:
   Sylvester Stallone:
     template: {name: Person, person: 16483}
 ```
+
+
+## extract_collections.py
+
+You're getting started with Plex-Meta-Manager and you want to export your existing collections
+
+Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
+
+### Usage
+1. setup as above
+2. Run with `python extract_collections.py`
+
+Note that these scripts all use the same .env and requirements, so you don't need to repeat those steps
+
+The script will grab some details from each collection and write a metadata file that you could use with PMM.  It also grabs artwork and background.
+
+This is extremely naive; it doesn't recreate filters, just grabs a list of everything in each collection.
+
+For example, you'll end up with something like this for each collection:
+
+```yaml
+collections:
+  ABC:
+    sort_title: +++_ABC
+    url_poster: ./config/TV Shows - 4K-artwork/ABC.png
+    summary: A collection of ABC content
+    collection_order: release
+    plex_search:
+      any:
+        title:
+          - Twin Peaks
+          - Strange World
+          - Designated Survivor
+          - The Good Doctor
+```
+
+But it can act as a starting point or recovery backup.
+
+## reset-posters.py
+
+Perhaps you want to reset all the posters in a library
+
+This script will set the poster for every series or movie to the default poster from TMDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
+
+Notably, it does NOT remove the overlay label from items in Plex.  If you want to reapply a new overlay you'll need to do that manually.
+
+### Usage
+1. setup as above
+2. Run with `python reset-posters.py`
+
+```
+tmdb config...
+connecting to https://stream.chazbox.com...
+getting items from [TV Shows - 4K]...
+looping over 876 items...
+[=---------------------------------------] 2.7% ... Age of Big Cats
+```
+
+At this time, there is no configuration aside from library name; it replaces all posters.  It does not delete any posters from Plex, just grabs a URL and uses the API to set the poster to the URL.

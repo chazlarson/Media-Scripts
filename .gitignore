@@ -1,2 +1,7 @@
 **/.env
+**/*.yml
+
+**/config
+**/posters
+**/venv
 
