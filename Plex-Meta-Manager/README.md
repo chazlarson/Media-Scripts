@@ -15,7 +15,7 @@ All these scripts use the same `.env` and requirements.
 
 Connects to a plex library, grabs all the movies.
 
-For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.
+For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
 
 At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
 
@@ -29,9 +29,9 @@ TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 
 `TOP_COUNT` is the number of actors to dump into the metadata file at the end.
 
-`template.tmpl` - this is the beginning of the target metadata file
+`template.tmpl` - this is the beginning of the target metadata file; change it if you like, but you're on your own there.
 
-`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]
+`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]; change it if you like, but this script only knows about those two data field substitutions.
 
 ### Usage
 1. setup as above
@@ -114,8 +114,6 @@ Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 ### Usage
 1. setup as above
 2. Run with `python extract_collections.py`
-
-Note that these scripts all use the same .env and requirements, so you don't need to repeat those steps
 
 The script will grab some details from each collection and write a metadata file that you could use with PMM.  It also grabs artwork and background.
 
