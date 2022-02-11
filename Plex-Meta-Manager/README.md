@@ -160,3 +160,51 @@ looping over 876 items...
 ```
 
 At this time, there is no configuration aside from library name; it replaces all posters.  It does not delete any posters from Plex, just grabs a URL and uses the API to set the poster to the URL.
+
+## pmm_trakt_auth.py
+
+Perhaps you're running PMM in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
+
+This little script will generate the trakt section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing and not rely on any PMM code.
+
+You can run this on a completely separate machine to where PMM is running.
+
+### Usage
+1. setup as above
+2. Run with `python pmm_trakt_auth.py`
+
+
+You'll be asked for your trakt Client ID and Client Secret then taken to a trakt web page.
+
+Copy the PIN and paste it at the prompt.
+
+Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+
+```
+Let's authenticate against Trakt!
+
+
+Trakt Client ID: JOHNNYJOEYDEEDEE
+Trakt Client Secret: PETEROGERJOHNKEITH
+Taking you to: https://trakt.tv/oauth/authorize?response_type=code&client_id=JOHNNYJOEYDEEDEE&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob
+
+If you get an OAuth error your Client ID or Client Secret is invalid
+
+If a browser window doesn't open go to that URL manually.
+
+
+Enter the Trakt pin from that web page: 9CE4045E
+Copy the following into your PMM config.yml:
+############################################
+trakt:
+  client_id: JOHNNYJOEYDEEDEE
+  client_secret: PETEROGERJOHNKEITH
+  authorization:
+    access_token: OZZYTONYGEEZERBILL
+    token_type: Bearer
+    expires_in: 7889237
+    refresh_token: JOHNPAULGEORGERINGO
+    scope: public
+    created_at: 1644589166
+############################################
+```
