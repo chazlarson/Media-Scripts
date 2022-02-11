@@ -15,8 +15,6 @@ PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
-CAST_DEPTH = int(os.getenv('CAST_DEPTH'))
-TOP_COUNT = int(os.getenv('TOP_COUNT'))
 
 # Commented out until this doesn't throw a 400
 # tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
