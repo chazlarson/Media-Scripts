@@ -208,3 +208,55 @@ trakt:
     created_at: 1644589166
 ############################################
 ```
+
+## pmm_mal_auth.py
+
+This little script will generate the mal section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing and not rely on any PMM code.
+
+You can run this on a completely separate machine to where PMM is running.
+
+### Usage
+1. setup as above
+2. Run with `python pmm_mal_auth.py`
+
+
+You'll be asked for your MyAnimeList Client ID and Client Secret then taken to a MyAnimeList web page.
+
+Log in and click "Allow"; you'll be redirected to a localhost page that won't load.
+
+Copy that localhost URL and paste it at the prompt.
+
+Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+
+```
+Let's authenticate against MyAnimeList!
+
+
+MyAnimeList Client ID: JOHNNYJOEYDEEDEE
+MyAnimeList Client Secret: PETEROGERJOHNKEITH
+We're going to open https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=JOHNNYJOEYDEEDEE&code_challenge=STINGANDYSTEWART
+
+
+Log in and click the Allow option.
+
+You will be redirected to a localhost url that probably won't load.
+
+That's fine.  Copy that localhost URL and paste it below.
+
+Hit enter when ready:
+URL: http://localhost/?code=TuomasEmppuTroyFloorKaiJukka
+
+
+Copy the following into your PMM config.yml:
+############################################
+mal:
+  client_id: JOHNNYJOEYDEEDEE
+  client_secret: PETEROGERJOHNKEITH
+  authorization:
+    access_token: OZZYTONYGEEZERBILL
+    token_type: Bearer
+    expires_in: 2415600
+    refresh_token: JOHNPAULGEORGERINGO
+############################################
+
+```
