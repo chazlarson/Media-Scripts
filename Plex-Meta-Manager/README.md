@@ -145,7 +145,12 @@ Perhaps you want to reset all the posters in a library
 
 This script will set the poster for every series or movie to the default poster from TMDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
 
-Notably, it does NOT remove the overlay label from items in Plex.  If you want to reapply a new overlay you'll need to do that manually.
+If you specify a comma-separated list of labels in the env file:
+```
+REMOVE_LABELS = This label, That label, Another label
+```
+
+The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Retrieving the list of labels from Plex is expensive.
 
 ### Usage
 1. setup as above

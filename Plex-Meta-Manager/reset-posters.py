@@ -6,7 +6,11 @@ import textwrap
 from tmdbapis import TMDbAPIs
 import requests
 import pathlib
+from timeit import default_timer as timer
+
 # import tvdb_v4_official
+
+start = timer()
 
 load_dotenv()
 
@@ -15,6 +19,10 @@ PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
+REMOVE_LABELS = os.getenv('REMOVE_LABELS')
+
+if REMOVE_LABELS:
+    lbl_array = REMOVE_LABELS.split(",")
 
 # Commented out until this doesn't throw a 400
 # tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
@@ -33,6 +41,12 @@ movie_dir = f"{local_dir}/movies"
 
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
+
+def removeLabels(theItem):
+    for label in theItem.labels:
+        for lbl in lbl_array:
+            if label.tag == lbl:
+                theItem.removeLabel(lbl, True)
 
 def getTID(theList):
     tmid = None
@@ -99,5 +113,12 @@ for item in items:
         else:
             progress(item_count, item_total, "unknown type: " + item.title)
 
+        if len(lbl_array) > 0:
+            removeLabels(item)
+
     except Exception as ex:
         progress(item_count, item_total, "EX: " + item.title)
+
+end = timer()
+elapsed = end - start
+print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
