@@ -11,6 +11,18 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 All these scripts use the same `.env` and requirements.
 
+```
+TMDB_KEY=TMDB_API_KEY
+TVDB_KEY=TVDB_V4_API_KEY
+PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
+PLEX_TOKEN=PLEX-TOKEN
+LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
+CAST_DEPTH=20                                # how deep to go into the cast for actor collections
+TOP_COUNT=10                                 # how many actors to export
+REMOVE_LABELS = this label, that label       # comma-separated list of labels to remove from items
+DELAY = 1                                    # optional delay between items
+```
+
 ## top-n-actor-coll.py
 
 Connects to a plex library, grabs all the movies.
@@ -150,7 +162,7 @@ If you specify a comma-separated list of labels in the env file:
 REMOVE_LABELS = This label, That label, Another label
 ```
 
-The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Retrieving the list of labels from Plex is expensive.
+The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is expensive.
 
 ### Usage
 1. setup as above
@@ -158,7 +170,7 @@ The script will remove those labels from any movies that have that label assigne
 
 ```
 tmdb config...
-connecting to https://stream.chazbox.com...
+connecting to https://stream.BING.BANG...
 getting items from [TV Shows - 4K]...
 looping over 876 items...
 [=---------------------------------------] 2.7% ... Age of Big Cats
