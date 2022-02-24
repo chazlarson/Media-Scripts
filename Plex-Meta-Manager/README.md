@@ -161,8 +161,9 @@ If you specify a comma-separated list of labels in the env file:
 ```
 REMOVE_LABELS = This label, That label, Another label
 ```
+You probably don't want to use this.
 
-The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is expensive.
+The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is *expensive*.
 
 ### Usage
 1. setup as above
