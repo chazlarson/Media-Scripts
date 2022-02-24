@@ -22,7 +22,7 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
 REMOVE_LABELS = os.getenv('REMOVE_LABELS')
-DELAY = os.getenv('DELAY')
+DELAY = int(os.getenv('DELAY'))
 
 if not DELAY:
     DELAY = 0

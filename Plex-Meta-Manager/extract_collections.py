@@ -15,7 +15,7 @@ TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
 CAST_DEPTH = int(os.getenv('CAST_DEPTH'))
 TOP_COUNT = int(os.getenv('TOP_COUNT'))
-DELAY = os.getenv('DELAY')
+DELAY = int(os.getenv('DELAY'))
 
 if not DELAY:
     DELAY = 0
