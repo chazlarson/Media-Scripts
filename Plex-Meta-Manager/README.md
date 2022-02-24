@@ -163,7 +163,7 @@ REMOVE_LABELS = This label, That label, Another label
 ```
 The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is *expensive*.
 
-You probably don't want to use this.  Again, you provbaly don't want to do taht.  The Plex UI is far faster.  PMM can remove labels as well, and is probably far faster.
+You probably don't want to use this.  Really.  The Plex UI is far faster for removing labels.  PMM can remove labels as well, and is probably far faster.
 
 ### Usage
 1. setup as above
