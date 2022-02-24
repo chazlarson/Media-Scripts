@@ -134,7 +134,7 @@ for lib in lib_array:
             progress(item_count, item_total, "EX: " + item.title)
 
         # Wait between items in case hammering the Plex server turns out badly.
-        time.sleep(DELAY)
+        time.sleep(int(DELAY))
 
 end = timer()
 elapsed = end - start
