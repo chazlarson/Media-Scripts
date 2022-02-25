@@ -23,6 +23,13 @@ REMOVE_LABELS = this label, that label       # comma-separated list of labels to
 DELAY = 1                                    # optional delay between items
 ```
 
+## Scripts:
+1. [top-n-actor-coll.py](#top-n-actor-coll.py) - generate collections for the top *n* actors in a library
+2. [extract_collections.py](#extract_collections.py) - extract collections from a library
+3. [reset-posters.py](#reset-posters.py) - reset all artwork in a library
+4. [pmm_trakt_auth.py](#pmm_trakt_auth.py) - generate trakt auth block for PMM config.yml
+5. [pmm_mal_auth.py](#pmm_mal_auth.py) - generate mal auth block for PMM config.yml
+
 ## top-n-actor-coll.py
 
 Connects to a plex library, grabs all the movies.
