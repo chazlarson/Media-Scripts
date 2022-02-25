@@ -11,6 +11,8 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 All these scripts use the same `.env` and requirements.
 
+### `.env` contents
+
 ```
 TMDB_KEY=TMDB_API_KEY
 TVDB_KEY=TVDB_V4_API_KEY
