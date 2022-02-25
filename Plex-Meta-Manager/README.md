@@ -21,8 +21,8 @@ PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
-REMOVE_LABELS = this label, that label       # comma-separated list of labels to remove from items
-DELAY = 1                                    # optional delay between items
+REMOVE_LABELS=this label, that label         # comma-separated list of labels to remove from items
+DELAY=1                                      # optional delay between items
 ```
 
 ## Scripts:
