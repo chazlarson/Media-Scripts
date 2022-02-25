@@ -164,7 +164,7 @@ But it can act as a starting point or recovery backup.
 
 Perhaps you want to reset all the posters in a library
 
-This script will set the poster for every series or movie to the default poster from TMDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
+This script will set the poster for every series or movie to the default poster from TMDB/TVDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
 
 If you specify a comma-separated list of labels in the env file:
 ```
