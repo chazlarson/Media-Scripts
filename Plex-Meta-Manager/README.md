@@ -24,7 +24,7 @@ TOP_COUNT=10                                 # how many actors to export
 REMOVE_LABELS=this label, that label         # comma-separated list of labels to remove from items
 DELAY=1                                      # optional delay between items
 POSTER_DIR=extracted_posters                 # put downloaded posters here
-POSTER_DEPTH=20                              # grab this many posters
+POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 ```
 
@@ -84,7 +84,7 @@ REMOVE_LABELS = This label, That label, Another label
 ```
 The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is *expensive*.
 
-You probably don't want to use this.  Really.  The Plex UI is far faster for removing labels.  PMM can remove labels as well, and is probably far faster.
+You probably don't want to use this label-removing feature.  Really.  The Plex UI is far faster for removing labels.  PMM can remove labels as well, and is probably far faster.
 
 ### Usage
 1. setup as above
@@ -202,22 +202,22 @@ mal:
 
 ## grab-all-posters.py
 
-Perhaps you want to get local copies of some or all the posters PLex knows about for everything in a library.
+Perhaps you want to get local copies of some or all the posters Plex knows about for everything in a library.
 
 Maybe you find it easier to look through a bunch of options in CoverFlow or something.
 
-This script will download some or all the posters for every item in a given set of libraries.  It won't download the same thing more than once, so you can cancel it and restart it if need be.
+This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retireved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
 
 Script-specific variables in .env:
 ```
-POSTER_DIR=extracted_posters    ### DIRECTORY TO PUT THE IMAGES INTO
-POSTER_DEPTH=20                 ### GRAB THIS MANY
-POSTER_DOWNLOAD=0               ### DOWNLOAD THEM OR NOT
+POSTER_DIR=extracted_posters                 # put downloaded posters here
+POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
+POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
 
-If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs.
+If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
 
 ### Usage
 1. setup as above
@@ -249,8 +249,6 @@ extracted_posters
     └── anohana:\ The\ Flower\ We\ Saw\ That\ Day\ -\ The\ Movie
         └── 2090423-001.png
 ```
-
-NOTE: This is another blunt instrument.  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.
 
 ## OBSOLETE SCRIPTS
 
