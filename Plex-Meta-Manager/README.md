@@ -23,108 +23,20 @@ CAST_DEPTH=20                                # how deep to go into the cast for 
 TOP_COUNT=10                                 # how many actors to export
 REMOVE_LABELS=this label, that label         # comma-separated list of labels to remove from items
 DELAY=1                                      # optional delay between items
+POSTER_DIR=extracted_posters                 # put downloaded posters here
+POSTER_DEPTH=20                              # grab this many posters
+POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 ```
 
 ## Scripts:
+1. [extract_collections.py](#extract_collections.py) - extract collections from a library
+1. [reset-posters.py](#reset-posters.py) - reset all artwork in a library
+1. [grab-all-posters.py](#grab-all-posters.py) - grab some or all of the artwork for a library from plex
+1. [pmm_trakt_auth.py](#pmm_trakt_auth.py) - generate trakt auth block for PMM config.yml
+1. [pmm_mal_auth.py](#pmm_mal_auth.py) - generate mal auth block for PMM config.yml
+
+### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-coll.py) - generate collections for the top *n* actors in a library
-2. [extract_collections.py](#extract_collections.py) - extract collections from a library
-3. [reset-posters.py](#reset-posters.py) - reset all artwork in a library
-4. [pmm_trakt_auth.py](#pmm_trakt_auth.py) - generate trakt auth block for PMM config.yml
-5. [pmm_mal_auth.py](#pmm_mal_auth.py) - generate mal auth block for PMM config.yml
-
-## top-n-actor-coll.py
-
-Connects to a plex library, grabs all the movies.
-
-For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
-
-At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
-
-Script-specific variables in .env:
-```
-CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
-TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
-```
-
-`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
-
-`TOP_COUNT` is the number of actors to dump into the metadata file at the end.
-
-`template.tmpl` - this is the beginning of the target metadata file; change it if you like, but you're on your own there.
-
-`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]; change it if you like, but this script only knows about those two data field substitutions.
-
-### Usage
-1. setup as above
-1. Run with `python top-n-actor-coll.py`
-
-```
-connecting...
-getting movies...
-looping over 2819 movies...
-[==--------------------------------------] 5.4% ... Annihilation
-```
-
-It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT and produce a yml file.
-
-```
-38      2231-Samuel L. Jackson
-26      500-Tom Cruise
-25      64-Gary Oldman
-25      192-Morgan Freeman
-23      884-Steve Buscemi
-22      62-Bruce Willis
-22      31-Tom Hanks
-21      19278-Bill Hader
-21      2888-Will Smith
-21      16483-Sylvester Stallone
-```
-
-In my 4K movie library, the script produces:
-
-```
-######################################################
-#               People Collections                   #
-######################################################
-templates:
-  Person:
-    smart_filter:
-      any:
-        actor: tmdb
-        director: tmdb
-        writer: tmdb
-        producer: tmdb
-      sort_by: year.asc
-      validate: false
-    tmdb_person: <<person>>
-    sort_title: +9_<<collection_name>>
-    schedule: weekly(monday)
-    collection_order: release
-    collection_mode: hide
-
-collections:
-  Samuel L. Jackson:
-    template: {name: Person, person: 2231}
-  Tom Cruise:
-    template: {name: Person, person: 500}
-  Gary Oldman:
-    template: {name: Person, person: 64}
-  Morgan Freeman:
-    template: {name: Person, person: 192}
-  Steve Buscemi:
-    template: {name: Person, person: 884}
-  Bruce Willis:
-    template: {name: Person, person: 62}
-  Tom Hanks:
-    template: {name: Person, person: 31}
-  Bill Hader:
-    template: {name: Person, person: 19278}
-  Will Smith:
-    template: {name: Person, person: 2888}
-  Sylvester Stallone:
-    template: {name: Person, person: 16483}
-```
-
 
 ## extract_collections.py
 
@@ -309,7 +221,7 @@ If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each libra
 
 ### Usage
 1. setup as above
-2. Run with `python reset-posters.py`
+2. Run with `python grab-all-posters.py`
 
 ```
 tmdb config...
@@ -317,4 +229,124 @@ connecting to https://cp1.BING.BANG...
 getting items from [Movies - 4K]...
 looping over 754 items...
 [==================================------] 84.7% ... The Sum of All Fears - 41 posters - 20
+```
+
+The posters will be sorted by library with each poster getting an incremented number, like this:
+
+```
+extracted_posters
+├── Movies\ -\ 4K\ DV
+│   ├── 10\ Cloverfield\ Lane
+│   │   └── 2273074-001.png
+│   └── 13\ Hours
+│       ├── 2273076-001.png
+│       ├── 2273076-002.png
+│       └── 2273076-003.png
+│
+└── Movies\ -\ Anime
+    ├── 30th\ Gundam\ Perfect\ Mission
+    │   └── 2095719-001.png
+    └── anohana:\ The\ Flower\ We\ Saw\ That\ Day\ -\ The\ Movie
+        └── 2090423-001.png
+```
+
+NOTE: This is another blunt instrument.  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.
+
+## OBSOLETE SCRIPTS
+
+## top-n-actor-coll.py
+
+This has been obsoleted by "Dynamic Collections" in PMM; it's left here for historical reference.
+
+You should use Dynamic Collections instead.
+
+Connects to a plex library, grabs all the movies.
+
+For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
+
+At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
+
+Script-specific variables in .env:
+```
+CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
+TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
+```
+
+`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
+
+`TOP_COUNT` is the number of actors to dump into the metadata file at the end.
+
+`template.tmpl` - this is the beginning of the target metadata file; change it if you like, but you're on your own there.
+
+`collection.tmpl` - this is the collection definition inserted for each actor [`%%NAME%%%` and `%%ID%%` are placeholders that get substituted for each actor]; change it if you like, but this script only knows about those two data field substitutions.
+
+### Usage
+1. setup as above
+1. Run with `python top-n-actor-coll.py`
+
+```
+connecting...
+getting movies...
+looping over 2819 movies...
+[==--------------------------------------] 5.4% ... Annihilation
+```
+
+It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT and produce a yml file.
+
+```
+38      2231-Samuel L. Jackson
+26      500-Tom Cruise
+25      64-Gary Oldman
+25      192-Morgan Freeman
+23      884-Steve Buscemi
+22      62-Bruce Willis
+22      31-Tom Hanks
+21      19278-Bill Hader
+21      2888-Will Smith
+21      16483-Sylvester Stallone
+```
+
+In my 4K movie library, the script produces:
+
+```
+######################################################
+#               People Collections                   #
+######################################################
+templates:
+  Person:
+    smart_filter:
+      any:
+        actor: tmdb
+        director: tmdb
+        writer: tmdb
+        producer: tmdb
+      sort_by: year.asc
+      validate: false
+    tmdb_person: <<person>>
+    sort_title: +9_<<collection_name>>
+    schedule: weekly(monday)
+    collection_order: release
+    collection_mode: hide
+
+collections:
+  Samuel L. Jackson:
+    template: {name: Person, person: 2231}
+  Tom Cruise:
+    template: {name: Person, person: 500}
+  Gary Oldman:
+    template: {name: Person, person: 64}
+  Morgan Freeman:
+    template: {name: Person, person: 192}
+  Steve Buscemi:
+    template: {name: Person, person: 884}
+  Bruce Willis:
+    template: {name: Person, person: 62}
+  Tom Hanks:
+    template: {name: Person, person: 31}
+  Bill Hader:
+    template: {name: Person, person: 19278}
+  Will Smith:
+    template: {name: Person, person: 2888}
+  Sylvester Stallone:
+    template: {name: Person, person: 16483}
 ```
