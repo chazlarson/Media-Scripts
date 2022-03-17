@@ -277,3 +277,34 @@ mal:
 ############################################
 
 ```
+
+## grab-all-posters.py
+
+Perhaps you want to get local copies of some or all the posters PLex knows about for everything in a library.
+
+Maybe you find it easier to look through a bunch of options in CoverFlow or something.
+
+This script will download some or all the posters for every item in a given set of libraries.  It won't download the same thing more than once, so you can cancel it and restart it if need be.
+
+Script-specific variables in .env:
+```
+POSTER_DIR=extracted_posters    ### DIRECTORY TO PUT THE IMAGES INTO
+POSTER_DEPTH=20                 ### GRAB THIS MANY
+POSTER_DOWNLOAD=0               ### DOWNLOAD THEM OR NOT
+```
+
+The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
+
+If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs.
+
+### Usage
+1. setup as above
+2. Run with `python reset-posters.py`
+
+```
+tmdb config...
+connecting to https://cp1.BING.BANG...
+getting items from [Movies - 4K]...
+looping over 754 items...
+[==================================------] 84.7% ... The Sum of All Fears - 41 posters - 20
+```
