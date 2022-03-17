@@ -11,6 +11,8 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 All these scripts use the same `.env` and requirements.
 
+### `.env` contents
+
 ```
 TMDB_KEY=TMDB_API_KEY
 TVDB_KEY=TVDB_V4_API_KEY
@@ -19,9 +21,16 @@ PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
-REMOVE_LABELS = this label, that label       # comma-separated list of labels to remove from items
-DELAY = 1                                    # optional delay between items
+REMOVE_LABELS=this label, that label         # comma-separated list of labels to remove from items
+DELAY=1                                      # optional delay between items
 ```
+
+## Scripts:
+1. [top-n-actor-coll.py](#top-n-actor-coll.py) - generate collections for the top *n* actors in a library
+2. [extract_collections.py](#extract_collections.py) - extract collections from a library
+3. [reset-posters.py](#reset-posters.py) - reset all artwork in a library
+4. [pmm_trakt_auth.py](#pmm_trakt_auth.py) - generate trakt auth block for PMM config.yml
+5. [pmm_mal_auth.py](#pmm_mal_auth.py) - generate mal auth block for PMM config.yml
 
 ## top-n-actor-coll.py
 
@@ -155,14 +164,15 @@ But it can act as a starting point or recovery backup.
 
 Perhaps you want to reset all the posters in a library
 
-This script will set the poster for every series or movie to the default poster from TMDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
+This script will set the poster for every series or movie to the default poster from TMDB/TVDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
 
 If you specify a comma-separated list of labels in the env file:
 ```
 REMOVE_LABELS = This label, That label, Another label
 ```
+The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is *expensive*.
 
-The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is expensive.
+You probably don't want to use this.  Really.  The Plex UI is far faster for removing labels.  PMM can remove labels as well, and is probably far faster.
 
 ### Usage
 1. setup as above
