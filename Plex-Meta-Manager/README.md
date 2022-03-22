@@ -29,14 +29,14 @@ POSTER_DOWNLOAD=0                            # if set to 0, generate a script ra
 ```
 
 ## Scripts:
-1. [extract_collections.py](#extract_collections.py) - extract collections from a library
-1. [reset-posters.py](#reset-posters.py) - reset all artwork in a library
-1. [grab-all-posters.py](#grab-all-posters.py) - grab some or all of the artwork for a library from plex
-1. [pmm_trakt_auth.py](#pmm_trakt_auth.py) - generate trakt auth block for PMM config.yml
-1. [pmm_mal_auth.py](#pmm_mal_auth.py) - generate mal auth block for PMM config.yml
+1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
+1. [reset-posters.py](#reset-posterspy) - reset all artwork in a library
+1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
+1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
+1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
 
 ### OBSOLETE
-1. [top-n-actor-coll.py](#top-n-actor-coll.py) - generate collections for the top *n* actors in a library
+1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
 
 ## extract_collections.py
 
