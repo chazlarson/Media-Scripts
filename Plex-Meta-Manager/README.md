@@ -14,8 +14,8 @@ All these scripts use the same `.env` and requirements.
 ### `.env` contents
 
 ```
-TMDB_KEY=TMDB_API_KEY
-TVDB_KEY=TVDB_V4_API_KEY
+TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
+TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
 PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
