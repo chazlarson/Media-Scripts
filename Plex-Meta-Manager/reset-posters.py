@@ -21,14 +21,17 @@ LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
-REMOVE_LABELS = os.getenv('REMOVE_LABELS')
+TARGET_LABELS = os.getenv('TARGET_LABELS')
+REMOVE_LABELS = bool(os.getenv('REMOVE_LABELS'))
 DELAY = int(os.getenv('DELAY'))
 
 if not DELAY:
     DELAY = 0
 
-if REMOVE_LABELS:
-    lbl_array = REMOVE_LABELS.split(",")
+if TARGET_LABELS:
+    lbl_array = TARGET_LABELS.split(",")
+else:
+    lbl_array = ["xy22y1973"]
 
 if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
@@ -53,14 +56,6 @@ movie_dir = f"{local_dir}/movies"
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
-def removeLabels(theItem):
-    for lbl in lbl_array:
-        theItem.removeLabel(lbl, True)
-    # for label in theItem.labels:
-    #     for lbl in lbl_array:
-    #         if label.tag == lbl:
-    #             theItem.removeLabel(lbl, True)
-
 def getTID(theList):
     tmid = None
     tvid = None
@@ -77,9 +72,9 @@ def progress(count, total, status=''):
 
     percents = round(100.0 * count / float(total), 1)
     bar = '=' * filled_len + '-' * (bar_len - filled_len)
-    stat_str = textwrap.shorten(status, width=30)
+    stat_str = textwrap.shorten(status, width=60)
 
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(30)))
+    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(60)))
     sys.stdout.flush()
 
 print("tmdb config...")
@@ -91,50 +86,61 @@ print(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
     print(f"\ngetting items from [{lib}]...")
-    items = plex.library.section(lib).all()
-    item_total = len(items)
-    print(f"looping over {item_total} items...")
-    item_count = 1
-    for item in items:
-        tmpDict = {}
-        tmdb_id, tvdb_id = getTID(item.guids)
-        item_count = item_count + 1
-        try:
-            progress(item_count, item_total, item.title)
-            pp = None
-            if item.TYPE == 'show':
-                try:
-                    pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
-                except:
-                    pp = "NONE"
-                tgt_dir = show_dir
-            else:
-                pp = tmdb.movie(tmdb_id).poster_path
-                tgt_dir = movie_dir
-
-            if pp is not None:
-                if pp == "NONE":
-                    posters = item.posters()
-                    item.setPoster(posters[0])
+    for lbl in lbl_array:
+        if lbl == "xy22y1973":
+            items = plex.library.section(lib).all()
+            REMOVE_LABELS = False
+        else:
+            print(f"\nlabelled [{lbl}]...")
+            items = plex.library.section(lib).search(label=lbl)
+        item_total = len(items)
+        print(f"looping over {item_total} items...")
+        item_count = 1
+        for item in items:
+            tmpDict = {}
+            tmdb_id, tvdb_id = getTID(item.guids)
+            item_count = item_count + 1
+            try:
+                progress(item_count, item_total, item.title)
+                pp = None
+                if item.TYPE == 'show':
+                    try:
+                        pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
+                    except:
+                        pp = "NONE"
+                    tgt_dir = show_dir
                 else:
-                    ext = pathlib.Path(pp).suffix
-                    posterURL = f"{base_url}{size_str}{pp}"
-                    local_file = f"{tgt_dir}/{item.ratingKey}{ext}"
-                    if not os.path.exists(local_file):
-                        r = requests.get(posterURL, allow_redirects=True)
-                        open(f"{local_file}", 'wb').write(r.content)
-                    item.uploadPoster(filepath=local_file)
-            else:
-                progress(item_count, item_total, "unknown type: " + item.title)
+                    pp = tmdb.movie(tmdb_id).poster_path
+                    tgt_dir = movie_dir
 
-            if len(lbl_array) > 0:
-                removeLabels(item)
+                if pp is not None:
+                    if pp == "NONE":
+                        progress(item_count, item_total, item.title + " - getting posters")
+                        posters = item.posters()
+                        progress(item_count, item_total, item.title + " - setting poster")
+                        item.setPoster(posters[0])
+                    else:
+                        ext = pathlib.Path(pp).suffix
+                        posterURL = f"{base_url}{size_str}{pp}"
+                        local_file = f"{tgt_dir}/{item.ratingKey}{ext}"
+                        progress(item_count, item_total, item.title + " - downloading poster")
+                        if not os.path.exists(local_file):
+                            r = requests.get(posterURL, allow_redirects=True)
+                            open(f"{local_file}", 'wb').write(r.content)
+                        progress(item_count, item_total, item.title + " - uploading poster")
+                        item.uploadPoster(filepath=local_file)
+                else:
+                    progress(item_count, item_total, "unknown type: " + item.title)
 
-        except Exception as ex:
-            progress(item_count, item_total, "EX: " + item.title)
+                if REMOVE_LABELS:
+                    progress(item_count, item_total, item.title + " - removing label")
+                    item.removeLabel(lbl, True)
 
-        # Wait between items in case hammering the Plex server turns out badly.
-        time.sleep(DELAY)
+            except Exception as ex:
+                progress(item_count, item_total, "EX: " + item.title)
+
+            # Wait between items in case hammering the Plex server turns out badly.
+            time.sleep(DELAY)
 
 end = timer()
 elapsed = end - start
