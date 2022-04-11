@@ -19,9 +19,10 @@ TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetv
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
 PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
-CAST_DEPTH=20                                # OBSOLETE: how deep to go into the cast for actor collections
-TOP_COUNT=10                                 # OBSOLETE: how many actors to export
-REMOVE_LABELS=this label, that label         # comma-separated list of labels to remove from items
+CAST_DEPTH=20                                # how deep to go into the cast for actor collections
+TOP_COUNT=10                                 # how many actors to export
+TARGET_LABELS=this label, that label         # comma-separated list of labels to remove posters from
+REMOVE_LABELS=True                           # attempt to remove the TARGET_LABELs from items after resetting the poster
 DELAY=1                                      # optional delay between items
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
@@ -80,11 +81,17 @@ This script will set the poster for every series or movie to the default poster 
 
 If you specify a comma-separated list of labels in the env file:
 ```
-REMOVE_LABELS = This label, That label, Another label
+TARGET_LABELS = This label, That label, Another label
 ```
-The script will remove those labels from any movies that have that label assigned.  This slows the process down DRAMATICALLY.  As an example, replacing images on a library of 658 movies took about 8 minutes.  With REMOVE_LABELS, after 9 minutes the script was 4% through the same library.  Manipulating labels through the PlexAPI library is *expensive*.
+The script will reset posters only on movies with those labels assigned.
 
-You probably don't want to use this label-removing feature.  Really.  The Plex UI is far faster for removing labels.  PMM can remove labels as well, and is probably far faster.
+If you also set:
+```
+REMOVE_LABELS=True
+```
+The script will *attempt* to remove those labels after resetting the poster.  I say "attempt" since in testing I have experienced an odd situation where no error occurs but the label is not removed.  My test library of 230 4K-Dolby Movies contains 47 that fail in this way; every run it goes through the 47 movies "removing labels" without error yet they still have the labels on the next run.
+
+Besides that Heisenbug, I don't recommend using this [`REMOVE_LABELS`] since the label removal takes a long time [dozens of seconds per item].  Doing this through the Plex UI is much faster.
 
 ### Usage
 1. setup as above
