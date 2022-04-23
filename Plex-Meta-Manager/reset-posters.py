@@ -33,8 +33,6 @@ TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
 REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
-print(f"os.getenv('REMOVE_LABELS'): {os.getenv('REMOVE_LABELS')}")
-print(f"REMOVE_LABELS: {REMOVE_LABELS}")
 DELAY = 0
 try:
     DELAY = int(os.getenv('DELAY'))
@@ -150,7 +148,7 @@ for lib in lib_array:
                         progress(item_count, item_total, item.title + " - setting poster")
                         item.setPoster(posters[0])
                     else:
-                        if not os.path.exists(local_file):
+                        if local_file is None or not os.path.exists(local_file):
                             ext = pathlib.Path(pp).suffix
                             posterURL = f"{base_url}{size_str}{pp}"
                             local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
