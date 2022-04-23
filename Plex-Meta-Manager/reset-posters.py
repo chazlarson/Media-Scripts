@@ -69,6 +69,13 @@ movie_dir = f"{local_dir}/movies"
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
+def localFilePath(tgt_dir, rating_key):
+    for ext in ['jpg','png']:
+        local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
+        if os.path.exists(local_file):
+            return local_file
+    return None
+
 def getTID(theList):
     tmid = None
     tvid = None
@@ -110,21 +117,31 @@ for lib in lib_array:
         print(f"looping over {item_total} items...")
         item_count = 1
         for item in items:
-            tmpDict = {}
             tmdb_id, tvdb_id = getTID(item.guids)
             item_count = item_count + 1
             try:
                 progress(item_count, item_total, item.title)
                 pp = None
+                local_file = None
+
                 if item.TYPE == 'show':
-                    try:
-                        pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
-                    except:
-                        pp = "NONE"
                     tgt_dir = show_dir
+                    local_file = localFilePath(tgt_dir, item.ratingKey)
+                    pp = local_file
+                    if local_file is None:
+                        try:
+                            pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
+                        except:
+                            pp = "NONE"
                 else:
-                    pp = tmdb.movie(tmdb_id).poster_path
                     tgt_dir = movie_dir
+                    local_file = localFilePath(tgt_dir, item.ratingKey)
+                    pp = local_file
+                    if local_file is None:
+                        try:
+                            pp = tmdb.movie(tmdb_id).poster_path
+                        except:
+                            pp = "NONE"
 
                 if pp is not None:
                     if pp == "NONE":
@@ -133,10 +150,12 @@ for lib in lib_array:
                         progress(item_count, item_total, item.title + " - setting poster")
                         item.setPoster(posters[0])
                     else:
-                        ext = pathlib.Path(pp).suffix
-                        posterURL = f"{base_url}{size_str}{pp}"
-                        local_file = f"{tgt_dir}/{item.ratingKey}{ext}"
-                        progress(item_count, item_total, item.title + " - downloading poster")
+                        if not os.path.exists(local_file):
+                            ext = pathlib.Path(pp).suffix
+                            posterURL = f"{base_url}{size_str}{pp}"
+                            local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
+                            progress(item_count, item_total, item.title + " - downloading poster")
+
                         if not os.path.exists(local_file):
                             r = requests.get(posterURL, allow_redirects=True)
                             open(f"{local_file}", 'wb').write(r.content)
