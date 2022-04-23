@@ -15,6 +15,11 @@ start = timer()
 
 load_dotenv()
 
+def boolean_string(s):
+    if s not in {'False', 'True'}:
+        raise ValueError('Not a valid boolean string')
+    return s == 'True'
+
 PLEX_URL = os.getenv('PLEX_URL')
 PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
@@ -22,7 +27,9 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
-REMOVE_LABELS = bool(os.getenv('REMOVE_LABELS'))
+REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
+print(f"os.getenv('REMOVE_LABELS'): {os.getenv('REMOVE_LABELS')}")
+print(f"REMOVE_LABELS: {REMOVE_LABELS}")
 DELAY = int(os.getenv('DELAY'))
 
 if not DELAY:
