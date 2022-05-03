@@ -28,7 +28,7 @@ TOP_COUNT=10                                 # how many actors to export
 
 ## user-emails.py
 
-You want a list of the eamil addresses for all the people you share with.
+You want a list of email addresses for all the people you share with.
 
 Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
