@@ -24,38 +24,27 @@ TOP_COUNT=10                                 # how many actors to export
 ```
 
 ## Scripts:
-1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
+1. [user-emails.py](#user-emailspy) - extract user emails from your shares
 
-## extract_collections.py
+## user-emails.py
 
-You're getting started with Plex-Meta-Manager and you want to export your existing collections
+You want a list of the eamil addresses for all the people you share with.
 
 Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
 ### Usage
 1. setup as above
-2. Run with `python extract_collections.py`
+2. Run with `python user-emails.py`
 
-The script will grab some details from each collection and write a metadata file that you could use with PMM.  It also grabs artwork and background.
+The script will loop through all the shared users on your acount and spit out username and email address.
 
-This is extremely naive; it doesn't recreate filters, just grabs a list of everything in each collection.
-
-For example, you'll end up with something like this for each collection:
-
-```yaml
-collections:
-  ABC:
-    sort_title: +++_ABC
-    url_poster: ./config/TV Shows - 4K-artwork/ABC.png
-    summary: A collection of ABC content
-    collection_order: release
-    plex_search:
-      any:
-        title:
-          - Twin Peaks
-          - Strange World
-          - Designated Survivor
-          - The Good Doctor
+```shell
+connecting...
+getting users...
+looping over 26 users...
+binguser - bing@gmail.com
+mrbang - bang@gmail.com
+boingster - boing@gmail.com
+...
 ```
 
-But it can act as a starting point or recovery backup.
