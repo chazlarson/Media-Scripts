@@ -18,6 +18,7 @@ TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
 PLEX_TOKEN=PLEX-TOKEN
+PLEX_OWNER=yournamehere                      # account name of the server owner
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
@@ -35,6 +36,8 @@ POSTER_DOWNLOAD=0                            # if set to 0, generate a script ra
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
 1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
+1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
+1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
@@ -258,6 +261,72 @@ extracted_posters
     └── anohana:\ The\ Flower\ We\ Saw\ That\ Day\ -\ The\ Movie
         └── 2090423-001.png
 ```
+
+## grab-all-status.py
+
+Perhaps you want to move or restore watch status from one server to another [or to a rebuild]
+
+This script will retrieve all watched items for all libraries on a given plex server.  It stores them in a tab-delimited file.
+
+Script-specific variables in .env:
+```
+PLEX_OWNER=yournamehere                      # account name of the server owner
+```
+
+### Usage
+1. setup as above
+2. Run with `python grab-all-status.py`
+
+```
+onnecting to https://cp1.DOMAIN.TLD...
+------------ chazlarson ------------
+------------ Movies - 4K ------------
+chazlarson      movie   Movies - 4K     It Comes at Night       2017    R
+chazlarson      movie   Movies - 4K     Mad Max: Fury Road      2015    R
+chazlarson      movie   Movies - 4K     Rio     2011    G
+chazlarson      movie   Movies - 4K     Rocky   1976    PG
+chazlarson      movie   Movies - 4K     The Witch       2015    R
+------------ Movies - 4K DV ------------
+chazlarson      movie   Movies - 4K DV  It Comes at Night       2017    R
+chazlarson      movie   Movies - 4K DV  Mad Max: Fury Road      2015    R
+...
+```
+
+The file contains one row per user/library/item:
+
+```
+chazlarson      movie   Movies - 4K     It Comes at Night       2017    R
+chazlarson      movie   Movies - 4K     Mad Max: Fury Road      2015    R
+chazlarson      movie   Movies - 4K     Rio     2011    G
+chazlarson      movie   Movies - 4K     Rocky   1976    PG
+chazlarson      movie   Movies - 4K     The Witch       2015    R
+chazlarson      movie   Movies - 4K DV  It Comes at Night       2017    R
+chazlarson      movie   Movies - 4K DV  Mad Max: Fury Road      2015    R
+...
+```
+
+## grab-all-posters.py
+
+This script reads the file produces by the previous script and applies the watched status for each user/library/item
+
+Script-specific variables in .env:
+```
+NONE
+```
+
+### Usage
+1. setup as above
+2. Run with `python apply-all-status.py`
+
+```
+connecting to https://cp1.DOMAIN.TLD...
+
+------------ Movies - 4K ------------
+Searching for It Comes at Night                                                      Marked watched for chazlarson
+...
+```
+
+There might be a problem with special characters in titles.
 
 ## OBSOLETE SCRIPTS
 
