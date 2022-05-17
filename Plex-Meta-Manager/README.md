@@ -28,6 +28,7 @@ DELAY=1                                      # optional delay between items
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
+POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
 ```
 
 ## Scripts:
@@ -218,13 +219,14 @@ Perhaps you want to get local copies of some or all the posters Plex knows about
 
 Maybe you find it easier to look through a bunch of options in CoverFlow or something.
 
-This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retireved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
+This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retireved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/all_libraries/578-Jaws/578-829-1452479-015.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
 
 Script-specific variables in .env:
 ```
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
+POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -243,24 +245,50 @@ looping over 754 items...
 [==================================------] 84.7% ... The Sum of All Fears - 41 posters - 20
 ```
 
-The posters will be sorted by library with each poster getting an incremented number, like this:
+The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
 
+The image names are: `TMDBID-TVDBID-RATINGKEY-INCREMENT.ext`
+
+POSTER_CONSOLIDATE=1:
 ```
 extracted_posters
-├── Movies\ -\ 4K\ DV
-│   ├── 10\ Cloverfield\ Lane
-│   │   └── 2273074-001.png
-│   └── 13\ Hours
-│       ├── 2273076-001.png
-│       ├── 2273076-002.png
-│       └── 2273076-003.png
-│
-└── Movies\ -\ Anime
-    ├── 30th\ Gundam\ Perfect\ Mission
-    │   └── 2095719-001.png
-    └── anohana:\ The\ Flower\ We\ Saw\ That\ Day\ -\ The\ Movie
-        └── 2090423-001.png
+└── all_libraries
+    ├── 100402-Captain America The Winter Soldier
+    │   ├── 100402-965-1456628-001.png
+    │   ├── 100402-965-1456628-002.png
+...
+    │   ├── 100402-965-1456628-014.png
+    │   └── 100402-965-1456628-015.png
+    ├── 10061-Escape from L.A
+    │   ├── 10061-2520-1985150-001.png
+    │   ├── 10061-2520-1985150-002.png
+...
+    │   ├── 10061-2520-1985150-014.png
+    │   └── 10061-2520-1985150-015.png
+...
 ```
+
+POSTER_CONSOLIDATE=0:
+```
+extracted_posters
+├── Movies - 4K
+│   └── 100402-Captain America The Winter Soldier
+│       ├── 100402-965-1456628-001.png
+│       ├── 100402-965-1456628-002.png
+...
+│       ├── 100402-965-1456628-014.png
+│       └── 100402-965-1456628-015.png
+└── Movies - 1080p
+    └── 10061-Escape from L.A
+        ├── 10061-2520-1985150-001.png
+        ├── 10061-2520-1985150-002.png
+...
+        ├── 10061-2520-1985150-014.png
+        └── 10061-2520-1985150-015.png
+...
+```
+
+
 
 ## grab-all-status.py
 
