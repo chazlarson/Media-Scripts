@@ -19,14 +19,33 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
 POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
+POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
+
+if POSTER_DOWNLOAD:
+    script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
+else:
+    script_string = ""
 
 if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
+
+tmdb_str = 'tmdb://'
+tvdb_str = 'tvdb://'
+
+def getTID(theList):
+    tmid = None
+    tvid = None
+    for guid in theList:
+        if tmdb_str in guid.id:
+            tmid = guid.id.replace(tmdb_str,'')
+        if tvdb_str in guid.id:
+            tvid = guid.id.replace(tvdb_str,'')
+    return tmid, tvid
 
 def progress(count, total, status=''):
     bar_len = 40
@@ -58,14 +77,24 @@ for lib in lib_array:
 
     plex_links = []
     external_links = []
-    script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
 
     for item in items:
+        tmdb_id, tvdb_id = getTID(item.guids)
         tmpDict = {}
         item_count = item_count + 1
-        tgt_dir = f"{POSTER_DIR}/{lib}"
-        dir_name, msg = validate_filename(item.title)
+        if POSTER_CONSOLIDATE:
+            tgt_dir = f"{POSTER_DIR}/all_libraries"
+        else:
+            tgt_dir = f"{POSTER_DIR}/{lib}"
+        old_dir_name, msg = validate_filename(item.title)
+        dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
         attempts = 0
+
+        old_path = Path(tgt_dir, f"{old_dir_name}")
+        artwork_path = Path(tgt_dir, f"{dir_name}")
+
+        if os.path.exists(old_path):
+            os.rename(old_path, artwork_path)
 
         while attempts < 5:
             try:
@@ -75,46 +104,57 @@ for lib in lib_array:
 
                 progress(item_count, item_total, progress_str)
 
-                idx = 1
-                for poster in posters:
-                    if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                        break
+                import fnmatch
 
-                    poster_obj = {}
-                    # print(poster)
-                    artwork_path = Path(tgt_dir, f"{dir_name}")
-                    tgt_file_path = f"{item.ratingKey}-{str(idx).zfill(3)}.png"
-                    final_file_path = f"{artwork_path}/{tgt_file_path}"
+                count = len(fnmatch.filter(os.listdir(artwork_path), '*.*'))
 
-                    poster_obj["folder"] = artwork_path
-                    poster_obj["file"] = tgt_file_path
+                no_more_to_get = count >= len(posters)
+                full_for_now = count >= POSTER_DEPTH
+                no_point_in_looking = full_for_now or no_more_to_get
 
-                    src_URL = poster.key
-                    if src_URL[0] == '/':
-                        src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
-                        poster_obj["URL"] = src_URL
-                        # plex_links.append(poster_obj)
-                    else:
-                        poster_obj["URL"] = src_URL
-                        # external_links.append(poster_obj)
+                if not no_point_in_looking:
+                    idx = 1
+                    for poster in posters:
+                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                            break
 
-                    progress(item_count, item_total, f"{progress_str} - {idx}")
+                        poster_obj = {}
+                        tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{str(idx).zfill(3)}.png"
+                        final_file_path = f"{artwork_path}/{tgt_file_path}"
 
-                    if not os.path.exists(final_file_path):
-                        if POSTER_DOWNLOAD:
-                            p = Path(artwork_path)
-                            p.mkdir(parents=True, exist_ok=True)
+                        poster_obj["folder"] = artwork_path
+                        poster_obj["file"] = tgt_file_path
 
-                            thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                        src_URL = poster.key
+                        if src_URL[0] == '/':
+                            src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
+                            poster_obj["URL"] = src_URL
+                            # plex_links.append(poster_obj)
                         else:
-                            script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
-                            script_string = script_string + f"{script_line}\n"
+                            poster_obj["URL"] = src_URL
+                            # external_links.append(poster_obj)
 
-                    idx += 1
+                        progress(item_count, item_total, f"{progress_str} - {idx}")
+
+                        if not os.path.exists(final_file_path):
+                            if POSTER_DOWNLOAD:
+                                p = Path(artwork_path)
+                                p.mkdir(parents=True, exist_ok=True)
+
+                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                            else:
+                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
+                                script_string = script_string + f"{script_line}\n"
+
+                        idx += 1
                 attempts = 6
             except Exception as ex:
                 progress(item_count, item_total, "EX: " + item.title)
                 attempts += 1
+
+    progress_str = f"COMPLETE"
+
+    progress(item_count, item_total, progress_str)
 
     print("\n")
     if len(script_string) > 0:

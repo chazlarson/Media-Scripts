@@ -19,6 +19,7 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('CURRENT_POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
 POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
+POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
@@ -27,6 +28,19 @@ if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
+
+tmdb_str = 'tmdb://'
+tvdb_str = 'tvdb://'
+
+def getTID(theList):
+    tmid = None
+    tvid = None
+    for guid in theList:
+        if tmdb_str in guid.id:
+            tmid = guid.id.replace(tmdb_str,'')
+        if tvdb_str in guid.id:
+            tvid = guid.id.replace(tvdb_str,'')
+    return tmid, tvid
 
 def progress(count, total, status=''):
     bar_len = 40
@@ -61,10 +75,14 @@ for lib in lib_array:
     script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
 
     for item in items:
+        tmdb_id, tvdb_id = getTID(item.guids)
         tmpDict = {}
         item_count = item_count + 1
-        tgt_dir = f"{POSTER_DIR}/{lib}"
-        dir_name, msg = validate_filename(item.title)
+        if POSTER_CONSOLIDATE:
+            tgt_dir = f"{POSTER_DIR}/all_libraries"
+        else:
+            tgt_dir = f"{POSTER_DIR}/{lib}"
+        dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
         attempts = 0
 
         progress_str = f"{item.title}"
@@ -74,31 +92,60 @@ for lib in lib_array:
         while attempts < 5:
             try:
 
-                progress_str = f"{item.title} - {attempts}"
+                progress_str = f"{item.title} - attempt {attempts}"
 
                 progress(item_count, item_total, progress_str)
 
-                # item.art
-                # '/library/metadata/2273137/art/1646196834'
-
-                # print(poster)
                 artwork_path = Path(tgt_dir, f"{dir_name}")
-                tgt_file_path = f"{item.ratingKey}.png"
+                if POSTER_CONSOLIDATE:
+                    tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{lib}.png"
+                else:
+                    tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}.png"
+                old_tgt_file_path = f"{item.ratingKey}.png"
                 final_file_path = f"{artwork_path}/{tgt_file_path}"
-
-                src_URL = item.art
-                if src_URL[0] == '/':
-                    src_URL = f"{PLEX_URL}{item.art}&X-Plex-Token={PLEX_TOKEN}"
+                old_final_file_path = f"{artwork_path}/{old_tgt_file_path}"
 
                 if not os.path.exists(final_file_path):
-                    if POSTER_DOWNLOAD:
-                        p = Path(artwork_path)
-                        p.mkdir(parents=True, exist_ok=True)
+                    progress_str = f"{item.title} - no final file"
 
-                        thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                    progress(item_count, item_total, progress_str)
+
+                    if not os.path.exists(old_final_file_path):
+                        progress_str = f"{item.title} - Grabbing art"
+
+                        progress(item_count, item_total, progress_str)
+
+                        src_URL = item.thumb
+                        # '/library/metadata/2187432/thumb/1652287170'
+
+                        progress_str = f"{item.title} - art: {src_URL}"
+
+                        progress(item_count, item_total, progress_str)
+
+                        if src_URL is not None:
+                            if src_URL[0] == '/':
+                                src_URL = f"{PLEX_URL}{item.thumb}&X-Plex-Token={PLEX_TOKEN}"
+
+                            if POSTER_DOWNLOAD:
+                                p = Path(artwork_path)
+                                p.mkdir(parents=True, exist_ok=True)
+
+                                progress_str = f"{item.title} - DOWNLOADING {tgt_file_path}"
+                                progress(item_count, item_total, progress_str)
+                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                            else:
+                                progress_str = f"{item.title} - building download command"
+                                progress(item_count, item_total, progress_str)
+                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
+                                script_string = script_string + f"{script_line}\n"
+                        else:
+                            progress_str = f"{item.title} - ART is None"
+                            progress(item_count, item_total, progress_str)
                     else:
-                        script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
-                        script_string = script_string + f"{script_line}\n"
+                        progress_str = f"{item.title} - RENAMING TO {tgt_file_path}"
+                        progress(item_count, item_total, progress_str)
+                        os.rename(old_final_file_path, final_file_path)
+
                 attempts = 6
 
             except Exception as ex:
