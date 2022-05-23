@@ -81,7 +81,7 @@ for lib in lib_array:
         items = collection.items()
         for item in items:
             titlearray.append(item.title)
-        this_coll["plex_search"]["any"]["title"] = titlearray
+        this_coll["plex_search"]["any"]["title.is"] = titlearray
 
         if len(this_coll) > 0:
             coll_obj['collections'][collection.title] = this_coll
