@@ -33,12 +33,8 @@ POSTER_CONSOLIDATE=1                         # if set to 0, posters are separate
 
 ## Scripts:
 1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
-1. [reset-posters.py](#reset-posterspy) - reset all artwork in a library
-1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
 1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
-1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
-1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
@@ -76,42 +72,6 @@ collections:
 ```
 
 But it can act as a starting point or recovery backup.
-
-## reset-posters.py
-
-Perhaps you want to reset all the posters in a library
-
-This script will set the poster for every series or movie to the default poster from TMDB/TVDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
-
-If there is a file already located at `./posters/[movies|shows]/<rating_key>.ext`, the script will use *that image* instead of retrieving a new one, so if you replace that local one with a poster of your choice, the script will use the custom one rather than the TMDB/TVDB default.
-
-If you specify a comma-separated list of labels in the env file:
-```
-TARGET_LABELS = This label, That label, Another label
-```
-The script will reset posters only on movies with those labels assigned.
-
-If you also set:
-```
-REMOVE_LABELS=True
-```
-The script will *attempt* to remove those labels after resetting the poster.  I say "attempt" since in testing I have experienced an odd situation where no error occurs but the label is not removed.  My test library of 230 4K-Dolby Movies contains 47 that fail in this way; every run it goes through the 47 movies "removing labels" without error yet they still have the labels on the next run.
-
-Besides that Heisenbug, I don't recommend using this [`REMOVE_LABELS`] since the label removal takes a long time [dozens of seconds per item].  Doing this through the Plex UI is much faster.
-
-### Usage
-1. setup as above
-2. Run with `python reset-posters.py`
-
-```
-tmdb config...
-connecting to https://stream.BING.BANG...
-getting items from [TV Shows - 4K]...
-looping over 876 items...
-[=---------------------------------------] 2.7% ... Age of Big Cats
-```
-
-At this time, there is no configuration aside from library name; it replaces all posters.  It does not delete any posters from Plex, just grabs a URL and uses the API to set the poster to the URL.
 
 ## pmm_trakt_auth.py
 
@@ -306,7 +266,7 @@ PLEX_OWNER=yournamehere                      # account name of the server owner
 2. Run with `python grab-all-status.py`
 
 ```
-onnecting to https://cp1.DOMAIN.TLD...
+connecting to https://cp1.DOMAIN.TLD...
 ------------ chazlarson ------------
 ------------ Movies - 4K ------------
 chazlarson      movie   Movies - 4K     It Comes at Night       2017    R
