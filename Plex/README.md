@@ -25,10 +25,13 @@ TOP_COUNT=10                                 # how many actors to export
 TARGET_LABELS=this label, that label         # comma-separated list of labels to remove posters from
 REMOVE_LABELS=True                           # attempt to remove the TARGET_LABELs from items after resetting the poster
 DELAY=1                                      # optional delay between items
+CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
+TRACK_RESET_STATUS=1                         # if set to 1, reset_posters keeps track of status and picks up where it left off
+ARTWORK_AND_POSTER=1                         # if set to 1, current background is downloaded with current poster
 ```
 
 ## Scripts:
