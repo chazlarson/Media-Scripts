@@ -86,7 +86,7 @@ for lib in lib_array:
             tgt_dir = f"{POSTER_DIR}/all_libraries"
         else:
             tgt_dir = f"{POSTER_DIR}/{lib}"
-        dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
+        dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}-{item.year}")
         attempts = 0
 
         progress_str = f"{item.title}"
