@@ -68,6 +68,21 @@ This script will set the poster for every series or movie to the default poster 
 
 If there is a file already located at `./posters/[movies|shows]/<rating_key>.ext`, the script will use *that image* instead of retrieving a new one, so if you replace that local one with a poster of your choice, the script will use the custom one rather than the TMDB/TVDB default.
 
+Script-specific variables in .env:
+```
+TRACK_RESET_STATUS=True                         # pick up where the script left off
+TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
+REMOVE_LABELS=True                              # remove labels when done [NOT RECOMMENDED]
+```
+
+If you set:
+```
+TRACK_RESET_STATUS=True
+```
+The script will keep track of where it is and will pick up at that point on subsequent runs.  This is useful in the event of a lost connection to Plex.
+
+Once it gets to the end of hte library successfully, the tracking file is deleted.
+
 If you specify a comma-separated list of labels in the env file:
 ```
 TARGET_LABELS = This label, That label, Another label

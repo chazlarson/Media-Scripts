@@ -32,6 +32,7 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TMDB_KEY = os.getenv('TMDB_KEY')
 TVDB_KEY = os.getenv('TVDB_KEY')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
+TRACK_RESET_STATUS = os.getenv('TRACK_RESET_STATUS')
 REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
 DELAY = 0
 try:
@@ -100,10 +101,22 @@ print("tmdb config...")
 base_url = tmdb.configuration().secure_base_image_url
 size_str = 'original'
 
+from pathlib import Path
+
 print(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
+    id_array = []
+    status_file_name = plex.library.section(lib).uuid + ".txt"
+    status_file = Path(status_file_name)
+
+    if status_file.is_file():
+        with open(f"{status_file_name}") as fp:
+            for line in fp:
+                id_array.append(line.strip())
+
     print(f"\ngetting items from [{lib}]...")
+
     for lbl in lbl_array:
         if lbl == "xy22y1973":
             items = plex.library.section(lib).all()
@@ -115,62 +128,72 @@ for lib in lib_array:
         print(f"looping over {item_total} items...")
         item_count = 1
         for item in items:
-            tmdb_id, tvdb_id = getTID(item.guids)
             item_count = item_count + 1
-            try:
-                progress(item_count, item_total, item.title)
-                pp = None
-                local_file = None
+            if id_array.count(f"{item.ratingKey}") == 0:
+                id_array.append(item.ratingKey)
 
-                if item.TYPE == 'show':
-                    tgt_dir = show_dir
-                    local_file = localFilePath(tgt_dir, item.ratingKey)
-                    pp = local_file
-                    if local_file is None:
-                        try:
-                            pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
-                        except:
-                            pp = "NONE"
-                else:
-                    tgt_dir = movie_dir
-                    local_file = localFilePath(tgt_dir, item.ratingKey)
-                    pp = local_file
-                    if local_file is None:
-                        try:
-                            pp = tmdb.movie(tmdb_id).poster_path
-                        except:
-                            pp = "NONE"
+                tmdb_id, tvdb_id = getTID(item.guids)
+                try:
+                    progress(item_count, item_total, item.title)
+                    pp = None
+                    local_file = None
 
-                if pp is not None:
-                    if pp == "NONE":
-                        progress(item_count, item_total, item.title + " - getting posters")
-                        posters = item.posters()
-                        progress(item_count, item_total, item.title + " - setting poster")
-                        item.setPoster(posters[0])
+                    if item.TYPE == 'show':
+                        tgt_dir = show_dir
+                        local_file = localFilePath(tgt_dir, item.ratingKey)
+                        pp = local_file
+                        if local_file is None:
+                            try:
+                                pp = tmdb.tv_show(tmdb_id).poster_path if tmdb_id else tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
+                            except:
+                                pp = "NONE"
                     else:
-                        if local_file is None or not os.path.exists(local_file):
-                            ext = pathlib.Path(pp).suffix
-                            posterURL = f"{base_url}{size_str}{pp}"
-                            local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
-                            progress(item_count, item_total, item.title + " - downloading poster")
+                        tgt_dir = movie_dir
+                        local_file = localFilePath(tgt_dir, item.ratingKey)
+                        pp = local_file
+                        if local_file is None:
+                            try:
+                                pp = tmdb.movie(tmdb_id).poster_path
+                            except:
+                                pp = "NONE"
 
-                        if not os.path.exists(local_file):
-                            r = requests.get(posterURL, allow_redirects=True)
-                            open(f"{local_file}", 'wb').write(r.content)
-                        progress(item_count, item_total, item.title + " - uploading poster")
-                        item.uploadPoster(filepath=local_file)
-                else:
-                    progress(item_count, item_total, "unknown type: " + item.title)
+                    if pp is not None:
+                        if pp == "NONE":
+                            progress(item_count, item_total, item.title + " - getting posters")
+                            posters = item.posters()
+                            progress(item_count, item_total, item.title + " - setting poster")
+                            item.setPoster(posters[0])
+                        else:
+                            if local_file is None or not os.path.exists(local_file):
+                                ext = pathlib.Path(pp).suffix
+                                posterURL = f"{base_url}{size_str}{pp}"
+                                local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
+                                progress(item_count, item_total, item.title + " - downloading poster")
 
-                if REMOVE_LABELS:
-                    progress(item_count, item_total, item.title + " - removing label")
-                    item.removeLabel(lbl, True)
+                            if not os.path.exists(local_file):
+                                r = requests.get(posterURL, allow_redirects=True)
+                                open(f"{local_file}", 'wb').write(r.content)
+                            progress(item_count, item_total, item.title + " - uploading poster")
+                            item.uploadPoster(filepath=local_file)
+                    else:
+                        progress(item_count, item_total, "unknown type: " + item.title)
 
-            except Exception as ex:
-                progress(item_count, item_total, "EX: " + item.title)
+                    if REMOVE_LABELS:
+                        progress(item_count, item_total, item.title + " - removing label")
+                        item.removeLabel(lbl, True)
 
-            # Wait between items in case hammering the Plex server turns out badly.
-            time.sleep(DELAY)
+                    # write out item_array to file.
+                    with open(status_file, "a") as sf:
+                        sf.write(f"{item.ratingKey}\n")
+
+                except Exception as ex:
+                    progress(item_count, item_total, "EX: " + item.title)
+
+                # Wait between items in case hammering the Plex server turns out badly.
+                time.sleep(DELAY)
+
+    # delete the status file
+    os.remove(status_file)
 
 end = timer()
 elapsed = end - start
