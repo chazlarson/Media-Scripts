@@ -72,7 +72,10 @@ for lib in lib_array:
 
     plex_links = []
     external_links = []
-    script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
+    if POSTER_DOWNLOAD:
+        script_string = f""
+    else:
+        script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
 
     for item in items:
         tmdb_id, tvdb_id = getTID(item.guids)
@@ -153,6 +156,7 @@ for lib in lib_array:
                 attempts += 1
 
     print("\n")
-    if len(script_string) > 0:
-        with open(f"{tgt_dir}/get_images.sh", 'w') as myfile:
-            myfile.write(f"{script_string}\n")
+    if not POSTER_DOWNLOAD:
+        if len(script_string) > 0:
+            with open(f"{tgt_dir}/get_images.sh", 'w') as myfile:
+                myfile.write(f"{script_string}\n")
