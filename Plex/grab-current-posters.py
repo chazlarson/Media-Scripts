@@ -20,6 +20,7 @@ POSTER_DIR = os.getenv('CURRENT_POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
 POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
 POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
+ARTWORK_AND_POSTER =  Boolean(int(os.getenv('ARTWORK_AND_POSTER')))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
@@ -101,25 +102,30 @@ for lib in lib_array:
 
                 artwork_path = Path(tgt_dir, f"{dir_name}")
                 if POSTER_CONSOLIDATE:
-                    tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{lib}.png"
+                    poster_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{lib}.png"
+                    background_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-BG-{lib}.png"
                 else:
-                    tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}.png"
-                old_tgt_file_path = f"{item.ratingKey}.png"
-                final_file_path = f"{artwork_path}/{tgt_file_path}"
-                old_final_file_path = f"{artwork_path}/{old_tgt_file_path}"
+                    poster_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}.png"
+                    background_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-BG.png"
+                old_poster_file_path = f"{item.ratingKey}.png"
+                final_poster_file_path = f"{artwork_path}/{poster_file_path}"
+                old_final_poster_file_path = f"{artwork_path}/{old_poster_file_path}"
 
-                if not os.path.exists(final_file_path):
-                    progress_str = f"{item.title} - no final file"
+                final_background_file_path = f"{artwork_path}/{background_file_path}"
+
+# BACKGROUNDS
+                if ARTWORK_AND_POSTER:
+                    progress_str = f"{item.title} - no final art file"
 
                     progress(item_count, item_total, progress_str)
 
-                    if not os.path.exists(old_final_file_path):
+                    if not os.path.exists(final_background_file_path):
                         progress_str = f"{item.title} - Grabbing art"
 
                         progress(item_count, item_total, progress_str)
 
-                        src_URL = item.thumb
-                        # '/library/metadata/2187432/thumb/1652287170'
+                        src_URL = item.art
+                        # '/library/metadata/999083/art/1654180581'
 
                         progress_str = f"{item.title} - art: {src_URL}"
 
@@ -127,27 +133,65 @@ for lib in lib_array:
 
                         if src_URL is not None:
                             if src_URL[0] == '/':
-                                src_URL = f"{PLEX_URL}{item.thumb}?X-Plex-Token={PLEX_TOKEN}"
+                                src_URL = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
 
                             if POSTER_DOWNLOAD:
                                 p = Path(artwork_path)
                                 p.mkdir(parents=True, exist_ok=True)
 
-                                progress_str = f"{item.title} - DOWNLOADING {tgt_file_path}"
+                                progress_str = f"{item.title} - DOWNLOADING {background_file_path}"
                                 progress(item_count, item_total, progress_str)
-                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=background_file_path, savepath=artwork_path)
                             else:
                                 progress_str = f"{item.title} - building download command"
                                 progress(item_count, item_total, progress_str)
-                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
+                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{background_file_path}\" {src_URL}"
                                 script_string = script_string + f"{script_line}\n"
                         else:
-                            progress_str = f"{item.title} - ART is None"
+                            progress_str = f"{item.title} - art is None"
+                            progress(item_count, item_total, progress_str)
+
+# POSTERS
+                if not os.path.exists(final_poster_file_path):
+                    progress_str = f"{item.title} - no final file"
+
+                    progress(item_count, item_total, progress_str)
+
+                    if not os.path.exists(old_final_poster_file_path):
+                        progress_str = f"{item.title} - Grabbing thumb"
+
+                        progress(item_count, item_total, progress_str)
+
+                        src_URL = item.thumb
+                        # '/library/metadata/2187432/thumb/1652287170'
+
+                        progress_str = f"{item.title} - thumb: {src_URL}"
+
+                        progress(item_count, item_total, progress_str)
+
+                        if src_URL is not None:
+                            if src_URL[0] == '/':
+                                src_URL = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
+
+                            if POSTER_DOWNLOAD:
+                                p = Path(artwork_path)
+                                p.mkdir(parents=True, exist_ok=True)
+
+                                progress_str = f"{item.title} - DOWNLOADING {poster_file_path}"
+                                progress(item_count, item_total, progress_str)
+                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=poster_file_path, savepath=artwork_path)
+                            else:
+                                progress_str = f"{item.title} - building download command"
+                                progress(item_count, item_total, progress_str)
+                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{poster_file_path}\" {src_URL}"
+                                script_string = script_string + f"{script_line}\n"
+                        else:
+                            progress_str = f"{item.title} - thumb is None"
                             progress(item_count, item_total, progress_str)
                     else:
-                        progress_str = f"{item.title} - RENAMING TO {tgt_file_path}"
+                        progress_str = f"{item.title} - RENAMING TO {poster_file_path}"
                         progress(item_count, item_total, progress_str)
-                        os.rename(old_final_file_path, final_file_path)
+                        os.rename(old_final_poster_file_path, final_poster_file_path)
 
                 attempts = 6
 
