@@ -2,14 +2,22 @@
 
 Misc scripts and tools. Undocumented scripts probably do what I need them to but aren't finished yet.
 
+## Requirements
+
+1. A system that can run Python3
+1. Python3 installed on that system
+
 ## Setup
 
 1. clone repo
 1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
+1. cd to desired directory
 1. Copy `.env.example` to `.env`
 1. Edit .env to suit
 
 All these scripts use the same `.env` and requirements.
+
+TODO: move `.env` file to top level and use it from there.
 
 ### `.env` contents
 
