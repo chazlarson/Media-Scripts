@@ -124,7 +124,7 @@ for lib in lib_array:
 
                         if src_URL is not None:
                             if src_URL[0] == '/':
-                                src_URL = f"{PLEX_URL}{item.thumb}&X-Plex-Token={PLEX_TOKEN}"
+                                src_URL = f"{PLEX_URL}{item.thumb}?X-Plex-Token={PLEX_TOKEN}"
 
                             if POSTER_DOWNLOAD:
                                 p = Path(artwork_path)
