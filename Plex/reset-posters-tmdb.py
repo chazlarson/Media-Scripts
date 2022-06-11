@@ -58,19 +58,19 @@ tmdb = TMDbAPIs(TMDB_KEY, language="en")
 tmdb_str = 'tmdb://'
 tvdb_str = 'tvdb://'
 
-local_dir = f"{os.getcwd()}/posters"
+local_dir = os.path.join(os.getcwd(), "posters")
 
 os.makedirs(local_dir, exist_ok=True)
 
-show_dir = f"{local_dir}/shows"
-movie_dir = f"{local_dir}/movies"
+show_dir = os.path.join(os.getcwd(), "shows")
+movie_dir = os.path.join(os.getcwd(), "movies")
 
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
 def localFilePath(tgt_dir, rating_key):
     for ext in ['jpg','png']:
-        local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
+        local_file = os.path.join(tgt_dir, f"{item.ratingKey}.{ext}")
         if os.path.exists(local_file):
             return local_file
     return None
@@ -115,14 +115,14 @@ for lib in lib_array:
             for line in fp:
                 id_array.append(line.strip())
 
-    print(f"\ngetting items from [{lib}]...")
+    print(f"{os.linesep}getting items from [{lib}]...")
 
     for lbl in lbl_array:
         if lbl == "xy22y1973":
             items = plex.library.section(lib).all()
             REMOVE_LABELS = False
         else:
-            print(f"\nlabelled [{lbl}]...")
+            print(f"{os.linesep}labelled [{lbl}]...")
             items = plex.library.section(lib).search(label=lbl)
         item_total = len(items)
         print(f"looping over {item_total} items...")
@@ -167,7 +167,7 @@ for lib in lib_array:
                             if local_file is None or not os.path.exists(local_file):
                                 ext = pathlib.Path(pp).suffix
                                 posterURL = f"{base_url}{size_str}{pp}"
-                                local_file = f"{tgt_dir}/{item.ratingKey}.{ext}"
+                                local_file = os.path.join(tgt_dir, f"{item.ratingKey}.{ext}")
                                 progress(item_count, item_total, item.title + " - downloading poster")
 
                             if not os.path.exists(local_file):
@@ -184,7 +184,7 @@ for lib in lib_array:
 
                     # write out item_array to file.
                     with open(status_file, "a") as sf:
-                        sf.write(f"{item.ratingKey}\n")
+                        sf.write(f"{item.ratingKey}{os.linesep}")
 
                 except Exception as ex:
                     progress(item_count, item_total, "EX: " + item.title)
@@ -197,4 +197,4 @@ for lib in lib_array:
 
 end = timer()
 elapsed = end - start
-print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
+print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")

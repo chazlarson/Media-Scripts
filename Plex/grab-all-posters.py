@@ -3,12 +3,18 @@ from plexapi.server import PlexServer
 from plexapi.utils import download
 import os
 from dotenv import load_dotenv
+import platform
 import sys
 import textwrap
 from tmdbapis import TMDbAPIs
 import requests
 from pathlib import Path, PurePath
 from pathvalidate import is_valid_filename, sanitize_filename
+import logging
+
+logging.basicConfig(filename='grab-all-posters.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+logging.info('Starting grab-all-posters.py')
 
 load_dotenv()
 
@@ -24,8 +30,16 @@ POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
 
+SCRIPT_FILE = "get_images.sh”
+SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
+IS_WINDOWS = platform.system() == 'Windows'
+
+if IS_WINDOWS:
+    SCRIPT_FILE = "get_images.bat”
+    SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
+
 if POSTER_DOWNLOAD:
-    script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
+    script_string = SCRIPT_SEED
 else:
     script_string = ""
 
@@ -68,15 +82,20 @@ def validate_filename(filename):
         return filename, None
     else:
         mapping_name = sanitize_filename(filename)
-        return mapping_name, f"Log Folder Name: {filename} is invalid using {mapping_name}"
+        stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
+        logging.info(stat_string)
+        return mapping_name, stat_string
 
 print(f"connecting to {PLEX_URL}...")
+logging.info(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
+    logging.info(f"getting items from [{lib}]...")
     items = plex.library.section(lib).all()
     item_total = len(items)
     print(f"looping over {item_total} items...")
+    logging.info(f"looping over {item_total} items...")
     item_count = 1
 
     plex_links = []
@@ -87,9 +106,9 @@ for lib in lib_array:
         tmpDict = {}
         item_count = item_count + 1
         if POSTER_CONSOLIDATE:
-            tgt_dir = f"{POSTER_DIR}/all_libraries"
+            tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
         else:
-            tgt_dir = f"{POSTER_DIR}/{lib}"
+            tgt_dir = os.path.join(POSTER_DIR, "lib")
         old_dir_name, msg = validate_filename(item.title)
         dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
         attempts = 0
@@ -103,8 +122,12 @@ for lib in lib_array:
         while attempts < 5:
             try:
 
+                progress_str = f"{item.title} - attempt {attempts}"
+                logging.info(progress_str)
+
                 posters = item.posters()
                 progress_str = f"{item.title} - {len(posters)} posters"
+                logging.info(progress_str)
 
                 progress(item_count, item_total, progress_str)
 
@@ -124,7 +147,7 @@ for lib in lib_array:
 
                         poster_obj = {}
                         tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{str(idx).zfill(3)}.png"
-                        final_file_path = f"{artwork_path}/{tgt_file_path}"
+                        final_file_path = os.path.join(artwork_path, tgt_file_path)
 
                         poster_obj["folder"] = artwork_path
                         poster_obj["file"] = tgt_file_path
@@ -139,6 +162,7 @@ for lib in lib_array:
                             # external_links.append(poster_obj)
 
                         progress(item_count, item_total, f"{progress_str} - {idx}")
+                        logging.info(progress_str)
 
                         if not os.path.exists(final_file_path):
                             if POSTER_DOWNLOAD:
@@ -147,20 +171,26 @@ for lib in lib_array:
 
                                 thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
                             else:
-                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{dir_name}/{tgt_file_path}\" {src_URL}"
-                                script_string = script_string + f"{script_line}\n"
+                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
+                                script_string = script_string + f"{script_line}{os.linesep}"
 
                         idx += 1
                 attempts = 6
             except Exception as ex:
-                progress(item_count, item_total, "EX: " + item.title)
+                progress_str = "EX: " + item.title)
+                logging.info(progress_str)
+
+                progress(item_count, item_total, progress_str)
                 attempts += 1
 
     progress_str = f"COMPLETE"
+    logging.info(progress_str)
 
     progress(item_count, item_total, progress_str)
 
-    print("\n")
-    if len(script_string) > 0:
-        with open(f"{tgt_dir}/get_images.sh", 'w') as myfile:
-            myfile.write(f"{script_string}\n")
+    print(os.linesep)
+    if not POSTER_DOWNLOAD:
+        scr_path = os.path.join(tgt_dir, SCRIPT_FILE)
+        if len(script_string) > 0:
+            with open(scr_path, "w") as myfile:
+                myfile.write(f"{script_string}{os.linesep}")
