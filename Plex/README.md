@@ -36,7 +36,8 @@ ARTWORK_AND_POSTER=1                         # if set to 1, current background i
 
 ## Scripts:
 1. [user-emails.py](#user-emailspy) - extract user emails from your shares
-1. [reset-posters.py](#reset-posterspy) - reset all artwork in a library
+1. [reset-posters-tmdb.py](#reset-posters-tmdbpy) - reset all artwork in a library to TMDB default
+1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
 1. [grab-current-posters.py](#grab-current-posterspy) - Grab currently-set posters and optionally background artwork
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 2. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
@@ -64,7 +65,7 @@ boingster - boing@gmail.com
 ...
 ```
 
-## reset-posters.py
+## reset-posters-tmdb.py
 
 Perhaps you want to reset all the posters in a library
 
@@ -115,6 +116,10 @@ looping over 876 items...
 
 At this time, there is no configuration aside from library name; it replaces all posters.  It does not delete any posters from Plex, just grabs a URL and uses the API to set the poster to the URL.
 
+## reset-posters-plex.py
+
+Same as `reset-posters-tmdb.py`, but it resets the artiwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
+
 ## grab-current-posters.py
 
 Perhaps you want to get local copies of the currently-set posters [and maybe backgrounds] for everything in a library.
@@ -146,7 +151,7 @@ looping over 3254 items...
 [----------------------------------------] 0.2% ... The 3 Worlds of Gulliver - DOWNLOADING 18974-36224-1841313-BG-Movies - 4K.png
 ```
 
-he posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
+The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
 
 The image names are: `TMDBID-TVDBID-RATINGKEY-INCREMENT.ext`
 
