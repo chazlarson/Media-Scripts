@@ -26,7 +26,7 @@ if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
 
 if POSTER_DOWNLOAD:
-    script_string = f"#!/bin/bash\n\n# SCRIPT TO DO STUFF\n\ncd \"{POSTER_DIR}\"\n\n"
+    script_string = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO DO STUFF{os.linesep}{os.linesep}cd \"{POSTER_DIR}\"{os.linesep}{os.linesep}"
 else:
     script_string = ""
 
@@ -100,7 +100,7 @@ for lib in lib_array:
         progress_str = f"{item.title}"
         progress(item_count, item_total, progress_str)
 
-    print("\n")
+    print("{os.linesep}")
 
 print(f"processing items...")
 item_total = len(all_items)

@@ -64,24 +64,24 @@ try:
             if items.type == 'show':
                 for video in items.searchEpisodes(unwatched=False):
                     file_line = f"{account.username}\t{items.type}\t{plex_section.title}\t{video.title}\t{video.grandparentTitle}\t{video.seasonEpisode}"
-                    file_string = file_string + f"{file_line}\n"
+                    file_string = file_string + f"{file_line}{os.linesep}"
                     print(file_line)
             elif items.type == 'movie':
                 for video in items.search(unwatched=False):
                     file_line = f"{account.username}\t{items.type}\t{plex_section.title}\t{video.title}\t{video.year}\t{video.contentRating}"
-                    file_string = file_string + f"{file_line}\n"
+                    file_string = file_string + f"{file_line}{os.linesep}"
                     print(file_line)
             else:
                 file_line = f"Unknown type: {items.type}"
-                file_string = file_string + f"{file_line}\n"
+                file_string = file_string + f"{file_line}{os.linesep}"
                 print(file_line)
         else:
             file_line = f"Skipping {plex_section.title}"
-            file_string = file_string + f"{file_line}\n"
+            file_string = file_string + f"{file_line}{os.linesep}"
             print(file_line)
 except:
     file_line = f"Exception processing {account.username}"
-    file_string = file_string + f"{file_line}\n"
+    file_string = file_string + f"{file_line}{os.linesep}"
     print(file_line)
 
 for plex_user in all_users:
@@ -98,27 +98,27 @@ for plex_user in all_users:
                 if items.type == 'show':
                     for video in items.searchEpisodes(unwatched=False):
                         file_line = f"{plex_user.username}\t{items.type}\t{plex_section.title}\t{video.title}\t{video.grandparentTitle}\t{video.seasonEpisode}"
-                        file_string = file_string + f"{file_line}\n"
+                        file_string = file_string + f"{file_line}{os.linesep}"
                         print(file_line)
                 elif items.type == 'movie':
                     for video in items.search(unwatched=False):
                         file_line = f"{plex_user.username}\t{items.type}\t{plex_section.title}\t{video.title}\t{video.year}\t{video.contentRating}"
-                        file_string = file_string + f"{file_line}\n"
+                        file_string = file_string + f"{file_line}{os.linesep}"
                         print(file_line)
                 else:
                     file_line = f"Unknown type: {items.type}"
-                    file_string = file_string + f"{file_line}\n"
+                    file_string = file_string + f"{file_line}{os.linesep}"
                     print(file_line)
             else:
                 file_line = f"Skipping {plex_section.title}"
-                file_string = file_string + f"{file_line}\n"
+                file_string = file_string + f"{file_line}{os.linesep}"
                 print(file_line)
     except:
         file_line = f"Exception processing {plex_user.username}"
-        file_string = file_string + f"{file_line}\n"
+        file_string = file_string + f"{file_line}{os.linesep}"
         print(file_line)
 
-    print("\n")
+    print("{os.linesep}")
     if len(file_string) > 0:
         with open(f"status.txt", 'w') as myfile:
-            myfile.write(f"{file_string}\n")
+            myfile.write(f"{file_string}{os.linesep}")

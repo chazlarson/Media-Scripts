@@ -21,7 +21,7 @@ urls = {
     "oauth_authorize": f"https://myanimelist.net/v1/oauth2/authorize",
 }
 
-print("Let's authenticate against MyAnimeList!\n\n")
+print("Let's authenticate against MyAnimeList!{os.linesep}{os.linesep}")
 session = requests.Session()
 
 client_id = input("MyAnimeList Client ID: ").strip()
@@ -30,10 +30,10 @@ client_secret = input("MyAnimeList Client Secret: ").strip()
 code_verifier = secrets.token_urlsafe(100)[:128]
 url = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_challenge={code_verifier}"
 
-print(f"We're going to open {url}\n\n")
-print(f"Log in and click the Allow option.\n")
-print(f"You will be redirected to a localhost url that probably won't load.\n")
-print(f"That's fine.  Copy that localhost URL and paste it below.\n")
+print(f"We're going to open {url}{os.linesep}{os.linesep}")
+print(f"Log in and click the Allow option.{os.linesep}")
+print(f"You will be redirected to a localhost url that probably won't load.{os.linesep}")
+print(f"That's fine.  Copy that localhost URL and paste it below.{os.linesep}")
 tmpVar = input("Hit enter when ready: ").strip()
 
 webbrowser.open(url, new=2)
@@ -42,7 +42,7 @@ url = input("URL: ").strip()
 
 match = re.search("code=([^&]+)", str(url))
 if not match:
-    print(f"Couldn't find the required code in that URL.\n")
+    print(f"Couldn't find the required code in that URL.{os.linesep}")
     exit()
 
 code = match.group(1)
@@ -58,10 +58,10 @@ data = {
 new_authorization = session.post(urls["oauth_token"], data=data).json()
 
 if "error" in new_authorization:
-    print(f"ERROR: invalid code.\n")
+    print(f"ERROR: invalid code.{os.linesep}")
     exit()
 
-print (f"\n\nCopy the following into your PMM config.yml:")
+print (f"{os.linesep}{os.linesep}Copy the following into your PMM config.yml:")
 print (f"############################################")
 print (f"mal:")
 print (f"  client_id: {client_id}")

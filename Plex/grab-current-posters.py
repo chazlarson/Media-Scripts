@@ -4,6 +4,7 @@ from plexapi.utils import download
 import os
 from dotenv import load_dotenv
 import sys
+import platform
 import textwrap
 from tmdbapis import TMDbAPIs
 import requests
@@ -28,12 +29,12 @@ POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
 POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
 ARTWORK_AND_POSTER =  Boolean(int(os.getenv('ARTWORK_AND_POSTER')))
 
-SCRIPT_FILE = "get_images.sh”
+SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
 IS_WINDOWS = platform.system() == 'Windows'
 
 if IS_WINDOWS:
-    SCRIPT_FILE = "get_images.bat”
+    SCRIPT_FILE = "get_images.bat"
     SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
 
 
@@ -179,7 +180,10 @@ for lib in lib_array:
                                 logging.info(progress_str)
                                 progress(item_count, item_total, progress_str)
 
-                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, background_file_path)}\" {src_URL}"
+                                if IS_WINDOWS:
+                                    script_line = f"mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, background_file_path)}\" {src_URL}"
+                                else:
+                                    script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, background_file_path)}\" {src_URL}"
                         else:
                             progress_str = f"{item.title} - art is None"
                             logging.info(progress_str)
@@ -223,7 +227,10 @@ for lib in lib_array:
                                 progress_str = f"{item.title} - building download command"
                                 progress(item_count, item_total, progress_str)
                                 logging.info(progress_str)
-                                script_line = script_line + f"{os.linesep}mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, poster_file_path)}\" {src_URL}"
+                                if IS_WINDOWS:
+                                    script_line = script_line + f"{os.linesep}mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, poster_file_path)}\" {src_URL}"
+                                else:
+                                    script_line = script_line + f"{os.linesep}mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, poster_file_path)}\" {src_URL}"
                         else:
                             progress_str = f"{item.title} - thumb is None"
                             progress(item_count, item_total, progress_str)

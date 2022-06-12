@@ -18,13 +18,13 @@ redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
 redirect_uri_encoded = redirect_uri.replace(":", "%3A")
 base_url = "https://api.trakt.tv"
 
-print("Let's authenticate against Trakt!\n\n")
+print("Let's authenticate against Trakt!{os.linesep}{os.linesep}")
 
 client_id = input("Trakt Client ID: ").strip()
 client_secret = input("Trakt Client Secret: ").strip()
 
 url = f"https://trakt.tv/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri_encoded}"
-print(f"Taking you to: {url}\n\nIf you get an OAuth error your Client ID or Client Secret is invalid\n\nIf a browser window doesn't open go to that URL manually.\n\n")
+print(f"Taking you to: {url}{os.linesep}{os.linesep}If you get an OAuth error your Client ID or Client Secret is invalid{os.linesep}{os.linesep}If a browser window doesn't open go to that URL manually.{os.linesep}{os.linesep}")
 webbrowser.open(url, new=2)
 pin = input("Enter the Trakt pin from that web page: ").strip()
 json = {

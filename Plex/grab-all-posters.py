@@ -30,12 +30,12 @@ POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
 
-SCRIPT_FILE = "get_images.sh”
+SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
 IS_WINDOWS = platform.system() == 'Windows'
 
 if IS_WINDOWS:
-    SCRIPT_FILE = "get_images.bat”
+    SCRIPT_FILE = "get_images.bat"
     SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
 
 if POSTER_DOWNLOAD:
@@ -108,13 +108,17 @@ for lib in lib_array:
         if POSTER_CONSOLIDATE:
             tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
         else:
-            tgt_dir = os.path.join(POSTER_DIR, "lib")
+            tgt_dir = os.path.join(POSTER_DIR, lib)
+
+        if not os.path.exists(tgt_dir):
+            os.makedirs(tgt_dir)
+
         old_dir_name, msg = validate_filename(item.title)
         dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
         attempts = 0
 
-        old_path = Path(tgt_dir, f"{old_dir_name}")
-        artwork_path = Path(tgt_dir, f"{dir_name}")
+        old_path = Path(tgt_dir, old_dir_name)
+        artwork_path = Path(tgt_dir, dir_name)
 
         if os.path.exists(old_path):
             os.rename(old_path, artwork_path)
@@ -171,13 +175,16 @@ for lib in lib_array:
 
                                 thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
                             else:
-                                script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
+                                if IS_WINDOWS:
+                                    script_line = f"mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
+                                else:
+                                    script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
                                 script_string = script_string + f"{script_line}{os.linesep}"
 
                         idx += 1
                 attempts = 6
             except Exception as ex:
-                progress_str = "EX: " + item.title)
+                progress_str = "EX: " + item.title
                 logging.info(progress_str)
 
                 progress(item_count, item_total, progress_str)

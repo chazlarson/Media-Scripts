@@ -120,7 +120,7 @@ for item in items:
 
 end = timer()
 elapsed = end - start
-print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
+print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
 
 #   libraryquestions: [
 #     {
@@ -538,14 +538,14 @@ print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
 #         var videotagline = video.$.tagline;
 #         var videosummary = video.$.summary;
 
-#         var pmm_metadata = 'metadata:\n' +
-#             '  "' + videotitle + '":\n' +
-#             '    title: "' + videotitle + '"\n' +
-#             '    year: ' + videoyear + '\n' +
-#             '    sort_title: "' + videosorttitle + '"\n' +
-#             '    original_title: "' + videoorigtitle + '"\n' +
-#             '    tagline: "' + videotagline + '"\n' +
-#             '    summary: "' + videosummary + '"\n'
+#         var pmm_metadata = 'metadata:{os.linesep}' +
+#             '  "' + videotitle + '":{os.linesep}' +
+#             '    title: "' + videotitle + '"{os.linesep}' +
+#             '    year: ' + videoyear + '{os.linesep}' +
+#             '    sort_title: "' + videosorttitle + '"{os.linesep}' +
+#             '    original_title: "' + videoorigtitle + '"{os.linesep}' +
+#             '    tagline: "' + videotagline + '"{os.linesep}' +
+#             '    summary: "' + videosummary + '"{os.linesep}'
 
 #         totalactions++;
 #         async.each(video.Media, function(media, mediaitemcallback){
@@ -580,7 +580,7 @@ print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
 #                 }
 #               }
 #               if(libraries[sectionid].savethumbs){
-#                 pmm_metadata = pmm_metadata + '    file_poster: "' + path.join(targetparent, "poster.jpg") + '"\n'
+#                 pmm_metadata = pmm_metadata + '    file_poster: "' + path.join(targetparent, "poster.jpg") + '"{os.linesep}'
 #                 if(!fs.existsSync(path.join(targetparent, "poster.jpg")) || libraries[sectionid].overwriteExisting){
 #                   downloadfile(rootaddr + thumburl, path.join(targetparent, "poster.jpg"));
 #                 }
@@ -591,7 +591,7 @@ print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
 #                 }
 #               }
 #               if(libraries[sectionid].savefolderart){
-#                 pmm_metadata = pmm_metadata + '    file_background: "' + path.join(targetparent, "art.jpg") + '"\n'
+#                 pmm_metadata = pmm_metadata + '    file_background: "' + path.join(targetparent, "art.jpg") + '"{os.linesep}'
 
 #                 if(!fs.existsSync(path.join(targetparent, "art.jpg")) || libraries[sectionid].overwriteExisting){
 #                   downloadfile(rootaddr + arturl, path.join(targetparent, "art.jpg"));
