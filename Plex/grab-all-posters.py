@@ -114,7 +114,7 @@ for lib in lib_array:
             os.makedirs(tgt_dir)
 
         old_dir_name, msg = validate_filename(item.title)
-        dir_name, msg = validate_filename(f"{tmdb_id}-{item.title}")
+        dir_name, msg = validate_filename(f"{tmid}-{item.title}")
         attempts = 0
 
         old_path = Path(tgt_dir, old_dir_name)
@@ -150,7 +150,7 @@ for lib in lib_array:
                             break
 
                         poster_obj = {}
-                        tgt_file_path = f"{tmdb_id}-{tvdb_id}-{item.ratingKey}-{str(idx).zfill(3)}.png"
+                        tgt_file_path = f"{tmid}-{tv_id}-{item.ratingKey}-{str(idx).zfill(3)}.png"
                         final_file_path = os.path.join(artwork_path, tgt_file_path)
 
                         poster_obj["folder"] = artwork_path
