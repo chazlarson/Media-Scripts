@@ -48,8 +48,8 @@ else:
         "trakt-api-key": client_id
     }
 
-    response = requests.get(f"{base_url}/users/settings", headers=headers)
-    if response.status_code == 423:
+    validation_response = requests.get(f"{base_url}/users/settings", headers=headers)
+    if validation_response.status_code == 423:
         print("Trakt Error: Account is locked; please contact Trakt Support")
     else:
         print (f"Copy the following into your PMM config.yml:")

@@ -14,7 +14,7 @@
 #
 # Some yaml will be printed, ready to copy-paste into your PMM config.yml.
 
-import requests, webbrowser, secrets, re
+import requests, webbrowser, secrets, re, os
 
 urls = {
     "oauth_token": f"https://myanimelist.net/v1/oauth2/token",
