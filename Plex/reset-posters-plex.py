@@ -69,14 +69,13 @@ for lib in lib_array:
             for line in fp:
                 id_array.append(line.strip())
 
-    print(f"{os.linesep}getting items from [{lib}]...")
-
     for lbl in lbl_array:
         if lbl == "xy22y1973":
+            print(f"{os.linesep}getting all items from [{lib}]...")
             items = plex.library.section(lib).all()
             REMOVE_LABELS = False
         else:
-            print(f"{os.linesep}labelled [{lbl}]...")
+            print(f"{os.linesep}getting items from [{lib}] labelled [{lbl}]...")
             items = plex.library.section(lib).search(label=lbl)
         item_total = len(items)
         print(f"looping over {item_total} items...")
