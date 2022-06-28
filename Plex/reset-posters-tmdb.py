@@ -196,7 +196,8 @@ for lib in lib_array:
                 time.sleep(DELAY)
 
     # delete the status file
-    os.remove(status_file)
+    if status_file.is_file():
+        os.remove(status_file)
 
 end = timer()
 elapsed = end - start
