@@ -3,13 +3,9 @@ import os
 from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
-import requests
-import pathlib
+# from tmdbapis import TMDbAPIs
 from timeit import default_timer as timer
 import time
-
-# import tvdb_v4_official
 
 start = timer()
 
@@ -29,8 +25,6 @@ if PLEX_URL is None:
 PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
-TMDB_KEY = os.getenv('TMDB_KEY')
-TVDB_KEY = os.getenv('TVDB_KEY')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
 TRACK_RESET_STATUS = os.getenv('TRACK_RESET_STATUS')
 REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
@@ -50,43 +44,6 @@ if LIBRARY_NAMES:
 else:
     lib_array = [LIBRARY_NAME]
 
-IS_WINDOWS = platform.system() == 'Windows'
-
-# Commented out until this doesn't throw a 400
-# tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
-
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-tmdb_str = 'tmdb://'
-tvdb_str = 'tvdb://'
-
-local_dir = os.path.join(os.getcwd(), "posters")
-
-os.makedirs(local_dir, exist_ok=True)
-
-show_dir = os.path.join(os.getcwd(), "shows")
-movie_dir = os.path.join(os.getcwd(), "movies")
-
-os.makedirs(show_dir, exist_ok=True)
-os.makedirs(movie_dir, exist_ok=True)
-
-def localFilePath(tgt_dir, rating_key):
-    for ext in ['jpg','png']:
-        local_file = os.path.join(tgt_dir, f"{item.ratingKey}.{ext}")
-        if os.path.exists(local_file):
-            return local_file
-    return None
-
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
-    return tmid, tvid
-
 def progress(count, total, status=''):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
@@ -97,11 +54,6 @@ def progress(count, total, status=''):
 
     sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(60)))
     sys.stdout.flush()
-
-print("tmdb config...")
-
-base_url = tmdb.configuration().secure_base_image_url
-size_str = 'original'
 
 from pathlib import Path
 
@@ -134,7 +86,6 @@ for lib in lib_array:
             if id_array.count(f"{item.ratingKey}") == 0:
                 id_array.append(item.ratingKey)
 
-                tmdb_id, tvdb_id = getTID(item.guids)
                 try:
                     progress(item_count, item_total, item.title)
                     pp = None

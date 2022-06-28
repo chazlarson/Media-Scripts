@@ -6,6 +6,7 @@ import textwrap
 from tmdbapis import TMDbAPIs
 import requests
 import pathlib
+import platform
 from timeit import default_timer as timer
 import time
 
@@ -49,6 +50,8 @@ if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
+
+IS_WINDOWS = platform.system() == 'Windows'
 
 # Commented out until this doesn't throw a 400
 # tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
