@@ -4,7 +4,13 @@
 #
 # You can run this on a completely separate machine to where PMM is running.
 #
-# Download it somewhere, "python3 -m pip install requests, webbrowser, secrets, re" and run it with "python3 pmm_mal_auth.py".
+# Download it somewhere, 
+# python3 -m pip install pyopenssl
+# python3 -m pip install requests secrets
+# python3 pmm_mal_auth.py
+# then run it with "python3 pmm_mal_auth.py".
+#
+# If you're running PMM locally, just copy it into the PMM directory and run in the PMM environment.  All teh requirements are already there.
 #
 # You'll be asked for your MyAnimeList Client ID and Client Secret
 # Then taken to a MyAnimeList web page
