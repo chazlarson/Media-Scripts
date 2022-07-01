@@ -1,3 +1,4 @@
+pyopenssl
 PlexAPI
 tmdbapis
 tmdbv3api
@@ -6,3 +7,4 @@ tvdb_v4_official
 ruamel.yaml
 requests
 pathvalidate
+secrets
