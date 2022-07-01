@@ -6,6 +6,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 1. clone repo
 1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
+   Note: the `auth` scripts don't need this step if you run them in the same environment as Plex-Meta Manager itself.
 1. Copy `.env.example` to `.env`
 1. Edit .env to suit
 
@@ -77,7 +78,7 @@ But it can act as a starting point or recovery backup.
 
 Perhaps you're running PMM in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
 
-This little script will generate the trakt section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing and not rely on any PMM code.
+This little script will generate the trakt section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing.
 
 You can run this on a completely separate machine to where PMM is running.
 
@@ -123,7 +124,7 @@ trakt:
 
 ## pmm_mal_auth.py
 
-This little script will generate the mal section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing and not rely on any PMM code.
+This little script will generate the `mal` section for your PMM config file.  Most of this code is pulled from PMM's own MAL authentication; it's just been simplified to do the one thing.
 
 You can run this on a completely separate machine to where PMM is running.
 
