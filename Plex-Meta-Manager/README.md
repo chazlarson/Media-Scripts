@@ -83,8 +83,7 @@ This little script will generate the trakt section for your PMM config file.  Mo
 You can run this on a completely separate machine to where PMM is running.
 
 ### Usage
-1. setup as above
-2. Run with `python pmm_trakt_auth.py`
+1. Run with `python pmm_trakt_auth.py`
 
 
 You'll be asked for your trakt Client ID and Client Secret then taken to a trakt web page.
