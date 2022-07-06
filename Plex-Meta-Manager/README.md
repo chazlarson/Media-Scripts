@@ -129,10 +129,9 @@ This little script will generate the `mal` section for your PMM config file.  Mo
 You can run this on a completely separate machine to where PMM is running.
 
 ### Usage
-1. python3 -m pip install pyopenssl
-1. python3 -m pip install requests secrets
-1. python3 pmm_mal_auth.py
-1. Run it with "python3 pmm_mal_auth.py".
+1. `python3 -m pip install pyopenssl`
+1. `python3 -m pip install requests secrets`
+1. Run it with `python3 pmm_mal_auth.py`.
 
 You'll be asked for your MyAnimeList Client ID and Client Secret then taken to a MyAnimeList web page.
 
