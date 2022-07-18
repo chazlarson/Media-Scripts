@@ -64,4 +64,5 @@ else:
         print (f"    refresh_token: {response.json()['refresh_token']}")
         print (f"    scope: {response.json()['scope']}")
         print (f"    created_at: {response.json()['created_at']}")
+        print (f"  pin:")
         print (f"############################################")
