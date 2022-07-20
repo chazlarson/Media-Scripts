@@ -113,15 +113,15 @@ ia = imdb.IMDb()
 for item in all_items:
     item_count = item_count + 1
 
-    progress_str = f"{item.title}"
+    progress_str = f"{item['title']}"
     progress(item_count, item_total, progress_str)
 
     # id
     code = "6468322"
-    imdid = item.imdb.replace('tt','')
+    imdid = item['imdb'].replace('tt','')
 
     # getting information
-    series = ia.get_movie(code)
+    series = ia.get_movie(imdid)
 
     # getting cover url of the series
     cover = series.data['cover url']

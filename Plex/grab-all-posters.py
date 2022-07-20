@@ -137,7 +137,10 @@ for lib in lib_array:
 
                 import fnmatch
 
-                count = len(fnmatch.filter(os.listdir(artwork_path), '*.*'))
+                count = 0
+
+                if os.path.exists(artwork_path):
+                    count = len(fnmatch.filter(os.listdir(artwork_path), '*.*'))
 
                 no_more_to_get = count >= len(posters)
                 full_for_now = count >= POSTER_DEPTH
@@ -150,7 +153,7 @@ for lib in lib_array:
                             break
 
                         poster_obj = {}
-                        tgt_file_path = f"{tmid}-{tv_id}-{item.ratingKey}-{str(idx).zfill(3)}.png"
+                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{str(idx).zfill(3)}.png"
                         final_file_path = os.path.join(artwork_path, tgt_file_path)
 
                         poster_obj["folder"] = artwork_path
@@ -175,10 +178,13 @@ for lib in lib_array:
 
                                 thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
                             else:
-                                if IS_WINDOWS:
-                                    script_line = f"mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
-                                else:
-                                    script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" {src_URL}"
+                                mkdir_flag = "" if IS_WINDOWS else '-p '
+                                script_line_start = f""
+                                if idx == 1:
+                                    script_line_start = f"mkdir {mkdir_flag}\"{dir_name}\"{os.linesep}"
+
+                                script_line = f"{script_line_start}curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" \"{src_URL}\""
+
                                 script_string = script_string + f"{script_line}{os.linesep}"
 
                         idx += 1

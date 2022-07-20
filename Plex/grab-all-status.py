@@ -84,9 +84,12 @@ except:
     file_string = file_string + f"{file_line}{os.linesep}"
     print(file_line)
 
+user_ct = len(all_users)
+user_idx = 0
 for plex_user in all_users:
     user_acct = account.user(plex_user.username)
-    print(f"------------ {plex_user.username} ------------")
+    user_idx += 1
+    print(f"------------ {plex_user.username} {user_idx}/{user_ct} ------------")
     try:
         user_plex = PlexServer(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
 
@@ -97,7 +100,7 @@ for plex_user in all_users:
                 items = user_plex.library.section(plex_section.title)
                 if items.type == 'show':
                     for video in items.searchEpisodes(unwatched=False):
-                        file_line = f"{plex_user.username}\t{items.type}\t{plex_section.title}\t{video.title}\t{video.grandparentTitle}\t{video.seasonEpisode}"
+                        file_line = f"{plex_user.username}\t{items.type}\t{plex_section.title}\t{video.grandparentTitle}\t{video.seasonEpisode}\t{video.title}"
                         file_string = file_string + f"{file_line}{os.linesep}"
                         print(file_line)
                 elif items.type == 'movie':
@@ -118,7 +121,7 @@ for plex_user in all_users:
         file_string = file_string + f"{file_line}{os.linesep}"
         print(file_line)
 
-    print("{os.linesep}")
+    print(f"{os.linesep}")
     if len(file_string) > 0:
         with open(f"status.txt", 'w') as myfile:
             myfile.write(f"{file_string}{os.linesep}")

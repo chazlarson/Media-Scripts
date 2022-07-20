@@ -280,7 +280,7 @@ plex_items = []
 
 if (len(file_array) > 0):
     for fn in file_array:
-        print(f"\ngetting items from [{fn}]...")
+        print(f"{os.linesep}getting items from [{fn}]...")
         item_total = sum(1 for i in open(fn, 'rb'))
         print(f"looping over {item_total} items...")
         with open(fn) as csv_file:
@@ -315,7 +315,7 @@ else:
         print(f"connecting to {PLEX_URL}...")
         plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 
-        print(f"\ngetting items from [{lib}]...")
+        print(f"{os.linesep}getting items from [{lib}]...")
         items = plex.library.section(lib).all()
         item_total = len(items)
         print(f"looping over {item_total} items...")
@@ -361,4 +361,4 @@ else:
 
 end = timer()
 elapsed = end - start
-print(f"\n\nprocessed {item_count - 1} items in {elapsed} seconds.")
+print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")

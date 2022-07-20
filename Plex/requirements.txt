@@ -1,3 +1,4 @@
+alive-progress
 PlexAPI
 tmdbapis
 tmdbv3api

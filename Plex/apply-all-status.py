@@ -40,10 +40,11 @@ def get_user_acct(acct_list, username):
         if acct.username == username:
             return acct
 
-padwidth = 95
+padwidth = 105
 count = 0
 connected_plex_user = PLEX_OWNER
-connected_plex_library = ""
+connected_plex_library = None
+last_library = None
 
 print(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
@@ -62,13 +63,18 @@ with open(f"status.txt") as fp:
         if len(parts) == 1:
             continue # this is an error line
 
+        # Reidesign  show  TV Shows on ChazTV  The Handmaid's Tale  s04e01  Episode 1
+        # 0          1     2                   3                    4       5
         plex_user = parts[0].strip()
         plex_type = parts[1].strip()
         plex_library = parts[2].strip()
-        plex_title = parts[3].strip()
-        if len(parts) > 4 and plex_type == "show":
-            plex_series = parts[4].strip()
-            plex_ep = parts[5].strip()
+
+        if plex_type == "show":
+            # Reidesign  show  TV Shows on ChazTV  The Handmaid's Tale  s04e01  Episode 1
+            # 0          1     2                   3                    4       5
+            plex_series = parts[3].strip() # Dexter: New Blood
+            plex_title = parts[5].strip() # Episode 2
+            plex_ep = parts[4].strip() # 's01e14'
             tmp = re.split('[se]', plex_ep)
             # ['', '01', '14']
             try:
@@ -77,6 +83,8 @@ with open(f"status.txt") as fp:
             except:
                 continue
         else:
+            # amypla	movie	Movies - 4K	10 Things I Hate About You	1999	PG-13
+            plex_title = parts[3].strip() # Episode 2
             plex_year = parts[4].strip()
             plex_rating = parts[5].strip()
 
@@ -90,65 +98,73 @@ with open(f"status.txt") as fp:
             print(f"------------ {connected_plex_user} ------------")
 
         if plex_library != connected_plex_library:
-            items = plex.library.section(plex_library)
-            connected_plex_library = plex_library
-            print(f"\r\n------------ {connected_plex_library} ------------")
+            try:
+                items = plex.library.section(plex_library)
+                connected_plex_library = plex_library
+                last_library = None
+                print(f"\r{os.linesep}------------ {connected_plex_library} ------------")
+            except:
+                if last_library == None:
+                    print(f"\r{os.linesep}------------ Exception connecting to {plex_library} ------------")
+                    last_library = plex_library
+                connected_plex_library = None
 
-        things = None
-        thing = None
-        item = None
+        if connected_plex_library != None:
+            things = None
+            thing = None
+            item = None
 
-        if plex_type == 'show':
-            sys.stdout.write(f"\rSearching for {plex_series} {plex_ep} {plex_title}".ljust(padwidth))
-            sys.stdout.flush()
-            things = items.searchShows(title=plex_series)
-            title_ct = 0
-            for thing in things:
-                if item is None:
-                    title_ct += 1
-                    if thing.title == plex_series:
-                        try:
-                            item = thing.episode(season=plex_season, episode=plex_episode)
-                            sys.stdout.write(f"\rSearching for {plex_series} {plex_ep} {plex_title}: found in {title_ct} - {thing.title}".ljust(padwidth))
-                            sys.stdout.flush()
-                        except:
-                            sys.stdout.write(f"\rSearching for {plex_series} {plex_ep} {plex_title}: NOT found in {title_ct} - {thing.title}".ljust(padwidth))
-                            sys.stdout.flush()
-        elif plex_type == 'movie':
-            sys.stdout.write(f"\rSearching for {plex_title}".ljust(padwidth))
-            sys.stdout.flush()
-            things = items.search(title=plex_title, unwatched=True)
-            title_ct = 0
-            title_match_ct = 0
-            title_year_ct = 0
-            title_rating_ct = 0
-            for thing in things:
-                if item is None:
-                    title_ct += 1
-                    unWatched = not thing.isWatched;
-                    # sys.stdout.write(f"\rSearching for {plex_title}: {title_ct} - {thing.title} ({thing.year}) ".ljust(padwidth))
-                    # sys.stdout.flush()
-                    if thing.title == plex_title:
-                        title_match_ct += 1
-                        if thing.year == int(plex_year):
-                            title_year_ct += 1
-                            if thing.contentRating == plex_rating:
-                                title_rating_ct += 1
-                                if unWatched:
-                                    item = thing
+            if plex_type == 'show':
+                sys.stdout.write(f"\rSearching for unwatched {plex_series} {plex_ep} {plex_title}".ljust(padwidth))
+                sys.stdout.flush()
+                things = items.searchShows(title=plex_series)
+                title_ct = 0
+                for thing in things:
+                    if item is None:
+                        title_ct += 1
+                        if thing.title == plex_series:
+                            try:
+                                item = thing.episode(season=plex_season, episode=plex_episode)
+                                sys.stdout.write(f"\rSearching for unwatched {plex_series} {plex_ep}: found?".ljust(padwidth))
+                                sys.stdout.flush()
+                            except:
+                                sys.stdout.write(f"\rSearching for unwatched {plex_series} {plex_ep}: NOT found".ljust(padwidth))
+                                sys.stdout.flush()
+            elif plex_type == 'movie':
+                sys.stdout.write(f"\rSearching for an unwatched {plex_title}".ljust(padwidth))
+                sys.stdout.flush()
+                things = items.search(title=plex_title, unwatched=True)
+                title_ct = 0
+                title_match_ct = 0
+                title_year_ct = 0
+                title_rating_ct = 0
+                for thing in things:
+                    if item is None:
+                        title_ct += 1
+                        unWatched = not thing.isWatched;
+                        # sys.stdout.write(f"\rSearching for {plex_title}: {title_ct} - {thing.title} ({thing.year}) ".ljust(padwidth))
+                        # sys.stdout.flush()
+                        if thing.title == plex_title:
+                            title_match_ct += 1
+                            if thing.year == int(plex_year):
+                                title_year_ct += 1
+                                if thing.contentRating == plex_rating:
+                                    title_rating_ct += 1
+                                    if unWatched:
+                                        item = thing
 
-            if title_match_ct > 1:
-                print(f"\r{title_match_ct} matches for {plex_title}")
-            if title_year_ct > 1:
-                print(f"\r{title_year_ct} matches for {plex_title}")
-            if title_rating_ct > 1:
-                print(f"\r{title_rating_ct} matches for {plex_title}")
-        else:
-            print(f"Unknown type: {plex_type}")
-
-        if item is not None:
-            if not item.isWatched:
-                print(f"Marked watched for {connected_plex_user}")
-                item.markWatched()
+                if title_match_ct > 1:
+                    print(f"\r{title_match_ct} matches for {plex_title}".ljust(padwidth))
+                if title_year_ct > 1:
+                    print(f"\r{title_year_ct} matches for {plex_title}".ljust(padwidth))
+                if title_rating_ct > 1:
+                    print(f"\r{title_rating_ct} matches for {plex_title}".ljust(padwidth))
             else:
-                print(f"Already marked watched for {connected_plex_user}")
+                print(f"Unknown type: {plex_type}")
+
+            if item is not None:
+                if not item.isWatched:
+                    print(f"Marked watched for {connected_plex_user}")
+                    item.markWatched()
+                # else:
+                #     print(f"Already marked watched for {connected_plex_user}")
