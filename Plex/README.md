@@ -28,10 +28,12 @@ DELAY=1                                      # optional delay between items
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
-POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
-POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-TRACK_RESET_STATUS=1                         # if set to 1, reset_posters keeps track of status and picks up where it left off
-ARTWORK_AND_POSTER=1                         # if set to 1, current background is downloaded with current poster
+POSTER_DOWNLOAD=False                        # generate a script rather than downloading
+POSTER_CONSOLIDATE=True                      # posters are separated into folders by library
+TRACK_RESET_STATUS=True                      # reset-posters-* keeps track of status and picks up where it left off
+ARTWORK_AND_POSTER=True                      # current background is downloaded with current poster
+RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
+RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 ```
 
 ## Scripts:
@@ -118,7 +120,15 @@ At this time, there is no configuration aside from library name; it replaces all
 
 ## reset-posters-plex.py
 
-Same as `reset-posters-tmdb.py`, but it resets the artiwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
+Script-specific variables in .env:
+```
+RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
+RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+```
+
+Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
+
+With `RESET_SEASONS=True`, if the season doesn't have artwork the series artwork will be used instead.
 
 ## grab-current-posters.py
 
