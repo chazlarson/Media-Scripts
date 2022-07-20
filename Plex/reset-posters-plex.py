@@ -1,3 +1,4 @@
+from alive_progress import alive_bar
 from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv
@@ -28,6 +29,9 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
 TRACK_RESET_STATUS = os.getenv('TRACK_RESET_STATUS')
 REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
+RESET_SEASONS = boolean_string(os.getenv('RESET_SEASONS'))
+RESET_EPISODES = boolean_string(os.getenv('RESET_EPISODES'))
+
 DELAY = 0
 try:
     DELAY = int(os.getenv('DELAY'))
@@ -43,17 +47,6 @@ if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
-
-def progress(count, total, status=''):
-    bar_len = 40
-    filled_len = int(round(bar_len * count / float(total)))
-
-    percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
-    stat_str = textwrap.shorten(status, width=60)
-
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(60)))
-    sys.stdout.flush()
 
 from pathlib import Path
 
@@ -71,43 +64,80 @@ for lib in lib_array:
 
     for lbl in lbl_array:
         if lbl == "xy22y1973":
-            print(f"{os.linesep}getting all items from [{lib}]...")
+            print(f"{os.linesep}getting all items from the library [{lib}]...")
             items = plex.library.section(lib).all()
             REMOVE_LABELS = False
         else:
-            print(f"{os.linesep}getting items from [{lib}] labelled [{lbl}]...")
+            print(f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]...")
             items = plex.library.section(lib).search(label=lbl)
         item_total = len(items)
-        print(f"looping over {item_total} items...")
+        print(f"{item_total} item(s) retrieved...")
         item_count = 1
-        for item in items:
-            item_count = item_count + 1
-            if id_array.count(f"{item.ratingKey}") == 0:
-                id_array.append(item.ratingKey)
+        with alive_bar(item_total, dual_line=True, title='Poster Reset - Plex') as bar:
+            for item in items:
+                item_count = item_count + 1
+                if id_array.count(f"{item.ratingKey}") == 0:
+                    id_array.append(item.ratingKey)
 
-                try:
-                    progress(item_count, item_total, item.title)
-                    pp = None
-                    local_file = None
+                    try:
+                        bar.text = f'-> starting: {item.title}'
+                        pp = None
+                        local_file = None
 
-                    progress(item_count, item_total, item.title + " - getting posters")
-                    posters = item.posters()
-                    progress(item_count, item_total, item.title + " - setting poster")
-                    item.setPoster(posters[0])
+                        bar.text = f'-> getting posters: {item.title}'
+                        posters = item.posters()
+                        bar.text = f'-> setting poster: {item.title}'
+                        showPoster = posters[0]
+                        item.setPoster(showPoster)
 
-                    if REMOVE_LABELS:
-                        progress(item_count, item_total, item.title + " - removing label")
-                        item.removeLabel(lbl, True)
+                        if REMOVE_LABELS:
+                            bar.text = f'-> removing label {lbl}: {item.title}'
+                            item.removeLabel(lbl, True)
 
-                    # write out item_array to file.
-                    with open(status_file, "a") as sf:
-                        sf.write(f"{item.ratingKey}{os.linesep}")
+                        # write out item_array to file.
+                        with open(status_file, "a") as sf:
+                            sf.write(f"{item.ratingKey}{os.linesep}")
 
-                except Exception as ex:
-                    progress(item_count, item_total, "EX: " + item.title)
+                        if item.TYPE == 'show':
+                            if RESET_SEASONS:
+                                # get seasons
+                                seasons = item.seasons()
+                                # loop over all:
+                                for s in seasons:
+                                    # reset artwork
+                                    bar.text = f'-> getting posters: {s.parentTitle}-{s.title}'
+                                    posters = s.posters()
+                                    if len(posters) > 0:
+                                        seasonPoster = posters[0]
+                                    else:
+                                        seasonPoster = showPoster
+                                    bar.text = f'-> setting poster: {s.parentTitle}-{s.title}'
+                                    s.setPoster(seasonPoster)
 
-                # Wait between items in case hammering the Plex server turns out badly.
-                time.sleep(DELAY)
+                                    if RESET_EPISODES:
+                                        # get episodes
+                                        episodes = s.episodes()
+                                        # loop over all
+                                        for e in episodes:
+                                            # reset artwork
+                                            # reset artwork
+                                            bar.text = f'-> getting posters: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}'
+                                            posters = e.posters()
+                                            if len(posters) > 0:
+                                                episodePoster = posters[0]
+                                            else:
+                                                episodePoster = showPoster
+                                            bar.text = f'-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}'
+                                            s.setPoster(episodePoster)
+
+
+                    except Exception as ex:
+                        print(f'Exception processing "{item.title}"')
+
+                    bar()
+
+                    # Wait between items in case hammering the Plex server turns out badly.
+                    time.sleep(DELAY)
 
     # delete the status file
     if status_file.is_file():
