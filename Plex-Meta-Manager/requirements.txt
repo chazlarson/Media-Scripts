@@ -10,4 +10,3 @@ requests
 pathvalidate
 secrets
 imdbpy
-wxPython
