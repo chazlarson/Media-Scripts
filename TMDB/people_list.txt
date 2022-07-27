@@ -1,3 +1,14 @@
+3131
+20907
+4173
+1223677
+1813
+82809
+11701
+8452
+1012
+224513
+440414
 Aaron Sorkin
 Abel Ferrara
 Adam Driver
@@ -7,7 +18,7 @@ Akira Kurosawa
 Al Pacino
 Alan J. Pakula
 Alan Parker
-Alejandro Gonzalez Irritu
+Alejandro González Iñárritu
 Alejandro Jodorowsky
 Alex Garland
 Alex Proyas
@@ -94,7 +105,7 @@ Charles Laughton
 Charlie Chaplin
 Charlize Theron
 Chevy Chase
-Chlo谷 Grace Moretz
+Chloe Grace Moretz
 Chris Columbus
 Chris Evans
 Chris Farley

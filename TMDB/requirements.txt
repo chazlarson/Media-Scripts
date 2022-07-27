@@ -1,3 +1,14 @@
+alive-progress
+PlexAPI
+tmdbsimple
+tmdbapis
+tmdbv3api
+python-dotenv
+tvdb_v4_official
+ruamel.yaml
+requests
+pathvalidate
+imdbpy
 PlexAPI
 tmdbapis
 tmdbv3api
@@ -5,4 +16,3 @@ python-dotenv
 tvdb_v4_official
 ruamel.yaml
 requests
-
