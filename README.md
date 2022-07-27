@@ -40,6 +40,7 @@ POSTER_DOWNLOAD=0                            # if set to 0, generate a script ra
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
 TRACK_RESET_STATUS=1                         # if set to 1, reset_posters keeps track of status and picks up where it left off
 ARTWORK_AND_POSTER=1                         # if set to 1, current background is downloaded with current poster
+PERSON_DEPTH=10                              # how deep to go into the search results for TMDB people
 ```
 
 ## Plex scripts:
@@ -61,3 +62,8 @@ See the [Plex Scripts README](Plex/README.md) for details.
 
 See the [Plex-Meta-Manager Scripts README](Plex-Meta-Manager/README.md) for details.
 
+# TMDB scripts
+
+1. tmdb-people.py - retrieve TMDB images for a list of people
+
+See the [TMDB Scripts README](TMDB/README.md) for details.

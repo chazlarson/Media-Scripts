@@ -30,7 +30,7 @@ except:
 TMDb = TMDbAPIs(TMDB_KEY, language="en")
 
 image_path = POSTER_DIR
-people_name_file = 'people_names.txt'
+people_name_file = 'people_list.txt'
 
 items = []
 
@@ -43,7 +43,7 @@ if people_file.is_file():
 
 idx = 1
 
-def save_image(person, idx):
+def save_image(person, idx, UPPER):
 
     file_root = f"{person.name}-{person.id}"
 
@@ -55,6 +55,9 @@ def save_image(person, idx):
 
         with filepath.open("wb") as f:
             f.write(r.content)
+    # else:
+    #     print(f"no profile image for {person.name} #{idx} of {UPPER}")
+
 
 item_total = len(items)
 print(f"{item_total} item(s) retrieved...")
@@ -67,7 +70,7 @@ with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
         try:
             person = TMDb.person(int(item))
             bar.text = f"-> retrieving: {item}"
-            save_image(person, 0)
+            save_image(person, 0, 1)
 
         except ValueError:
             try:
@@ -87,7 +90,7 @@ with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
                         person = results[i]
                         idx = idx + 1
                         bar.text = f"-> retrieving: {idx}-{item}"
-                        save_image(person, idx)
+                        save_image(person, idx, UPPER)
 
                     except Exception as ex:
                         print(f'->  exception: {item} - {ex.args[0]}')
