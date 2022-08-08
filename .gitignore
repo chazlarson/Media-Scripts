@@ -1,4 +1,6 @@
 **/.env
+**/*.csv
+**/*.png
 **/*.yml
 
 **/config
@@ -8,4 +10,6 @@
 **/extracted_posters
 **/people_posters
 **/venv
+**/.venv
+**/*-output.txt
 

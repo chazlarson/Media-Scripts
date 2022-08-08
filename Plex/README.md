@@ -42,8 +42,10 @@ RESET_EPISODES=True                          # reset-posters-plex resets episode
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
 1. [grab-current-posters.py](#grab-current-posterspy) - Grab currently-set posters and optionally background artwork
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
-2. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
-3. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
+1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
+1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
+1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
+1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 
 ## user-emails.py
 
@@ -332,3 +334,49 @@ Searching for It Comes at Night                                                 
 ```
 
 There might be a problem with special characters in titles.
+
+## delete_collections.py
+
+Perhaps you want to delete all the collections in one or more libraries
+
+This script will simply delete all collections from the libraries specified in the config, except those listed.
+
+Script-specific variables in .env:
+```
+KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collections to keep
+```
+****
+### Usage
+1. setup as above
+2. Run with `python delete_collections.py`
+
+```
+39 collection(s) retrieved...
+Collection delete - Plex |█████████▎                              | ▂▄▆ 9/39 [23%] in 14s (0.6/s, eta: 27s)
+-> deleting: 98 Best Action Movies Of All Time
+```
+
+## refresh-metadata.py
+
+Perhaps you want to refresh metadata in one or more libraries; there are situations where refreshing the whole library doesn't work so you have to do it in groups, which can be tiring.
+
+This script will simply loop through the libraries specified in the config, refreshing each item in the library.  It waits for the specified DELAY between each.
+
+Script-specific variables in .env:
+```
+NONE
+```
+****
+### Usage
+1. setup as above
+2. Run with `python refresh-metadata.py`
+
+```
+getting items from [TV Shows - 4K]...
+looping over 1086 items...
+[========================================] 100.1% ... Zoey's Extraordinary Playlist - DONE
+
+getting items from [ TV Shows - Anime]...
+looping over 2964 items...
+[========================================] 100.0% ... Ōkami Shōnen Ken - DONE
+```
