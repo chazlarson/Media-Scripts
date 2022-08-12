@@ -11,9 +11,11 @@ USE_MAGIC = True
 try:
     import magic
 except:
-    print("Can't import the python-magic library")
+    print("================== ATTENTION ==================")
+    print("There was a problem importing the python-magic library")
     print("This typically means you haven't installed libmagic")
-    print("This script will assume all images are JPEG format")
+    print("Script will default to .jpg extension on all images")
+    print("================== ATTENTION ==================")
     USE_MAGIC = False
 
 import requests
@@ -42,6 +44,13 @@ LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('CURRENT_POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
 POSTER_DOWNLOAD =  booler(os.getenv('POSTER_DOWNLOAD'))
+if not POSTER_DOWNLOAD:
+    print("================== ATTENTION ==================")
+    print("Downloading disabled; file identification not possible")
+    print("Script will default to .jpg extension on all images")
+    print("================== ATTENTION ==================")
+    USE_MAGIC = False
+
 POSTER_CONSOLIDATE =  booler(os.getenv('POSTER_CONSOLIDATE'))
 if os.getenv('ARTWORK') is None:
     ARTWORK =  booler(os.getenv('ARTWORK_AND_POSTER'))
@@ -55,7 +64,7 @@ IS_WINDOWS = platform.system() == 'Windows'
 
 if IS_WINDOWS:
     SCRIPT_FILE = "get_images.bat"
-    SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
+    SCRIPT_SEED = f"@echo off{os.linesep}setlocal enableextensions enabledelayedexpansion{os.linesep}{os.linesep}"
 
 
 if POSTER_DEPTH is None:
@@ -226,7 +235,7 @@ for lib in lib_array:
 
                             if src_URL is not None:
                                 if src_URL[0] == '/':
-                                    # src_URL = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
+                                    src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
                                     src_URL = f"{PLEX_URL}{src_URL}"
                                     # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
 
@@ -260,9 +269,9 @@ for lib in lib_array:
                                     bar.text = progress_str
 
                                     if IS_WINDOWS:
-                                        script_line = f"mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, background_file_path)}\" {src_URL}"
+                                        script_line = f"mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
                                     else:
-                                        script_line = f"mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, background_file_path)}\" {src_URL}"
+                                        script_line = f"mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
                             else:
                                 progress_str = f"{item.title} - art is None"
                                 logging.info(progress_str)
@@ -286,7 +295,7 @@ for lib in lib_array:
 
                             if src_URL is not None:
                                 if src_URL[0] == '/':
-                                    # src_URL = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
+                                    src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
                                     src_URL = f"{PLEX_URL}{src_URL}"
                                     # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
 
@@ -318,9 +327,9 @@ for lib in lib_array:
                                     bar.text = progress_str
                                     logging.info(progress_str)
                                     if IS_WINDOWS:
-                                        script_line = script_line + f"{os.linesep}mkdir \"{dir_name}\"{os.linesep}curl -C - -fLo \"{os.path.join(dir_name, poster_file_path)}\" {src_URL}"
+                                        script_line = script_line + f"{os.linesep}mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
                                     else:
-                                        script_line = script_line + f"{os.linesep}mkdir -p \"{dir_name}\" && curl -C - -fLo \"{os.path.join(dir_name, poster_file_path)}\" {src_URL}"
+                                        script_line = script_line + f"{os.linesep}mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
                             else:
                                 progress_str = f"{item.title} - thumb is None"
                                 bar.text = progress_str
@@ -343,7 +352,7 @@ for lib in lib_array:
 
     print(os.linesep)
     if not POSTER_DOWNLOAD:
-        scr_path = os.path.join(tgt_dir, SCRIPT_FILE)
+        scr_path = Path(POSTER_DIR, lib.replace(" ", "") + "-" + SCRIPT_FILE)
         logging.info(f"writing {scr_path}")
         if len(script_string) > 0:
             with open(scr_path, "w") as myfile:
