@@ -1,16 +1,27 @@
-from xmlrpc.client import Boolean
-from plexapi.server import PlexServer
-from plexapi.utils import download
+import logging
+import mimetypes
 import os
-from dotenv import load_dotenv
 import platform
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
-import requests
 from pathlib import Path, PurePath
+from xmlrpc.client import Boolean
+
+USE_MAGIC = True
+try:
+    import magic
+except:
+    print("Can't import the python-magic library")
+    print("This typically means you haven't installed libmagic")
+    print("This script will assume all images are JPEG format")
+    USE_MAGIC = False
+import requests
+from alive_progress import alive_bar
+from dotenv import load_dotenv
 from pathvalidate import is_valid_filename, sanitize_filename
-import logging
+from plexapi.server import PlexServer
+from plexapi.utils import download
+from tmdbapis import TMDbAPIs
 
 logging.basicConfig(filename='grab-all-posters.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -24,8 +35,8 @@ LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
-POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
-POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
+POSTER_DOWNLOAD =  Boolean(os.getenv('POSTER_DOWNLOAD'))
+POSTER_CONSOLIDATE =  Boolean(os.getenv('POSTER_CONSOLIDATE'))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
@@ -51,6 +62,9 @@ else:
 imdb_str = 'imdb://'
 tmdb_str = 'tmdb://'
 tvdb_str = 'tvdb://'
+
+if USE_MAGIC:
+    mime = magic.Magic(mime=True)
 
 def getTID(theList):
     imdbid = None
@@ -94,112 +108,122 @@ for lib in lib_array:
     logging.info(f"getting items from [{lib}]...")
     items = plex.library.section(lib).all()
     item_total = len(items)
-    print(f"looping over {item_total} items...")
     logging.info(f"looping over {item_total} items...")
     item_count = 1
 
     plex_links = []
     external_links = []
 
-    for item in items:
-        imdbid, tmid, tvid = getTID(item.guids)
-        tmpDict = {}
-        item_count = item_count + 1
-        if POSTER_CONSOLIDATE:
-            tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
-        else:
-            tgt_dir = os.path.join(POSTER_DIR, lib)
+    with alive_bar(item_total, dual_line=True, title='Grab all posters') as bar:
+        for item in items:
+            imdbid, tmid, tvid = getTID(item.guids)
+            tmpDict = {}
+            item_count = item_count + 1
+            if POSTER_CONSOLIDATE:
+                tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
+            else:
+                tgt_dir = os.path.join(POSTER_DIR, lib)
 
-        if not os.path.exists(tgt_dir):
-            os.makedirs(tgt_dir)
+            if not os.path.exists(tgt_dir):
+                os.makedirs(tgt_dir)
 
-        old_dir_name, msg = validate_filename(item.title)
-        dir_name, msg = validate_filename(f"{tmid}-{item.title}")
-        attempts = 0
+            old_dir_name, msg = validate_filename(item.title)
+            dir_name, msg = validate_filename(f"{tmid}-{item.title}")
+            attempts = 0
 
-        old_path = Path(tgt_dir, old_dir_name)
-        artwork_path = Path(tgt_dir, dir_name)
+            old_path = Path(tgt_dir, old_dir_name)
+            artwork_path = Path(tgt_dir, dir_name)
 
-        if os.path.exists(old_path):
-            os.rename(old_path, artwork_path)
+            if os.path.exists(old_path):
+                os.rename(old_path, artwork_path)
 
-        while attempts < 5:
-            try:
+            while attempts < 5:
+                try:
 
-                progress_str = f"{item.title} - attempt {attempts}"
-                logging.info(progress_str)
+                    progress_str = f"{item.title} - getting posters"
+                    logging.info(f"{progress_str} - {attempts}")
+                    bar.text = progress_str
 
-                posters = item.posters()
-                progress_str = f"{item.title} - {len(posters)} posters"
-                logging.info(progress_str)
+                    posters = item.posters()
 
-                progress(item_count, item_total, progress_str)
+                    progress_str = f"{item.title} - {len(posters)} posters"
+                    logging.info(progress_str)
+                    bar.text = progress_str
 
-                import fnmatch
+                    import fnmatch
 
-                count = 0
+                    count = 0
 
-                if os.path.exists(artwork_path):
-                    count = len(fnmatch.filter(os.listdir(artwork_path), '*.*'))
+                    if os.path.exists(artwork_path):
+                        count = len(fnmatch.filter(os.listdir(artwork_path), '*.*'))
 
-                no_more_to_get = count >= len(posters)
-                full_for_now = count >= POSTER_DEPTH
-                no_point_in_looking = full_for_now or no_more_to_get
+                    no_more_to_get = count >= len(posters)
+                    full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                    no_point_in_looking = full_for_now or no_more_to_get
 
-                if not no_point_in_looking:
-                    idx = 1
-                    for poster in posters:
-                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                            break
+                    if not no_point_in_looking:
+                        idx = 1
+                        for poster in posters:
+                            if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                                break
 
-                        poster_obj = {}
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{str(idx).zfill(3)}.png"
-                        final_file_path = os.path.join(artwork_path, tgt_file_path)
+                            poster_obj = {}
+                            tgt_ext = ".dat" if USE_MAGIC else ".jpg"
+                            tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{str(idx).zfill(3)}{tgt_ext}"
+                            final_file_path = os.path.join(artwork_path, tgt_file_path)
 
-                        poster_obj["folder"] = artwork_path
-                        poster_obj["file"] = tgt_file_path
+                            poster_obj["folder"] = artwork_path
+                            poster_obj["file"] = tgt_file_path
 
-                        src_URL = poster.key
-                        if src_URL[0] == '/':
-                            src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
-                            poster_obj["URL"] = src_URL
-                            # plex_links.append(poster_obj)
-                        else:
-                            poster_obj["URL"] = src_URL
-                            # external_links.append(poster_obj)
-
-                        progress(item_count, item_total, f"{progress_str} - {idx}")
-                        logging.info(progress_str)
-
-                        if not os.path.exists(final_file_path):
-                            if POSTER_DOWNLOAD:
-                                p = Path(artwork_path)
-                                p.mkdir(parents=True, exist_ok=True)
-
-                                thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
+                            src_URL = poster.key
+                            if src_URL[0] == '/':
+                                src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
+                                poster_obj["URL"] = src_URL
+                                # plex_links.append(poster_obj)
                             else:
-                                mkdir_flag = "" if IS_WINDOWS else '-p '
-                                script_line_start = f""
-                                if idx == 1:
-                                    script_line_start = f"mkdir {mkdir_flag}\"{dir_name}\"{os.linesep}"
+                                poster_obj["URL"] = src_URL
+                                # external_links.append(poster_obj)
 
-                                script_line = f"{script_line_start}curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" \"{src_URL}\""
+                            bar.text = f"{progress_str} - {idx}"
+                            logging.info(progress_str)
 
-                                script_string = script_string + f"{script_line}{os.linesep}"
+                            if not os.path.exists(final_file_path):
+                                if POSTER_DOWNLOAD:
+                                    p = Path(artwork_path)
+                                    p.mkdir(parents=True, exist_ok=True)
 
-                        idx += 1
-                attempts = 6
-            except Exception as ex:
-                progress_str = "EX: " + item.title
-                logging.info(progress_str)
+                                    thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=tgt_file_path, savepath=artwork_path)
 
-                progress(item_count, item_total, progress_str)
-                attempts += 1
+                                    if USE_MAGIC:
+                                        p = Path(final_file_path)
+
+                                        extension = mimetypes.guess_extension(mime.from_file(thumbPath), strict=False)
+                                        p.rename(p.with_suffix(extension))
+                                else:
+                                    mkdir_flag = "" if IS_WINDOWS else '-p '
+                                    script_line_start = f""
+                                    if idx == 1:
+                                        script_line_start = f"mkdir {mkdir_flag}\"{dir_name}\"{os.linesep}"
+
+                                    script_line = f"{script_line_start}curl -C - -fLo \"{os.path.join(dir_name, tgt_file_path)}\" \"{src_URL}\""
+
+                                    script_string = script_string + f"{script_line}{os.linesep}"
+
+                            idx += 1
+                    attempts = 6
+                except Exception as ex:
+                    progress_str = "EX: " + item.title
+                    logging.info(progress_str)
+
+                    attempts += 1
+
+            bar()
 
     progress_str = f"COMPLETE"
     logging.info(progress_str)
 
-    progress(item_count, item_total, progress_str)
+    bar.text = progress_str
+
 
     print(os.linesep)
     if not POSTER_DOWNLOAD:

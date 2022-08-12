@@ -136,21 +136,22 @@ With `RESET_SEASONS=True`, if the season doesn't have artwork the series artwork
 
 Perhaps you want to get local copies of the currently-set posters [and maybe backgrounds] for everything in a library.
 
-Maybe you find it easier to look through a bunch of options in CoverFlow or something.
-
 Script-specific variables in .env:
 ```
 CURRENT_POSTER_DIR=current_posters           # put downloaded posters here
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-ARTWORK_AND_POSTER=1                         # if set to 1, posters and background artwork are retrieved
+ARTWORK=1                                    # if set to 1, background artwork is retrieved
+PLEX_PATHS=1                                 # if set to 1, Files are stored in a mirror of the plex folders rooted at CURRENT_POSTER_DIR
 ```
 
 If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
 
 If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one directory rather than separating them by library name.  The idea is that Plex shows the same set of posters for "Star Wars" whether it's in your "Movies" or "Movies - 4K" or whatever other libraries, so there's no reason to pull the same set of posters multiple times.  There is an example below.
 
-If "ARTWORK_AND_POSTER" is `1`, the script will also grab the background artwork.
+If "ARTWORK" is `1`, the script will also grab the background artwork.
+
+If "PLEX_PATHS" is `1`, the script will store all the images in a mirror of your Plex library paths, under the Plex local asset names.  This overrides POSTER_CONSOLIDATE"
 
 ### Usage
 1. setup as above
@@ -174,15 +175,15 @@ current_posters
     ├── 100402-Captain America The Winter Soldier
     │   ├── 100402-965-1456628-Movies - 4K.png
     │   └── 100402-965-1456628-BG-Movies - 4K.png
-    ├── 10061-Escape from L.A
-    │   ├── 10061-2520-1985150-Movies - 4K.png
-    │   └── 10061-2520-1985150-BG-Movies - 4K.png
+    └── 10061-Escape from L.A
+        ├── 10061-2520-1985150-Movies - 4K.png
+        └── 10061-2520-1985150-BG-Movies - 4K.png
 ...
 ```
 
 POSTER_CONSOLIDATE=0:
 ```
-extracted_posters
+CURRENT_posters
 ├── Movies - 4K
 │   └── 100402-Captain America The Winter Soldier
 │       ├── 100402-965-1456628.png
@@ -192,7 +193,47 @@ extracted_posters
         ├── 10061-2520-1985150.png
         └── 10061-2520-1985150-BG.png
 ...
+
 ```
+PLEX_PATHS=1:
+```
+current_posters
+└── mnt
+    └── unionfs
+        └── movies
+            └── 4k
+            │   └── Captain America The Winter Soldier (2014) {tmdb-100402}
+            │       ├── background.jpg
+            │       └── poster.png
+            └── 1080
+                └── Escape from L.A (1996) {tmdb-10061}
+                    ├── background.jpg
+                    └── poster.png
+...
+```
+
+NEW: The script now downloads the image and examines it to find out its type before adding an extension.  This requires that "libmagic" be installed on the host system.
+
+This is described [here](https://pypi.org/project/python-magic/) and reproduced below:
+
+Debian/Ubuntu:
+```
+sudo apt-get install libmagic1
+```
+
+Windows:
+You'll need DLLs for libmagic. @julian-r maintains a pypi package with the DLLs, you can fetch it with:
+
+```
+pip install python-magic-bin
+```
+
+OSX:
+When using Homebrew: `brew install libmagic`
+When using macports: `port install file`
+
+If `libmagic` is not installed, the script will default to a jpg extension for all files.
+
 ## grab-all-posters.py
 
 Perhaps you want to get local copies of some or all the posters Plex knows about for everything in a library.
@@ -269,6 +310,30 @@ extracted_posters
         └── 10061-2520-1985150-015.png
 ...
 ```
+
+NEW: The script now downloads the image and examines it to find out its type before adding an extension.  This requires that "libmagic" be installed on the host system.
+
+This is described [here](https://pypi.org/project/python-magic/) and reproduced below:
+
+Debian/Ubuntu:
+```
+sudo apt-get install libmagic1
+```
+
+Windows:
+You'll need DLLs for libmagic. @julian-r maintains a pypi package with the DLLs, you can fetch it with:
+
+```
+pip install python-magic-bin
+```
+
+OSX:
+When using Homebrew: `brew install libmagic`
+When using macports: `port install file`
+
+If `libmagic` is not installed, the script will default to a jpg extension for all files.
+
+
 ## grab-all-status.py
 
 Perhaps you want to move or restore watch status from one server to another [or to a rebuild]
