@@ -45,7 +45,7 @@ POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
 POSTER_DOWNLOAD =  booler(os.getenv('POSTER_DOWNLOAD'))
 POSTER_CONSOLIDATE =  booler(os.getenv('POSTER_CONSOLIDATE'))
 if os.getenv('ARTWORK') is None:
-    ARTWORK =  booler(os.getenv('ARTWORK_AND_POSTERS'))
+    ARTWORK =  booler(os.getenv('ARTWORK_AND_POSTER'))
 else:
     ARTWORK =  booler(os.getenv('ARTWORK'))
 PLEX_PATHS = booler(os.getenv('PLEX_PATHS'))
