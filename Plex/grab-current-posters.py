@@ -124,14 +124,14 @@ def getPath(library, item, season=False):
     if library.type == 'movie':
         for media in item.media:
             for part in media.parts:
-                return part.file.rsplit('/', 1)[0]
+                return Path(part.file).parent
     elif library.type == 'show':
         for episode in item.episodes():
             for media in episode.media:
                 for part in media.parts:
                     if season:
-                        return part.file.rsplit('/', 1)[0]
-                    return part.file.rsplit('/', 2)[0]
+                        return Path(part.file).parent
+                    return Path(part.file).parent.parent
 
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
