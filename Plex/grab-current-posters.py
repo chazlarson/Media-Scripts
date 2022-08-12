@@ -162,14 +162,14 @@ for lib in lib_array:
 
             else:
                 if POSTER_CONSOLIDATE:
-                    tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
+                    tgt_dir = Path(POSTER_DIR, "all_libraries")
                 else:
-                    tgt_dir = os.path.join(POSTER_DIR, lib)
+                    tgt_dir = Path(POSTER_DIR, lib)
 
                 dir_name, msg = validate_filename(f"{tmid}-{item.title}-{item.year}")
 
-                if not os.path.exists(tgt_dir):
-                    os.makedirs(tgt_dir)
+                if not tgt_dir.is_file():
+                    tgt_dir.mkdir(parents=True, exist_ok=True)
 
             attempts = 0
 
@@ -208,10 +208,10 @@ for lib in lib_array:
                     old_poster_file_path = f"{item.ratingKey}.png"
 
 
-                    final_poster_file_path = os.path.join(artwork_path, poster_file_path)
-                    old_final_poster_file_path = os.path.join(artwork_path, old_poster_file_path)
+                    final_poster_file_path = Path(artwork_path, poster_file_path)
+                    old_final_poster_file_path = Path(artwork_path, old_poster_file_path)
 
-                    final_background_file_path = os.path.join(artwork_path, background_file_path)
+                    final_background_file_path = Path(artwork_path, background_file_path)
 
                     logging.info(f"final poster path: {final_poster_file_path}")
                     logging.info(f"final background path: {final_background_file_path}")
@@ -223,7 +223,7 @@ for lib in lib_array:
 
                         bar.text = progress_str
 
-                        if not os.path.exists(final_background_file_path):
+                        if not final_background_file_path.is_file():
                             progress_str = f"{item.title} - Grabbing art"
                             logging.info(progress_str)
 
@@ -278,13 +278,13 @@ for lib in lib_array:
                                 bar.text = progress_str
 
     # POSTERS
-                    if not os.path.exists(final_poster_file_path):
+                    if not final_poster_file_path.is_file():
                         progress_str = f"{item.title} - no final file"
                         logging.info(progress_str)
 
                         bar.text = progress_str
 
-                        if not os.path.exists(old_final_poster_file_path):
+                        if not old_final_poster_file_path.is_file():
                             progress_str = f"{item.title} - Grabbing thumb"
 
                             bar.text = progress_str
@@ -338,7 +338,7 @@ for lib in lib_array:
                             progress_str = f"{item.title} - RENAMING TO {poster_file_path}"
                             logging.info(progress_str)
                             bar.text = progress_str
-                            os.rename(old_final_poster_file_path, final_poster_file_path)
+                            old_final_poster_file_path.rename(final_poster_file_path)
 
                     attempts = 6
                     script_string = script_string + f"{script_line}{os.linesep}"
