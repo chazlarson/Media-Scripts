@@ -58,6 +58,10 @@ else:
     ARTWORK =  booler(os.getenv('ARTWORK'))
 PLEX_PATHS = booler(os.getenv('PLEX_PATHS'))
 
+NAME_IN_TITLE = booler(os.getenv('NAME_IN_TITLE'))
+POSTER_NAME = os.getenv('POSTER_NAME')
+BACKGROUND_NAME = os.getenv('BACKGROUND_NAME')
+
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
 IS_WINDOWS = platform.system() == 'Windows'
@@ -65,7 +69,6 @@ IS_WINDOWS = platform.system() == 'Windows'
 if IS_WINDOWS:
     SCRIPT_FILE = "get_images.bat"
     SCRIPT_SEED = f"@echo off{os.linesep}setlocal enableextensions enabledelayedexpansion{os.linesep}{os.linesep}"
-
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
@@ -124,14 +127,14 @@ def getPath(library, item, season=False):
     if library.type == 'movie':
         for media in item.media:
             for part in media.parts:
-                return Path(part.file).parent
+                return Path(part.file).parent, Path(part.file).stem
     elif library.type == 'show':
         for episode in item.episodes():
             for media in episode.media:
                 for part in media.parts:
                     if season:
-                        return Path(part.file).parent
-                    return Path(part.file).parent.parent
+                        return Path(part.file).parent, Path(part.file).stem
+                    return Path(part.file).parent.parent, Path(part.file).parent.parent.stem
 
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
@@ -153,7 +156,7 @@ for lib in lib_array:
             imdbid, tmid, tvid = getTID(item.guids)
             tmpDict = {}
             item_count = item_count + 1
-            item_path = getPath(the_lib, item)
+            item_path, item_name = getPath(the_lib, item)
 
             dir_name = ""
 
@@ -194,16 +197,19 @@ for lib in lib_array:
 
                     tgt_ext = ".dat" if USE_MAGIC else ".jpg"
 
-                    if PLEX_PATHS:
-                        poster_file_path = f"poster{tgt_ext}"
-                        background_file_path = f"background{tgt_ext}"
-                    else:
+                    poster_file_path = f"{POSTER_NAME}{tgt_ext}"
+                    background_file_path = f"{BACKGROUND_NAME}{tgt_ext}"
+
+                    if not PLEX_PATHS:
                         file_base = f"{tmid}-{tvid}-{item.ratingKey}"
                         if POSTER_CONSOLIDATE:
                             file_base = f"{file_base}-{lib}"
+                        poster_file_path = f"{file_base}-{poster_file_path}"
+                        background_file_path = f"{file_base}-{background_file_path}"
 
-                        poster_file_path = f"{file_base}{tgt_ext}"
-                        background_file_path = f"{file_base}-BG{tgt_ext}"
+                    if NAME_IN_TITLE:
+                        poster_file_path = f"{item_name}-{poster_file_path}"
+                        background_file_path = f"{item_name}-{background_file_path}"
 
                     old_poster_file_path = f"{item.ratingKey}.png"
 

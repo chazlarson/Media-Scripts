@@ -142,7 +142,10 @@ CURRENT_POSTER_DIR=current_posters           # put downloaded posters here
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
 ARTWORK=1                                    # if set to 1, background artwork is retrieved
-PLEX_PATHS=1                                 # if set to 1, Files are stored in a mirror of the plex folders rooted at CURRENT_POSTER_DIR
+PLEX_PATHS=1                                 # if set to 1, files are stored in a mirror of the plex folders rooted at CURRENT_POSTER_DIR
+NAME_IN_TITLE=1                              # if set to 1, files will have the title added to the name: 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg
+POSTER_NAME=poster                           # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for posters
+BACKGROUND_NAME=background                   # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for backgrounds
 ```
 
 If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
@@ -152,6 +155,34 @@ If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one dire
 If "ARTWORK" is `1`, the script will also grab the background artwork.
 
 If "PLEX_PATHS" is `1`, the script will store all the images in a mirror of your Plex library paths, under the Plex local asset names.  This overrides POSTER_CONSOLIDATE"
+
+If "NAME_IN_TITLE" is `1`, files will have titles in their names:
+
+`PLEX_PATHS=1`:
+```
+13 Reasons Why (2017) {tvdb-323168}-poster.jpg
+13 Reasons Why (2017) {tvdb-323168}-background.jpg
+```
+`PLEX_PATHS=0`:
+```
+13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-poster.jpg
+13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-background.jpg
+```
+
+Without NAME_IN_TITLE:
+
+`PLEX_PATHS=1`:
+```
+poster.jpg
+background.jpg
+```
+`PLEX_PATHS=0`:
+```
+66788-323168-1791734-poster.jpg
+66788-323168-1791734-background.jpg
+```
+
+`POSTER_NAME` and `BACKGROUND_NAME` control the "-poster" and "-background" in those names.  Make sure they are different; if they are both blank and you want to download both poster and background; the second one won't get downloaded since hte file will already exist.
 
 ### Usage
 1. setup as above
