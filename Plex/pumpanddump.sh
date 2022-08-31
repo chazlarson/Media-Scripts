@@ -65,24 +65,45 @@ fi
 echo "cleaning/resetting folders"
 rm -rf "/${dbp1}"/Library/Application Support/Plex Media Server/Codecs/*
 
+
 echo "================================================"
-echo "removing pointless items from database"
+echo "starting database size:"
+ls -alh *.db
+echo "free space:"
+df -h .
+
+echo "================================================"
+echo "removing pointless items from database; errors here are safe to ignore"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DROP index 'index_title_sort_naturalsort'"
+echo "schema_migrations..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE from schema_migrations where version='20180501000000'"
+echo "statistics_bandwidth..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE FROM statistics_bandwidth;"
+echo "statistics_media..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE FROM statistics_media;"
+echo "statistics_resources..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE FROM statistics_resources;"
+echo "accounts..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE FROM accounts;"
+echo "devices..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "DELETE FROM devices;"
 echo "================================================"
 echo "fixing dates on stuck files"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = originally_available_at WHERE added_at <> originally_available_at AND originally_available_at IS NOT NULL;"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = DATETIME('now', '-1 days') WHERE DATETIME(added_at) > DATETIME('now');"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = DATETIME('now', '-1 days') WHERE DATETIME(originally_available_at) > DATETIME('now');"
+echo "database size:"
+ls -alh *.db
+echo "free space:"
+df -h .
 echo "================================================"
 echo "dumping and removing old database"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db .dump > dump.sql
 rm com.plexapp.plugins.library.db
+echo "sql size:"
+ls -alh *.sql
+echo "free space:"
+df -h .
 echo "================================================"
 echo "making adjustments to new db"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "pragma page_size=32768; vacuum;"
@@ -90,10 +111,17 @@ echo "making adjustments to new db"
 echo "================================================"
 echo "importing old data"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db <dump.sql
+echo "database size:"
+ls -alh *.db
+echo "free space:"
+df -h .
 echo "================================================"
 echo "optimize database and fix times"
+echo "vacuum..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "vacuum"
+echo "optimize..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "pragma optimize"
+echo "fixing dates..."
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = originally_available_at WHERE added_at <> originally_available_at AND originally_available_at IS NOT NULL;"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = DATETIME('now', '-1 days') WHERE DATETIME(added_at) > DATETIME('now');"
 "${sqplex}" --sqlite com.plexapp.plugins.library.db "UPDATE metadata_items SET added_at = DATETIME('now', '-1 days') WHERE DATETIME(originally_available_at) > DATETIME('now');"
