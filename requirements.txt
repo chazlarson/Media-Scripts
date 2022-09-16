@@ -8,3 +8,4 @@ ruamel.yaml
 requests
 pathvalidate
 imdbpy
+python-magic
