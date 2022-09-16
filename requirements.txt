@@ -1,3 +1,4 @@
+pyopenssl
 alive-progress==2.4.1
 PlexAPI
 tmdbapis
