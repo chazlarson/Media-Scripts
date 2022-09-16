@@ -30,16 +30,21 @@ logging.info('Starting grab-all-posters.py')
 
 load_dotenv()
 
+def booler(thing):
+    if type(thing) == str:
+        thing = eval(thing)
+    return bool(thing)
+
 PLEX_URL = os.getenv('PLEX_URL')
 PLEX_TOKEN = os.getenv('PLEX_TOKEN')
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('POSTER_DIR')
 POSTER_DEPTH = int(os.getenv('POSTER_DEPTH'))
-POSTER_DOWNLOAD = Boolean(os.getenv('POSTER_DOWNLOAD'))
-POSTER_CONSOLIDATE = Boolean(os.getenv('POSTER_CONSOLIDATE'))
-INCLUDE_COLLECTION_ARTWORK = Boolean(os.getenv('INCLUDE_COLLECTION_ARTWORK'))
-ONLY_COLLECTION_ARTWORK = Boolean(os.getenv('ONLY_COLLECTION_ARTWORK'))
+POSTER_DOWNLOAD = booler(os.getenv('POSTER_DOWNLOAD'))
+POSTER_CONSOLIDATE = booler(os.getenv('POSTER_CONSOLIDATE'))
+INCLUDE_COLLECTION_ARTWORK = booler(os.getenv('INCLUDE_COLLECTION_ARTWORK'))
+ONLY_COLLECTION_ARTWORK = booler(os.getenv('ONLY_COLLECTION_ARTWORK'))
 
 print(f"INCLUDE_COLLECTION_ARTWORK: {INCLUDE_COLLECTION_ARTWORK}")
 print(f"ONLY_COLLECTION_ARTWORK: {ONLY_COLLECTION_ARTWORK}")

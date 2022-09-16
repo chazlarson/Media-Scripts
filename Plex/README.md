@@ -31,9 +31,16 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 POSTER_DOWNLOAD=False                        # generate a script rather than downloading
 POSTER_CONSOLIDATE=True                      # posters are separated into folders by library
 TRACK_RESET_STATUS=True                      # reset-posters-* keeps track of status and picks up where it left off
-ARTWORK_AND_POSTER=True                      # current background is downloaded with current poster
+ARTWORK=True                                 # current background is downloaded with current poster
+PLEX_PATHS=False
+NAME_IN_TITLE=True
+POSTER_NAME=poster
+BACKGROUND_NAME=background
 RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
 RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
+INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
+ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
 ```
 
 ## Scripts:
@@ -146,6 +153,8 @@ PLEX_PATHS=1                                 # if set to 1, files are stored in 
 NAME_IN_TITLE=1                              # if set to 1, files will have the title added to the name: 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg
 POSTER_NAME=poster                           # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for posters
 BACKGROUND_NAME=background                   # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for backgrounds
+INCLUDE_COLLECTION_ARTWORK=1                 # If set to 1, collection posters are retrieved
+ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection posters are retrieved
 ```
 
 If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
@@ -162,7 +171,7 @@ If "NAME_IN_TITLE" is `1`, files will have titles in their names:
 ```
 13 Reasons Why (2017) {tvdb-323168}-poster.jpg
 13 Reasons Why (2017) {tvdb-323168}-background.jpg
-```
+``****`
 `PLEX_PATHS=0`:
 ```
 13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-poster.jpg
@@ -279,6 +288,8 @@ POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
+INCLUDE_COLLECTION_ARTWORK=1                 # If set to 1, collection posters are retrieved
+ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection posters are retrieved
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -286,6 +297,10 @@ The point of "POSTER_DEPTH" is that sometimes movies have an insane number of po
 If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
 
 If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one directory rather than separating them by library name.  The idea is that Plex shows the same set of posters for "Star Wars" whether it's in your "Movies" or "Movies - 4K" or whatever other libraries, so there's no reason to pull the same set of posters multiple times.  There is an example below.
+
+If "INCLUDE_COLLECTION_ARTWORK" is `1`, the script will grab artwork for all the collections in the target library.
+
+If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
 
 ### Usage
 1. setup as above
