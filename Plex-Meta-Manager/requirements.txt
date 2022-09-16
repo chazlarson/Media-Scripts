@@ -1,5 +1,5 @@
 pyopenssl
-alive-progress
+alive-progress==2.4.1
 PlexAPI
 tmdbapis
 tmdbv3api
@@ -10,3 +10,4 @@ requests
 pathvalidate
 secrets
 imdbpy
+python-magic
