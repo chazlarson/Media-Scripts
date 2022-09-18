@@ -6,6 +6,7 @@ import sys
 import textwrap
 from pathlib import Path, PurePath
 from xmlrpc.client import Boolean
+import time
 
 USE_MAGIC = True
 try:
@@ -23,19 +24,16 @@ from alive_progress import alive_bar
 from dotenv import load_dotenv
 from pathvalidate import is_valid_filename, sanitize_filename
 from plexapi.server import PlexServer
+from plexapi.exceptions import BadRequest, NotFound, Unauthorized
 from plexapi.utils import download
 from tmdbapis import TMDbAPIs
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 load_dotenv()
 
 logging.basicConfig(filename='grab-current-posters.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logging.info('Starting grab-current-posters.py')
-
-def booler(thing):
-    if type(thing) == str:
-        thing = eval(thing)
-    return bool(thing)
 
 PLEX_URL = os.getenv('PLEX_URL')
 PLEX_TOKEN = os.getenv('PLEX_TOKEN')
@@ -92,93 +90,93 @@ if LIBRARY_NAMES:
 else:
     lib_array = [LIBRARY_NAME]
 
-imdb_str = 'imdb://'
-tmdb_str = 'tmdb://'
-tvdb_str = 'tvdb://'
-
 if USE_MAGIC:
     mime = magic.Magic(mime=True)
 
-
-# print(f"TMDB_KEY: {TMDB_KEY}")
-# print(f"TVDB_KEY: {TVDB_KEY}")
-print(f"PLEX_URL: {PLEX_URL}")
-print(f"PLEX_TOKEN: {PLEX_TOKEN}")
-print(f"LIBRARY_NAMES: {LIBRARY_NAMES}")
-# print(f"TOP_COUNT: {TOP_COUNT}")
-# print(f"TARGET_LABELS: {TARGET_LABELS}")
-# print(f"REMOVE_LABELS: {REMOVE_LABELS}")
-# print(f"TRACK_RESET_STATUS: {TRACK_RESET_STATUS}")
-# print(f"CURRENT_POSTER_DIR: {CURRENT_POSTER_DIR}")
-print(f"POSTER_DIR: {POSTER_DIR}")
-print(f"POSTER_DEPTH: {POSTER_DEPTH}")
-print(f"POSTER_DOWNLOAD: {POSTER_DOWNLOAD}")
-print(f"POSTER_CONSOLIDATE: {POSTER_CONSOLIDATE}")
-print(f"PLEX_PATHS: {PLEX_PATHS}")
-print(f"DELAY: {DELAY}")
-# print(f"PLEX_OWNER: {PLEX_OWNER}")
-print(f"ARTWORK: {ARTWORK}")
-print(f"NAME_IN_TITLE: {NAME_IN_TITLE}")
-print(f"POSTER_NAME: {POSTER_NAME}")
-print(f"BACKGROUND_NAME: {BACKGROUND_NAME}")
-# print(f"RESET_SEASONS: {RESET_SEASONS}")
-# print(f"RESET_EPISODES: {RESET_EPISODES}")
-# print(f"KEEP_COLLECTIONS: {KEEP_COLLECTIONS}")
-print(f"INCLUDE_COLLECTION_ARTWORK: {INCLUDE_COLLECTION_ARTWORK}")
-print(f"ONLY_COLLECTION_ARTWORK: {ONLY_COLLECTION_ARTWORK}")
-
-def getTID(theList):
-    imdbid = None
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if imdb_str in guid.id:
-            imdid = guid.id.replace(imdb_str,'')
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
-    return imdbid, tmid, tvid
-
-def progress(count, total, status=''):
-    bar_len = 40
-    filled_len = int(round(bar_len * count / float(total)))
-
-    percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
-    stat_str = textwrap.shorten(status, width=80)
-
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
-    sys.stdout.flush()
-
-def validate_filename(filename):
-    if is_valid_filename(filename):
-        return filename, None
-    else:
-        mapping_name = sanitize_filename(filename)
-        stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
-        logging.info(stat_string)
-        return mapping_name, stat_string
-
-def getPath(library, item, season=False):
-    if item.type == 'collection':
-        return "Collection", item.title
-    else:
-        if library.type == 'movie':
-            for media in item.media:
-                for part in media.parts:
-                    return Path(part.file).parent, Path(part.file).stem
-        elif library.type == 'show':
-            for episode in item.episodes():
-                for media in episode.media:
-                    for part in media.parts:
-                        if season:
-                            return Path(part.file).parent, Path(part.file).stem
-                        return Path(part.file).parent.parent, Path(part.file).parent.parent.stem
-
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+try:
+    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+except Unauthorized:
+    print("Plex Error: Plex token is invalid")
+    exit()
+
+logging.info(f"connection success")
+
+def rename_by_type(target):
+    p = Path(target)
+
+    if USE_MAGIC:
+        logging.info(f"determining file type of {target}")
+        extension = mimetypes.guess_extension(mime.from_file(target), strict=False)
+    else:
+        logging.info(f"no libmagic; assuming {extension}")
+        extension = ".jpg"
+
+    if 'html' in extension:
+        logging.info(f"deleting html file {p}")
+        p.unlink()
+    else:
+        logging.info(f"changing file extension to {extension}")
+        p.rename(p.with_suffix(extension))
+
+def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
+    if IS_WINDOWS:
+        script_line = f"{os.linesep}mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
+    else:
+        script_line = f"{os.linesep}mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
+    script_string = script_string + f"{script_line}{os.linesep}"
+
+def bar_and_log(the_bar, msg):
+    logging.info(msg)
+    the_bar.text = msg
+
+def download_file(src_URL, target_path, target_filename):
+    p = Path(target_path)
+    p.mkdir(parents=True, exist_ok=True)
+
+    dlPath = download(f"{src_URL}", PLEX_TOKEN, filename=target_filename, savepath=target_path)
+    rename_by_type(dlPath)
+
+def get_file(src_URL, bar, item, target_path, target_file):
+    if src_URL[0] == '/':
+        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
+        src_URL = f"{PLEX_URL}{src_URL}"
+        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
+
+    bar_and_log(bar, f"{item.title} - art: {src_URL}")
+
+    if POSTER_DOWNLOAD:
+        bar_and_log(bar, f"{item.title} - DOWNLOADING {target_file}")
+        download_file(src_URL, target_path, target_file)
+    else:
+        bar_and_log(bar, f"{item.title} - building download command")
+        add_script_line(target_path, target_file, src_URL_with_token)
+
+def item_init(item, the_lib):
+    title = item.title
+    tmpDict = {}
+    item_path, item_name = getPath(the_lib, item)
+    dir_name = ""
+    msg = ""
+    if PLEX_PATHS:
+        tgt_dir = Path(f"{POSTER_DIR}{item_path}")
+    else:
+        if POSTER_CONSOLIDATE:
+            tgt_dir = Path(POSTER_DIR, "all_libraries")
+        else:
+            tgt_dir = Path(POSTER_DIR, lib)
+
+        dir_name, msg = validate_filename(f"collection-{title}")
+        logging.info(f"{msg}")
+
+        if not tgt_dir.is_file():
+            tgt_dir.mkdir(parents=True, exist_ok=True)
+
+    attempts = 0
+
+    return title, tmpDict, item_path, item_name, dir_name, msg, tgt_dir, attempts, title
+
 for lib in lib_array:
     the_lib = plex.library.section(lib)
 
@@ -189,433 +187,199 @@ for lib in lib_array:
         item_total = len(items)
         print(f"{item_total} collection(s) retrieved...")
         item_count = 1
-        with alive_bar(item_total, dual_line=True, title='Grab Collection Posters') as bar:
-            for item in items:
 
-                title = item.title
-                tmpDict = {}
-                item_count = item_count + 1
+        tgt_ext = ".dat" if USE_MAGIC else ".jpg"
 
-                item_path, item_name = getPath(the_lib, item)
+        if item_total > 0:
+            with alive_bar(item_total, dual_line=True, title='Grab Collection Posters') as bar:
+                for item in items:
 
-                dir_name = ""
+                    logging.info(f"================================")
+                    bar_and_log(bar, f"Starting {item.title}")
 
-                if PLEX_PATHS:
-                    tgt_dir = Path(f"{POSTER_DIR}{item_path}")
-                else:
-                    if POSTER_CONSOLIDATE:
-                        tgt_dir = Path(POSTER_DIR, "all_libraries")
-                    else:
-                        tgt_dir = Path(POSTER_DIR, lib)
+                    title, tmpDict, item_path, item_name, dir_name, msg, tgt_dir, attempts, progress_str = item_init(item, the_lib)
 
-                    dir_name, msg = validate_filename(f"collection-{title}")
+                    item_count = item_count + 1
 
-                    if not tgt_dir.is_file():
-                        tgt_dir.mkdir(parents=True, exist_ok=True)
+                    poster_src = item.thumb
+                    background_src = item.art
 
-                attempts = 0
+                    artwork_path = Path(tgt_dir, f"{dir_name}")
 
-                progress_str = f"{title}"
+                    poster_file_path = f"{POSTER_NAME}{tgt_ext}"
+                    background_file_path = f"{BACKGROUND_NAME}{tgt_ext}"
 
-                bar.text = progress_str
+                    if not PLEX_PATHS:
+                        file_base = f"collection-{title}"
+                        if POSTER_CONSOLIDATE:
+                            file_base = f"{file_base}-{lib}"
+                        poster_file_path = f"{file_base}-{poster_file_path}"
+                        background_file_path = f"{file_base}-{background_file_path}"
 
-                while attempts < 5:
-                    try:
+                    if NAME_IN_TITLE:
+                        poster_file_path = f"{item_name}-{poster_file_path}"
+                        background_file_path = f"{item_name}-{background_file_path}"
 
-                        progress_str = f"{item.title} - Getting poster"
-                        logging.info(f"{progress_str} - {attempts}")
+                    while attempts < 5:
+                        try:
 
-                        script_line = ""
+                            bar_and_log(bar, f"{title} - Getting poster - attempt {attempts + 1}")
 
-                        bar.text = progress_str
+                            script_line = ""
 
-                        artwork_path = Path(tgt_dir, f"{dir_name}")
+                            if ARTWORK:
+                                bar_and_log(bar, f"{item.title} - grabbing background artwork")
 
-                        poster_src = item.thumb
-                        background_src = item.art
+                                if not Path(artwork_path, background_file_path).is_file():
+                                    bar_and_log(bar, f"{item.title} - Grabbing background artwork")
 
-                        tgt_ext = ".dat" if USE_MAGIC else ".jpg"
+                                    src_URL = background_src
 
-                        poster_file_path = f"{POSTER_NAME}{tgt_ext}"
-                        background_file_path = f"{BACKGROUND_NAME}{tgt_ext}"
+                                    src_URL_no_token = src_URL
 
-                        if not PLEX_PATHS:
-                            file_base = f"collection-{title}"
-                            if POSTER_CONSOLIDATE:
-                                file_base = f"{file_base}-{lib}"
-                            poster_file_path = f"{file_base}-{poster_file_path}"
-                            background_file_path = f"{file_base}-{background_file_path}"
-
-                        if NAME_IN_TITLE:
-                            poster_file_path = f"{item_name}-{poster_file_path}"
-                            background_file_path = f"{item_name}-{background_file_path}"
-
-                        old_poster_file_path = f"{item.ratingKey}.png"
-
-
-                        final_poster_file_path = Path(artwork_path, poster_file_path)
-                        old_final_poster_file_path = Path(artwork_path, old_poster_file_path)
-
-                        final_background_file_path = Path(artwork_path, background_file_path)
-
-                        logging.info(f"final poster path: {final_poster_file_path}")
-                        logging.info(f"final background path: {final_background_file_path}")
-
-        # BACKGROUNDS
-                        if ARTWORK:
-                            progress_str = f"{item.title} - no final art file"
-                            logging.info(progress_str)
-
-                            bar.text = progress_str
-
-                            if not final_background_file_path.is_file():
-                                progress_str = f"{item.title} - Grabbing art"
-                                logging.info(progress_str)
-
-                                bar.text = progress_str
-
-                                src_URL = background_src
-                                # '/library/metadata/999083/art/1654180581'
-                                src_URL_no_token = src_URL
-
-                                if src_URL is not None:
-                                    if src_URL[0] == '/':
-                                        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
-                                        src_URL = f"{PLEX_URL}{src_URL}"
-                                        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
-
-                                    progress_str = f"{item.title} - art: {src_URL}"
-                                    logging.info(progress_str)
-
-                                    bar.text = progress_str
-
-                                    if POSTER_DOWNLOAD:
-                                        p = Path(artwork_path)
-                                        p.mkdir(parents=True, exist_ok=True)
-
-                                        progress_str = f"{item.title} - DOWNLOADING {background_file_path}"
-                                        logging.info(progress_str)
-                                        bar.text = progress_str
-
-                                        thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=background_file_path, savepath=artwork_path)
-
-                                        if USE_MAGIC:
-                                            p = Path(final_background_file_path)
-
-                                            extension = mimetypes.guess_extension(mime.from_file(thumbPath), strict=False)
-                                            if extension == '.html':
-                                                p.unlink()
-                                            else:
-                                                p.rename(p.with_suffix(extension))
-
+                                    if src_URL is not None:
+                                        get_file(src_URL, bar, item, artwork_path, background_file_path)
                                     else:
-                                        progress_str = f"{item.title} - building download command"
-                                        logging.info(progress_str)
-                                        bar.text = progress_str
+                                        bar_and_log(bar, f"{item.title} - art is None")
 
-                                        if IS_WINDOWS:
-                                            script_line = f"mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
-                                        else:
-                                            script_line = f"mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
-                                else:
-                                    progress_str = f"{item.title} - art is None"
-                                    logging.info(progress_str)
-                                    bar.text = progress_str
-
-        # POSTERS
-                        if not final_poster_file_path.is_file():
-                            progress_str = f"{item.title} - no final file"
-                            logging.info(progress_str)
-
-                            bar.text = progress_str
-
-                            if not old_final_poster_file_path.is_file():
-                                progress_str = f"{item.title} - Grabbing thumb"
-
-                                bar.text = progress_str
+            # POSTERS
+                            if not Path(artwork_path, poster_file_path).is_file():
+                                bar_and_log(bar, f"{item.title} - no final file - Grabbing thumb")
 
                                 src_URL = poster_src
                                 # '/library/metadata/2187432/thumb/1652287170'
                                 src_URL_no_token = src_URL
 
                                 if src_URL is not None:
-                                    if src_URL[0] == '/':
-                                        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
-                                        src_URL = f"{PLEX_URL}{src_URL}"
-                                        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
-
-                                    progress_str = f"{item.title} - thumb: {src_URL}"
-                                    logging.info(progress_str)
-
-                                    bar.text = progress_str
-
-                                    if POSTER_DOWNLOAD:
-                                        p = Path(artwork_path)
-                                        p.mkdir(parents=True, exist_ok=True)
-
-                                        progress_str = f"{item.title} - DOWNLOADING {poster_file_path}"
-                                        bar.text = progress_str
-                                        logging.info(progress_str)
-                                        thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=poster_file_path, savepath=artwork_path)
-
-                                        if USE_MAGIC:
-                                            p = Path(final_poster_file_path)
-
-                                            extension = mimetypes.guess_extension(mime.from_file(thumbPath), strict=False)
-                                            if extension == '.html':
-                                                p.unlink()
-                                            else:
-                                                p.rename(p.with_suffix(extension))
-
-                                    else:
-                                        progress_str = f"{item.title} - building download command"
-                                        bar.text = progress_str
-                                        logging.info(progress_str)
-                                        if IS_WINDOWS:
-                                            script_line = script_line + f"{os.linesep}mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
-                                        else:
-                                            script_line = script_line + f"{os.linesep}mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
+                                    get_file(src_URL, bar, item, artwork_path, poster_file_path)
                                 else:
-                                    progress_str = f"{item.title} - thumb is None"
-                                    bar.text = progress_str
-                                    logging.info(progress_str)
-                            else:
-                                progress_str = f"{item.title} - RENAMING TO {poster_file_path}"
-                                logging.info(progress_str)
-                                bar.text = progress_str
-                                old_final_poster_file_path.rename(final_poster_file_path)
+                                    bar_and_log(bar, f"{item.title} - thumb is None")
 
-                        attempts = 6
-                        script_string = script_string + f"{script_line}{os.linesep}"
+                            attempts = 6
 
-                    except Exception as ex:
-                        bar.text = progress_str
-                        logging.error(ex)
+                        except Exception as ex:
+                            bar.text = "EXCEPTION"
+                            logging.error(ex)
 
-                        attempts += 1
-                bar()
+                            attempts += 1
+                    bar()
 
     if not ONLY_COLLECTION_ARTWORK:
-        print(f"getting items from [{lib}]...")
-        logging.info(f"getting items from [{lib}]...")
+        print(f"getting {the_lib.type}s from [{lib}]...")
+        logging.info(f"getting {the_lib.type}s from [{lib}]...")
         the_lib = plex.library.section(lib)
         items = the_lib.all()
         item_total = len(items)
-        logging.info(f"looping over {item_total} items...")
+        print(f"{item_total} {the_lib.type}s retrieved...")
         item_count = 1
 
         plex_links = []
         external_links = []
-        with alive_bar(item_total, dual_line=True, title='Grab current posters') as bar:
-            for item in items:
-                imdbid, tmid, tvid = getTID(item.guids)
-                tmpDict = {}
-                item_count = item_count + 1
-                item_path, item_name = getPath(the_lib, item)
+        if item_total > 0:
+            with alive_bar(item_total, dual_line=True, title='Grab current posters') as bar:
+                for item in items:
+                    logging.info(f"================================")
+                    logging.info(f"Starting {item.title}")
 
-                dir_name = ""
+                    imdbid, tmid, tvid = getTID(item.guids)
+                    tmpDict = {}
+                    item_count = item_count + 1
+                    item_path, item_name = getPath(the_lib, item)
 
-                if PLEX_PATHS:
-                    tgt_dir = Path(f"{POSTER_DIR}{item_path}")
+                    dir_name = ""
 
-                else:
-                    if POSTER_CONSOLIDATE:
-                        tgt_dir = Path(POSTER_DIR, "all_libraries")
+                    if PLEX_PATHS:
+                        tgt_dir = Path(f"{POSTER_DIR}{item_path}")
+
                     else:
-                        tgt_dir = Path(POSTER_DIR, lib)
+                        if POSTER_CONSOLIDATE:
+                            tgt_dir = Path(POSTER_DIR, "all_libraries")
+                        else:
+                            tgt_dir = Path(POSTER_DIR, lib)
 
-                    dir_name, msg = validate_filename(f"{tmid}-{item.title}-{item.year}")
+                        dir_name, msg = validate_filename(f"{tmid}-{item.title}-{item.year}")
+                        if msg is not None:
+                            logging.info(f"{dir_name}")
+                            logging.info(f"{msg}")
 
-                    if not tgt_dir.is_file():
-                        tgt_dir.mkdir(parents=True, exist_ok=True)
+                        if not tgt_dir.is_file():
+                            tgt_dir.mkdir(parents=True, exist_ok=True)
 
-                attempts = 0
+                    attempts = 0
 
-                progress_str = f"{item.title}"
+                    bar.text = f"{item.title}"
 
-                bar.text = progress_str
+                    while attempts < 5:
+                        try:
 
-                while attempts < 5:
-                    try:
+                            bar_and_log(bar, f"{item.title} - Getting poster - {attempts}")
 
-                        progress_str = f"{item.title} - Getting poster"
-                        logging.info(f"{progress_str} - {attempts}")
+                            script_line = ""
 
-                        script_line = ""
+                            artwork_path = Path(tgt_dir, f"{dir_name}")
 
-                        bar.text = progress_str
+                            poster_src = item.thumb
+                            background_src = item.art
 
-                        artwork_path = Path(tgt_dir, f"{dir_name}")
+                            tgt_ext = ".dat" if USE_MAGIC else ".jpg"
 
-                        poster_src = item.thumb
-                        background_src = item.art
+                            poster_file_path = f"{POSTER_NAME}{tgt_ext}"
+                            background_file_path = f"{BACKGROUND_NAME}{tgt_ext}"
 
-                        tgt_ext = ".dat" if USE_MAGIC else ".jpg"
+                            if not PLEX_PATHS:
+                                file_base = f"{tmid}-{tvid}-{item.ratingKey}"
+                                if POSTER_CONSOLIDATE:
+                                    file_base = f"{file_base}-{lib}"
+                                poster_file_path = f"{file_base}-{poster_file_path}"
+                                background_file_path = f"{file_base}-{background_file_path}"
 
-                        poster_file_path = f"{POSTER_NAME}{tgt_ext}"
-                        background_file_path = f"{BACKGROUND_NAME}{tgt_ext}"
+                            if NAME_IN_TITLE:
+                                poster_file_path = f"{item_name}-{poster_file_path}"
+                                background_file_path = f"{item_name}-{background_file_path}"
 
-                        if not PLEX_PATHS:
-                            file_base = f"{tmid}-{tvid}-{item.ratingKey}"
-                            if POSTER_CONSOLIDATE:
-                                file_base = f"{file_base}-{lib}"
-                            poster_file_path = f"{file_base}-{poster_file_path}"
-                            background_file_path = f"{file_base}-{background_file_path}"
+            # BACKGROUNDS
+                            if ARTWORK:
+                                bar_and_log(bar, f"{item.title} - no final art file")
 
-                        if NAME_IN_TITLE:
-                            poster_file_path = f"{item_name}-{poster_file_path}"
-                            background_file_path = f"{item_name}-{background_file_path}"
+                                if not Path(artwork_path, background_file_path).is_file():
+                                    bar_and_log(bar, f"{item.title} - Grabbing art")
 
-                        old_poster_file_path = f"{item.ratingKey}.png"
+                                    src_URL = background_src
+                                    # '/library/metadata/999083/art/1654180581'
+                                    src_URL_no_token = src_URL
 
-
-                        final_poster_file_path = Path(artwork_path, poster_file_path)
-                        old_final_poster_file_path = Path(artwork_path, old_poster_file_path)
-
-                        final_background_file_path = Path(artwork_path, background_file_path)
-
-                        logging.info(f"final poster path: {final_poster_file_path}")
-                        logging.info(f"final background path: {final_background_file_path}")
-
-        # BACKGROUNDS
-                        if ARTWORK:
-                            progress_str = f"{item.title} - no final art file"
-                            logging.info(progress_str)
-
-                            bar.text = progress_str
-
-                            if not final_background_file_path.is_file():
-                                progress_str = f"{item.title} - Grabbing art"
-                                logging.info(progress_str)
-
-                                bar.text = progress_str
-
-                                src_URL = background_src
-                                # '/library/metadata/999083/art/1654180581'
-                                src_URL_no_token = src_URL
-
-                                if src_URL is not None:
-                                    if src_URL[0] == '/':
-                                        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
-                                        src_URL = f"{PLEX_URL}{src_URL}"
-                                        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
-
-                                    progress_str = f"{item.title} - art: {src_URL}"
-                                    logging.info(progress_str)
-
-                                    bar.text = progress_str
-
-                                    if POSTER_DOWNLOAD:
-                                        p = Path(artwork_path)
-                                        p.mkdir(parents=True, exist_ok=True)
-
-                                        progress_str = f"{item.title} - DOWNLOADING {background_file_path}"
-                                        logging.info(progress_str)
-                                        bar.text = progress_str
-
-                                        thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=background_file_path, savepath=artwork_path)
-
-                                        if USE_MAGIC:
-                                            p = Path(final_background_file_path)
-
-                                            extension = mimetypes.guess_extension(mime.from_file(thumbPath), strict=False)
-                                            if extension == '.html':
-                                                p.unlink()
-                                            else:
-                                                p.rename(p.with_suffix(extension))
-
+                                    if src_URL is not None:
+                                        get_file(src_URL, bar, item, artwork_path, background_file_path)
                                     else:
-                                        progress_str = f"{item.title} - building download command"
-                                        logging.info(progress_str)
-                                        bar.text = progress_str
+                                        bar_and_log(bar, f"{item.title} - art is None")
 
-                                        if IS_WINDOWS:
-                                            script_line = f"mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
-                                        else:
-                                            script_line = f"mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, background_file_path)}\" {src_URL_with_token}"
-                                else:
-                                    progress_str = f"{item.title} - art is None"
-                                    logging.info(progress_str)
-                                    bar.text = progress_str
-
-        # POSTERS
-                        if not final_poster_file_path.is_file():
-                            progress_str = f"{item.title} - no final file"
-                            logging.info(progress_str)
-
-                            bar.text = progress_str
-
-                            if not old_final_poster_file_path.is_file():
-                                progress_str = f"{item.title} - Grabbing thumb"
-
-                                bar.text = progress_str
+            # POSTERS
+                            if not Path(artwork_path, poster_file_path).is_file():
+                                bar_and_log(bar, f"{item.title} - no final file - Grabbing thumb")
 
                                 src_URL = poster_src
                                 # '/library/metadata/2187432/thumb/1652287170'
                                 src_URL_no_token = src_URL
 
                                 if src_URL is not None:
-                                    if src_URL[0] == '/':
-                                        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
-                                        src_URL = f"{PLEX_URL}{src_URL}"
-                                        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
-
-                                    progress_str = f"{item.title} - thumb: {src_URL}"
-                                    logging.info(progress_str)
-
-                                    bar.text = progress_str
-
-                                    if POSTER_DOWNLOAD:
-                                        p = Path(artwork_path)
-                                        p.mkdir(parents=True, exist_ok=True)
-
-                                        progress_str = f"{item.title} - DOWNLOADING {poster_file_path}"
-                                        bar.text = progress_str
-                                        logging.info(progress_str)
-                                        thumbPath = download(f"{src_URL}", PLEX_TOKEN, filename=poster_file_path, savepath=artwork_path)
-
-                                        if USE_MAGIC:
-                                            p = Path(final_poster_file_path)
-
-                                            extension = mimetypes.guess_extension(mime.from_file(thumbPath), strict=False)
-                                            if extension == '.html':
-                                                p.unlink()
-                                            else:
-                                                p.rename(p.with_suffix(extension))
-
-                                    else:
-                                        progress_str = f"{item.title} - building download command"
-                                        bar.text = progress_str
-                                        logging.info(progress_str)
-                                        if IS_WINDOWS:
-                                            script_line = script_line + f"{os.linesep}mkdir \"{artwork_path}\"{os.linesep}curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
-                                        else:
-                                            script_line = script_line + f"{os.linesep}mkdir -p \"{artwork_path}\" && curl -C - -fLo \"{Path(artwork_path, poster_file_path)}\" {src_URL_with_token}"
+                                    get_file(src_URL, bar, item, artwork_path, poster_file_path)
                                 else:
-                                    progress_str = f"{item.title} - thumb is None"
-                                    bar.text = progress_str
-                                    logging.info(progress_str)
-                            else:
-                                progress_str = f"{item.title} - RENAMING TO {poster_file_path}"
-                                logging.info(progress_str)
-                                bar.text = progress_str
-                                old_final_poster_file_path.rename(final_poster_file_path)
+                                    bar_and_log(bar, f"{item.title} - thumb is None")
 
-                        attempts = 6
-                        script_string = script_string + f"{script_line}{os.linesep}"
+                            attempts = 6
 
-                    except Exception as ex:
-                        bar.text = progress_str
-                        logging.error(ex)
+                        except Exception as ex:
+                            bar.text = "EXCEPTION"
+                            logging.error(ex)
 
-                        attempts += 1
-                bar()
+                            attempts += 1
+                    bar()
 
 
     print(os.linesep)
     if not POSTER_DOWNLOAD:
         scr_path = Path(POSTER_DIR, lib.replace(" ", "") + "-" + SCRIPT_FILE)
-        logging.info(f"writing {scr_path}")
+        bar_and_log(bar, f"writing {scr_path}")
         if len(script_string) > 0:
             with open(scr_path, "w") as myfile:
                 myfile.write(f"{script_string}{os.linesep}")
