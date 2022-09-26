@@ -381,5 +381,5 @@ for lib in lib_array:
         scr_path = Path(POSTER_DIR, lib.replace(" ", "") + "-" + SCRIPT_FILE)
         bar_and_log(bar, f"writing {scr_path}")
         if len(script_string) > 0:
-            with open(scr_path, "w") as myfile:
+            with open(scr_path, "w", encoding='utf-8') as myfile:
                 myfile.write(f"{script_string}{os.linesep}")

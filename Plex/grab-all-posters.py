@@ -459,5 +459,5 @@ for lib in lib_array:
     if not POSTER_DOWNLOAD:
         scr_path = os.path.join(tgt_dir, SCRIPT_FILE)
         if len(script_string) > 0:
-            with open(scr_path, "w") as myfile:
+            with open(scr_path, "w", encoding='utf-8') as myfile:
                 myfile.write(f"{script_string}{os.linesep}")

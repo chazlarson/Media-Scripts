@@ -123,5 +123,6 @@ for plex_user in all_users:
 
     print(f"{os.linesep}")
     if len(file_string) > 0:
-        with open(f"status.txt", 'w') as myfile:
+        with open(f"status.txt", 'w', encoding='utf-8') as myfile:
             myfile.write(f"{file_string}{os.linesep}")
+

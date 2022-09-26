@@ -95,7 +95,7 @@ for lib in lib_array:
                             item.removeLabel(lbl, True)
 
                         # write out item_array to file.
-                        with open(status_file, "a") as sf:
+                        with open(status_file, "a", encoding='utf-8') as sf:
                             sf.write(f"{item.ratingKey}{os.linesep}")
 
                         if item.TYPE == 'show':
