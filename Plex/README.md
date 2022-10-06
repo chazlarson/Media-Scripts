@@ -19,6 +19,11 @@ TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetv
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
 PLEX_TOKEN=PLEX-TOKEN
 PLEX_OWNER=yournamehere                      # account name of the server owner
+TARGET_PLEX_URL=https://plex.domain2.tld     # As above, the target of apply_all_status
+TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO             # As above, the target of apply_all_status
+TARGET_PLEX_OWNER=yournamehere               # As above, the target of apply_all_status
+LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
+                                             # In apply_all_status, map libraries according to this JSON.
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
@@ -429,8 +434,22 @@ This script reads the file produces by the previous script and applies the watch
 
 Script-specific variables in .env:
 ```
-NONE
+TARGET_PLEX_URL=https://plex.domain2.tld
+TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO
+TARGET_PLEX_OWNER=yournamehere
+LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
 ```
+
+These values are for the TARGET of this script; this is easier than requiring you to edit the PLEX_URL, etc, when running the script.
+
+If the target Plex has different library names, you can map one to the other in LIBRARY_MAP.
+
+For example, if the TV library on the source Plex is called "TV - 1080p" and on the target Plex it's "TV Shows on SpoonFlix", you'd map that with:
+
+```
+LIBRARY_MAP={"TV - 1080p":"TV Shows on SpoonFlix"}
+```
+And any records from the status.txt file that came from the "TV - 1080p" library on the source Plex would get applied to the "TV Shows on SpoonFlix" library on the target.
 
 ### Usage
 1. setup as above
@@ -462,7 +481,7 @@ KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collec
 2. Run with `python delete_collections.py`
 
 ```
-39 collection(s) retrieved...
+39 collection(s) retrieved...****
 Collection delete - Plex |█████████▎                              | ▂▄▆ 9/39 [23%] in 14s (0.6/s, eta: 27s)
 -> deleting: 98 Best Action Movies Of All Time
 ```
