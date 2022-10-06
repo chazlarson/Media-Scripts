@@ -56,6 +56,7 @@ ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve O
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
+1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
 1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 
@@ -464,6 +465,51 @@ Searching for It Comes at Night                                                 
 ```
 
 There might be a problem with special characters in titles.
+
+
+## show-all-playlists.py
+
+Perhaps you want to creep on your users and see what they have on their playlists
+
+This script will list the contents of all playlists users have created [except the owner's, since you already have access to those].
+
+Script-specific variables in .env:
+```
+NONE
+```
+
+****
+### Usage
+1. setup as above
+2. Run with `python show-all-playlists.py`
+
+```
+connecting to https://cp1.DOMAIN.TLD...
+
+------------ ozzy ------------
+------------ ozzy playlist: Abbott Elementary ------------
+episode - Abbott Elementary s01e01 Pilot
+episode - Abbott Elementary s01e02 Light Bulb
+episode - Abbott Elementary s01e03 Wishlist
+episode - Abbott Elementary s01e04 New Tech
+episode - Abbott Elementary s01e05 Student Transfer
+episode - Abbott Elementary s01e06 Gifted Program
+episode - Abbott Elementary s01e07 Art Teacher
+------------ ozzy playlist: The Bear ------------
+episode - The Bear s01e01 System
+episode - The Bear s01e02 Hands
+...
+------------ tony ------------
+------------ tony playlist: Specials ------------
+movie   - Comedy Central Roast of James Franco
+movie   - Comedy Central Roast of Justin Bieber
+movie   - Comedy Central Roast of Bruce Willis
+------------ tony playlist: Ted ------------
+movie   - Ted
+movie   - The Invisible Man
+movie   - Ace Ventura: When Nature Calls
+...
+```
 
 ## delete_collections.py
 
