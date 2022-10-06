@@ -177,7 +177,7 @@ If "NAME_IN_TITLE" is `1`, files will have titles in their names:
 ```
 13 Reasons Why (2017) {tvdb-323168}-poster.jpg
 13 Reasons Why (2017) {tvdb-323168}-background.jpg
-``****`
+```
 `PLEX_PATHS=0`:
 ```
 13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-poster.jpg
