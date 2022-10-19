@@ -7,15 +7,11 @@ import textwrap
 # from tmdbapis import TMDbAPIs
 from timeit import default_timer as timer
 import time
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 start = timer()
 
 load_dotenv()
-
-def boolean_string(s):
-    if s not in {'False', 'True'}:
-        raise ValueError('Not a valid boolean string')
-    return s == 'True'
 
 PLEX_URL = os.getenv('PLEX_URL')
 
@@ -28,9 +24,9 @@ LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 TARGET_LABELS = os.getenv('TARGET_LABELS')
 TRACK_RESET_STATUS = os.getenv('TRACK_RESET_STATUS')
-REMOVE_LABELS = boolean_string(os.getenv('REMOVE_LABELS'))
-RESET_SEASONS = boolean_string(os.getenv('RESET_SEASONS'))
-RESET_EPISODES = boolean_string(os.getenv('RESET_EPISODES'))
+REMOVE_LABELS = booler(os.getenv('REMOVE_LABELS'))
+RESET_SEASONS = booler(os.getenv('RESET_SEASONS'))
+RESET_EPISODES = booler(os.getenv('RESET_EPISODES'))
 
 DELAY = 0
 try:

@@ -1,4 +1,4 @@
-from xmlrpc.client import Boolean
+
 from plexapi.server import PlexServer
 from plexapi.utils import download
 import os
@@ -9,7 +9,7 @@ import textwrap
 from tmdbapis import TMDbAPIs
 import requests
 from pathlib import Path, PurePath
-from pathvalidate import is_valid_filename, sanitize_filename
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 load_dotenv()
 
@@ -19,8 +19,8 @@ LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
 POSTER_DIR = os.getenv('POSTER_DIR')
 POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
-POSTER_DOWNLOAD =  Boolean(int(os.getenv('POSTER_DOWNLOAD')))
-POSTER_CONSOLIDATE =  Boolean(int(os.getenv('POSTER_CONSOLIDATE')))
+POSTER_DOWNLOAD =  booler(os.getenv('POSTER_DOWNLOAD'))
+POSTER_CONSOLIDATE =  booler(os.getenv('POSTER_CONSOLIDATE'))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
@@ -39,19 +39,6 @@ imdb_str = 'imdb://'
 tmdb_str = 'tmdb://'
 tvdb_str = 'tvdb://'
 
-def getTID(theList):
-    imdbid = None
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if imdb_str in guid.id:
-            imdbid = guid.id.replace(imdb_str,'')
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
-    return imdbid, tmid, tvid
-
 def progress(count, total, status=''):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
@@ -63,13 +50,6 @@ def progress(count, total, status=''):
     sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
     sys.stdout.flush()
 
-
-def validate_filename(filename):
-    if is_valid_filename(filename):
-        return filename, None
-    else:
-        mapping_name = sanitize_filename(filename)
-        return mapping_name, f"Log Folder Name: {filename} is invalid using {mapping_name}"
 
 all_items = []
 

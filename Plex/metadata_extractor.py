@@ -7,6 +7,7 @@ from tmdbapis import TMDbAPIs
 import requests
 import pathlib
 from timeit import default_timer as timer
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 # // TODO: improved error handling
 # // TODO: TV Theme tunes
@@ -47,16 +48,6 @@ movie_dir = f"{local_dir}/movies"
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
-    return tmid, tvid
-
 def progress(count, total, status=''):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
@@ -82,7 +73,7 @@ print(f"looping over {item_total} items...")
 item_count = 1
 for item in items:
     tmpDict = {}
-    tmdb_id, tvdb_id = getTID(item.guids)
+    imdb_id, tmdb_id, tvdb_id = getTID(item.guids)
     item_count = item_count + 1
     try:
         progress(item_count, item_total, item.title)

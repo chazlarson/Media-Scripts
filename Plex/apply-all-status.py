@@ -1,4 +1,4 @@
-from xmlrpc.client import Boolean
+
 from plexapi.server import PlexServer
 from plexapi.utils import download
 import os
@@ -11,6 +11,7 @@ import requests
 from pathlib import Path, PurePath
 from pathvalidate import is_valid_filename, sanitize_filename
 from alive_progress import alive_bar
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 load_dotenv()
 
@@ -32,14 +33,6 @@ def progress(count, total, status=''):
 
     sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
     sys.stdout.flush()
-
-
-def validate_filename(filename):
-    if is_valid_filename(filename):
-        return filename, None
-    else:
-        mapping_name = sanitize_filename(filename)
-        return mapping_name, f"Log Folder Name: {filename} is invalid using {mapping_name}"
 
 def get_user_acct(acct_list, username):
     for acct in acct_list:

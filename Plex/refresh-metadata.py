@@ -1,4 +1,4 @@
-from xmlrpc.client import Boolean
+
 from plexapi.server import PlexServer
 from plexapi.utils import download
 import os
@@ -9,11 +9,11 @@ import time
 from tmdbapis import TMDbAPIs
 import requests
 from pathlib import Path, PurePath
-from pathvalidate import is_valid_filename, sanitize_filename
 import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
+from helpers import booler, redact, getTID, validate_filename, getPath
 
 load_dotenv()
 
@@ -35,16 +35,6 @@ else:
 tmdb_str = 'tmdb://'
 tvdb_str = 'tvdb://'
 
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
-    return tmid, tvid
-
 def progress(count, total, status=''):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
@@ -55,15 +45,6 @@ def progress(count, total, status=''):
 
     sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
     sys.stdout.flush()
-
-def validate_filename(filename):
-    if is_valid_filename(filename):
-        return filename, None
-    else:
-        mapping_name = sanitize_filename(filename)
-        stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
-        logging.info(stat_string)
-        return mapping_name, stat_string
 
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")

@@ -46,6 +46,7 @@ RESET_EPISODES=True                          # reset-posters-plex resets episode
 KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
 INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
 ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
 ```
 
 ## Scripts:
@@ -95,6 +96,7 @@ Script-specific variables in .env:
 TRACK_RESET_STATUS=True                         # pick up where the script left off
 TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
 REMOVE_LABELS=True                              # remove labels when done [NOT RECOMMENDED]
+LOCAL_RESET_ARCHIVE=True                        # keep a local archive of posters
 ```
 
 If you set:
@@ -103,7 +105,7 @@ TRACK_RESET_STATUS=True
 ```
 The script will keep track of where it is and will pick up at that point on subsequent runs.  This is useful in the event of a lost connection to Plex.
 
-Once it gets to the end of hte library successfully, the tracking file is deleted.
+Once it gets to the end of the library successfully, the tracking file is deleted.
 
 If you specify a comma-separated list of labels in the env file:
 ```
@@ -118,6 +120,12 @@ REMOVE_LABELS=True
 The script will *attempt* to remove those labels after resetting the poster.  I say "attempt" since in testing I have experienced an odd situation where no error occurs but the label is not removed.  My test library of 230 4K-Dolby Movies contains 47 that fail in this way; every run it goes through the 47 movies "removing labels" without error yet they still have the labels on the next run.
 
 Besides that Heisenbug, I don't recommend using this [`REMOVE_LABELS`] since the label removal takes a long time [dozens of seconds per item].  Doing this through the Plex UI is much faster.
+
+If you set:
+```
+LOCAL_RESET_ARCHIVE=False
+```
+The script will set the artwork by sending the TMDB URL to Plex, without downloading the file locally first.
 
 ### Usage
 1. setup as above
