@@ -135,6 +135,7 @@ for lib in lib_array:
                                         tmdb_item = tmdb.tv_show(tmdb_id)
                                     else:
                                         tmdb_item = tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].poster_path
+                                    tmdb_item.reload()
                                     pp = tmdb_item.poster_path
                                 except:
                                     pp = None
@@ -151,7 +152,7 @@ for lib in lib_array:
                                     pp = None
 
                         if pp is not None:
-                            posterURL = f"{base_url}{size_str}{pp}"
+                            seriesPosterURL = f"{base_url}{size_str}{pp}"
 
                             if LOCAL_RESET_ARCHIVE:
                                 if local_file is None or not os.path.exists(local_file):
@@ -160,98 +161,102 @@ for lib in lib_array:
                                     bar.text = f'-> downloading poster: {item.title}'
 
                                 if not os.path.exists(local_file):
-                                    r = requests.get(posterURL, allow_redirects=True)
+                                    r = requests.get(seriesPosterURL, allow_redirects=True)
                                     open(f"{local_file}", 'wb').write(r.content)
 
                                 bar.text = f'-> uploading poster: {item.title}'
                                 item.uploadPoster(filepath=local_file)
                             else:
                                 bar.text = f'-> setting poster URL: {item.title}'
-                                item.uploadPoster(url=posterURL)
+                                item.uploadPoster(url=seriesPosterURL)
 
-                            # if item.TYPE == 'show':
+                            if item.TYPE == 'show':
 
-                            #     if RESET_SEASONS:
-                            #         # get seasons
-                            #         seasons = item.seasons()
-                            #         tmdb_seasons = tmdb_item.seasons
+                                if RESET_SEASONS:
+                                    # get seasons
+                                    seasons = item.seasons()
+                                    tmdb_seasons = tmdb_item.seasons
 
-                            #         # loop over all:
-                            #         s_idx = 0
-                            #         for s in seasons:
-                            #             s_id = s.seasonNumber
-                            #             s_found = False
+                                    # loop over all:
+                                    s_idx = 0
+                                    for s in seasons:
+                                        s_id = s.seasonNumber
+                                        s_found = False
 
-                            #             for ss in tmdb_seasons:
+                                        for ss in tmdb_seasons:
+                                            ss.reload()
 
-                            #                 if ss.season_number == s_id and not s_found:
-                            #                     s_found = True
+                                            if ss.season_number == s_id and not s_found:
+                                                s_found = True
 
-                            #                     if tmdb_id:
-                            #                         tmdb_episodes = tmdb.tv_show(tmdb_id).seasons[s_idx].episodes
-                            #                     else:
-                            #                         tmdb_episodes = tmdb.find_by_id(tvdb_id=tvdb_id).tv_results[0].seasons[s_idx].episodes
+                                                tmdb_episodes = ss.episodes
 
+                                                pp = ss.poster_path
+                                                if pp is None:
+                                                    posterURL = seriesPosterURL
+                                                    pp = posterURL.rsplit('/', 1)[-1]
+                                                else:
+                                                    posterURL = f"{base_url}{size_str}{pp}"
+                                                local_file = localFilePath(tgt_dir, f"{i_rk}-S{s_id}")
 
-                            #                     pp = ss.poster_path
+                                                if LOCAL_RESET_ARCHIVE:
+                                                    if local_file is None or not os.path.exists(local_file):
+                                                        ext = pathlib.Path(pp).suffix
+                                                        local_file = os.path.join(tgt_dir, f"{i_rk}-S{s_id}{ext}")
+                                                        bar.text = f'-> downloading poster: {item.title} S{s_id}'
 
-                            #                     posterURL = f"{base_url}{size_str}{pp}"
-                            #                     local_file = localFilePath(tgt_dir, f"{i_rk}-S{s_id}")
+                                                    if not os.path.exists(local_file):
+                                                        r = requests.get(posterURL, allow_redirects=True)
+                                                        open(f"{local_file}", 'wb').write(r.content)
 
-                            #                     if LOCAL_RESET_ARCHIVE:
-                            #                         if local_file is None or not os.path.exists(local_file):
-                            #                             ext = pathlib.Path(pp).suffix
-                            #                             local_file = os.path.join(tgt_dir, f"{i_rk}-S{s_id}.{ext}")
-                            #                             bar.text = f'-> downloading poster: {item.title} S{s_id}'
+                                                    bar.text = f'-> uploading poster: {item.title} S{s_id}'
+                                                    s.uploadPoster(filepath=local_file)
+                                                else:
+                                                    bar.text = f'-> setting poster URL: {item.title} S{s_id}'
+                                                    s.uploadPoster(url=posterURL)
 
-                            #                         if not os.path.exists(local_file):
-                            #                             r = requests.get(posterURL, allow_redirects=True)
-                            #                             open(f"{local_file}", 'wb').write(r.content)
+                                                if RESET_EPISODES:
+                                                    # get episodes
+                                                    episodes = s.episodes()
 
-                            #                         bar.text = f'-> uploading poster: {item.title} S{s_id}'
-                            #                         s.uploadPoster(filepath=local_file)
-                            #                     else:
-                            #                         bar.text = f'-> setting poster URL: {item.title} S{s_id}'
-                            #                         s.uploadPoster(url=posterURL)
+                                                    if len(episodes) == len(tmdb_episodes):
+                                                        # loop over all
+                                                        e_idx = 0
+                                                        for e in episodes:
+                                                            e_id = e.episodeNumber
+                                                            e_found = False
 
-                            #                     if RESET_EPISODES:
-                            #                         # get episodes
-                            #                         episodes = item.episodes()
+                                                            if e.seasonNumber == s_id and not e_found:
+                                                                tmdb_ep = tmdb_episodes[e_idx]
 
-                            #                         # loop over all
-                            #                         e_found = False
-                            #                         e_idx = 0
-                            #                         for e in episodes:
-                            #                             e_id = e.episodeNumber
+                                                                if tmdb_ep.episode_number == e_id and tmdb_ep.season_number == s_id:
+                                                                    e_found = True
+                                                                    pp = tmdb_ep.still_path
+                                                                    if pp is not None:
+                                                                        posterURL = f"{base_url}{size_str}{pp}"
+                                                                        local_file = localFilePath(tgt_dir, f"{i_rk}-S{s_id}E{e_id}")
 
-                            #                             if e.seasonNumber == s_id:
-                            #                                 tmdb_ep = tmdb_episodes[e_idx]
+                                                                        if LOCAL_RESET_ARCHIVE:
+                                                                            if local_file is None or not os.path.exists(local_file):
+                                                                                ext = pathlib.Path(pp).suffix
+                                                                                local_file = os.path.join(tgt_dir, f"{i_rk}-S{s_id}E{e_id}.{ext}")
+                                                                                bar.text = f'-> downloading poster: {item.title} S{s_id}E{e_id}'
 
-                            #                                 if tmdb_ep.episode_number == e_id and tmdb_ep.season_number == s_id and not e_found:
-                            #                                     e_found = True
-                            #                                     pp = tmdb_ep.still_path
-                            #                                     posterURL = f"{base_url}{size_str}{pp}"
-                            #                                     local_file = localFilePath(tgt_dir, f"{i_rk}-S{s_id}E{e_id}")
+                                                                            if not os.path.exists(local_file):
+                                                                                r = requests.get(posterURL, allow_redirects=True)
+                                                                                open(f"{local_file}", 'wb').write(r.content)
 
-                            #                                     if LOCAL_RESET_ARCHIVE:
-                            #                                         if local_file is None or not os.path.exists(local_file):
-                            #                                             ext = pathlib.Path(pp).suffix
-                            #                                             local_file = os.path.join(tgt_dir, f"{i_rk}-S{s_id}E{e_id}.{ext}")
-                            #                                             bar.text = f'-> downloading poster: {item.title} S{s_id}E{e_id}'
+                                                                            bar.text = f'-> uploading poster: {item.title} S{s_id}E{e_id}'
+                                                                            e.uploadPoster(filepath=local_file)
+                                                                        else:
+                                                                            bar.text = f'-> setting poster URL: {item.title} S{s_id}E{e_id}'
+                                                                            e.uploadPoster(url=posterURL)
 
-                            #                                         if not os.path.exists(local_file):
-                            #                                             r = requests.get(posterURL, allow_redirects=True)
-                            #                                             open(f"{local_file}", 'wb').write(r.content)
+                                                                e_idx += 1
+                                                    else:
+                                                        print(f"Episode count mismatch for {item.title} S{s.seasonNumber}: Plex: {len(episodes)} vs TMDB: {len(tmdb_episodes)}")
 
-                            #                                         bar.text = f'-> uploading poster: {item.title} S{s_id}E{e_id}'
-                            #                                         e.uploadPoster(filepath=local_file)
-                            #                                     else:
-                            #                                         bar.text = f'-> setting poster URL: {item.title} S{s_id}E{e_id}'
-                            #                                         e.uploadPoster(url=posterURL)
-
-                            #                             e_idx += 1
-
-                            #             s_idx += 1
+                                        s_idx += 1
                         else:
                             bar.text = f'-> unknown type: {item.title}'
 

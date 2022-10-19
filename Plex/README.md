@@ -96,6 +96,8 @@ Script-specific variables in .env:
 TRACK_RESET_STATUS=True                         # pick up where the script left off
 TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
 REMOVE_LABELS=True                              # remove labels when done [NOT RECOMMENDED]
+RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
+RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 LOCAL_RESET_ARCHIVE=True                        # keep a local archive of posters
 ```
 
@@ -106,6 +108,8 @@ TRACK_RESET_STATUS=True
 The script will keep track of where it is and will pick up at that point on subsequent runs.  This is useful in the event of a lost connection to Plex.
 
 Once it gets to the end of the library successfully, the tracking file is deleted.
+
+If you want to reset the progress tracking and start from the beginning for some reason, delete a file named something like `8c9d8955-b414-4f35-98a4-8f3f26d0249c.txt` in the same directory as this script.  The file name is the internal UUID of the library being processed.
 
 If you specify a comma-separated list of labels in the env file:
 ```
@@ -125,11 +129,23 @@ If you set:
 ```
 LOCAL_RESET_ARCHIVE=False
 ```
-The script will set the artwork by sending the TMDB URL to Plex, without downloading the file locally first.
+The script will set the artwork by sending the TMDB URL to Plex, without downloading the file locally first.  This means a faster run compared to the initial run when downloading.
+
+Example timings on a test library of 1140 TV Shows, resetting artwork for Show-Season-Episode level:
+
+1. No downloading: 1 hour 25 minutes
+1. With downloading: 2 hours 30 minutes
+2. Second run with downloaded archive: 1 hours 10 minutes
+
+That is on a system with a 1G connection up and down, so values are just relative ot each other.
+
+The value of the local archive is that if you want to replace some of those images with your own, it provides a simple way to update all the posters in a library to custom posters of your own.  When teh script runs, it looks at that archive first, only downloading an image if one doesn't exist in the archive.
+
+If you're just looking to reset as a one-off, that may not have value.
 
 ### Usage
 1. setup as above
-2. Run with `python reset-posters.py`
+2. Run with `python reset-posters-tmdb.py`
 
 ```
 tmdb config...
