@@ -2,35 +2,34 @@ from alive_progress import alive_bar
 from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv
-import sys
-import textwrap
-# from tmdbapis import TMDbAPIs
+
 from timeit import default_timer as timer
 import time
-from helpers import booler, redact, getTID, validate_filename, getPath
+from helpers import booler
+from pathlib import Path
 
 start = timer()
 
 load_dotenv()
 
-PLEX_URL = os.getenv('PLEX_URL')
+PLEX_URL = os.getenv("PLEX_URL")
 
 if PLEX_URL is None:
     print("Your .env file is incomplete or missing: PLEX_URL is empty")
     exit()
 
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-LIBRARY_NAME = os.getenv('LIBRARY_NAME')
-LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
-TARGET_LABELS = os.getenv('TARGET_LABELS')
-TRACK_RESET_STATUS = os.getenv('TRACK_RESET_STATUS')
-REMOVE_LABELS = booler(os.getenv('REMOVE_LABELS'))
-RESET_SEASONS = booler(os.getenv('RESET_SEASONS'))
-RESET_EPISODES = booler(os.getenv('RESET_EPISODES'))
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+TARGET_LABELS = os.getenv("TARGET_LABELS")
+TRACK_RESET_STATUS = os.getenv("TRACK_RESET_STATUS")
+REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
+RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
+RESET_EPISODES = booler(os.getenv("RESET_EPISODES"))
 
 DELAY = 0
 try:
-    DELAY = int(os.getenv('DELAY'))
+    DELAY = int(os.getenv("DELAY"))
 except:
     DELAY = 0
 
@@ -43,8 +42,6 @@ if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
-
-from pathlib import Path
 
 print(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
@@ -64,50 +61,56 @@ for lib in lib_array:
             items = plex.library.section(lib).all()
             REMOVE_LABELS = False
         else:
-            print(f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]...")
+            print(
+                f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]..."
+            )
             items = plex.library.section(lib).search(label=lbl)
         item_total = len(items)
         print(f"{item_total} item(s) retrieved...")
         item_count = 1
-        with alive_bar(item_total, dual_line=True, title='Poster Reset - Plex') as bar:
+        with alive_bar(item_total, dual_line=True, title="Poster Reset - Plex") as bar:
             for item in items:
                 item_count = item_count + 1
                 if id_array.count(f"{item.ratingKey}") == 0:
                     id_array.append(item.ratingKey)
 
                     try:
-                        bar.text = f'-> starting: {item.title}'
+                        bar.text = f"-> starting: {item.title}"
                         pp = None
                         local_file = None
 
-                        bar.text = f'-> getting posters: {item.title}'
+                        bar.text = f"-> getting posters: {item.title}"
                         posters = item.posters()
-                        bar.text = f'-> setting poster: {item.title}'
+                        bar.text = f"-> setting poster: {item.title}"
                         showPoster = posters[0]
                         item.setPoster(showPoster)
 
                         if REMOVE_LABELS:
-                            bar.text = f'-> removing label {lbl}: {item.title}'
+                            bar.text = f"-> removing label {lbl}: {item.title}"
                             item.removeLabel(lbl, True)
 
                         # write out item_array to file.
-                        with open(status_file, "a", encoding='utf-8') as sf:
+                        with open(status_file, "a", encoding="utf-8") as sf:
                             sf.write(f"{item.ratingKey}{os.linesep}")
 
-                        if item.TYPE == 'show':
+                        if item.TYPE == "show":
                             if RESET_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()
                                 # loop over all:
                                 for s in seasons:
                                     # reset artwork
-                                    bar.text = f'-> getting posters: {s.parentTitle}-{s.title}'
+                                    bar.text = (
+                                        f"-> getting posters: {s.parentTitle}-{s.title}"
+                                    )
                                     posters = s.posters()
                                     if len(posters) > 0:
                                         seasonPoster = posters[0]
                                     else:
                                         seasonPoster = showPoster
-                                    bar.text = f'-> setting poster: {s.parentTitle}-{s.title}'
+                                    bar.text = (
+                                        f"-> setting poster: {s.parentTitle}-{s.title}"
+                                    )
                                     s.setPoster(seasonPoster)
 
                                     if RESET_EPISODES:
@@ -117,15 +120,14 @@ for lib in lib_array:
                                         for e in episodes:
                                             # reset artwork
                                             # reset artwork
-                                            bar.text = f'-> getting posters: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}'
+                                            bar.text = f"-> getting posters: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
                                             posters = e.posters()
                                             if len(posters) > 0:
                                                 episodePoster = posters[0]
                                             else:
                                                 episodePoster = showPoster
-                                            bar.text = f'-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}'
+                                            bar.text = f"-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
                                             s.setPoster(episodePoster)
-
 
                     except Exception as ex:
                         print(f'Exception processing "{item.title}"')

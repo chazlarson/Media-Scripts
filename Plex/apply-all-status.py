@@ -1,43 +1,39 @@
-
-from plexapi.server import PlexServer
-from plexapi.utils import download
-import os
 import json
-from dotenv import load_dotenv
+import os
 import re
 import sys
 import textwrap
-import requests
-from pathlib import Path, PurePath
-from pathvalidate import is_valid_filename, sanitize_filename
-from alive_progress import alive_bar
-from helpers import booler, redact, getTID, validate_filename, getPath
+from dotenv import load_dotenv
+from plexapi.server import PlexServer
 
 load_dotenv()
 
-PLEX_URL = os.getenv('TARGET_PLEX_URL')
-PLEX_TOKEN = os.getenv('TARGET_PLEX_TOKEN')
-PLEX_OWNER = os.getenv('TARGET_PLEX_OWNER')
+PLEX_URL = os.getenv("TARGET_PLEX_URL")
+PLEX_TOKEN = os.getenv("TARGET_PLEX_TOKEN")
+PLEX_OWNER = os.getenv("TARGET_PLEX_OWNER")
 
-LIBRARY_MAP = os.getenv('LIBRARY_MAP')
+LIBRARY_MAP = os.getenv("LIBRARY_MAP")
 
 lib_map = json.loads(LIBRARY_MAP)
 
-def progress(count, total, status=''):
+
+def progress(count, total, status=""):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=80)
 
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
+    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
+
 
 def get_user_acct(acct_list, username):
     for acct in acct_list:
         if acct.username == username:
             return acct
+
 
 padwidth = 105
 count = 0
@@ -54,15 +50,15 @@ account = plex.myPlexAccount()
 all_users = account.users()
 item = None
 
-with open(f"status.txt") as fp:
+with open("status.txt") as fp:
     for line in fp:
         item = None
 
         count += 1
 
-        parts = line.split('\t')
+        parts = line.split("\t")
         if len(parts) == 1:
-            continue # this is an error line
+            continue  # this is an error line
 
         #  chazlarson	show	TV Shows - 4K	After Life	s01e01	Episode 1
         #  0            1       2               3           4       5
@@ -84,7 +80,7 @@ with open(f"status.txt") as fp:
             plex_ep = parts[4].strip()
             plex_title = parts[5].strip()
 
-            tmp = re.split('[se]', plex_ep)
+            tmp = re.split("[se]", plex_ep)
             # ['', '01', '14']
             try:
                 plex_season = int(tmp[1])
@@ -94,7 +90,7 @@ with open(f"status.txt") as fp:
         else:
             #  chazlarson	movie	Movies - 4K	10 Things I Hate About You	1999	PG-13
             #  0            1       2           3                           4       5
-            plex_title = parts[3].strip() # Episode 2
+            plex_title = parts[3].strip()  # Episode 2
             plex_year = parts[4].strip()
             plex_rating = parts[5].strip()
 
@@ -112,18 +108,24 @@ with open(f"status.txt") as fp:
                 items = plex.library.section(plex_library)
                 connected_plex_library = plex_library
                 last_library = None
-                print(f"\r{os.linesep}------------ {connected_plex_library}{mapped_from} ------------")
+                print(
+                    f"\r{os.linesep}------------ {connected_plex_library}{mapped_from} ------------"
+                )
             except:
-                if last_library == None:
-                    print(f"\r{os.linesep}------------ Exception connecting to {plex_library} ------------")
+                if last_library is None:
+                    print(
+                        f"\r{os.linesep}------------ Exception connecting to {plex_library} ------------"
+                    )
                     last_library = plex_library
                 connected_plex_library = None
 
-        if connected_plex_library != None:
+        if connected_plex_library is not None:
 
-            if plex_type == 'show':
+            if plex_type == "show":
                 plex_target = f"{plex_series} {plex_ep}"
-                sys.stdout.write(f"\rSearching for unwatched {plex_series}".ljust(padwidth))
+                sys.stdout.write(
+                    f"\rSearching for unwatched {plex_series}".ljust(padwidth)
+                )
                 sys.stdout.flush()
                 if current_show != plex_series:
                     things = items.searchShows(title=plex_series, unwatched=True)
@@ -146,11 +148,15 @@ with open(f"status.txt") as fp:
                             if epi.seasonEpisode == plex_ep:
                                 item = epi
                 else:
-                    sys.stdout.write(f"\rSkipping {plex_target} - show is watched".ljust(padwidth))
+                    sys.stdout.write(
+                        f"\rSkipping {plex_target} - show is watched".ljust(padwidth)
+                    )
                     sys.stdout.flush()
-            elif plex_type == 'movie':
+            elif plex_type == "movie":
                 plex_target = f"{plex_title} ({plex_year})"
-                sys.stdout.write(f"\rSearching for an unwatched {plex_target}".ljust(padwidth))
+                sys.stdout.write(
+                    f"\rSearching for an unwatched {plex_target}".ljust(padwidth)
+                )
                 sys.stdout.flush()
                 things = items.search(title=plex_title, unwatched=True)
                 title_ct = 0
@@ -160,7 +166,7 @@ with open(f"status.txt") as fp:
                 for thing in things:
                     if item is None:
                         title_ct += 1
-                        unWatched = not thing.isWatched;
+                        unWatched = not thing.isWatched
                         if thing.title == plex_title:
                             title_match_ct += 1
                             if thing.year == int(plex_year):
@@ -171,18 +177,34 @@ with open(f"status.txt") as fp:
                                         item = thing
 
                 if title_match_ct > 1:
-                    print(f"\r{title_match_ct} title matches for {plex_title}".ljust(padwidth))
+                    print(
+                        f"\r{title_match_ct} title matches for {plex_title}".ljust(
+                            padwidth
+                        )
+                    )
                 if title_year_ct > 1:
-                    print(f"\r{title_year_ct} title-year matches for {plex_title}".ljust(padwidth))
+                    print(
+                        f"\r{title_year_ct} title-year matches for {plex_title}".ljust(
+                            padwidth
+                        )
+                    )
                 if title_rating_ct > 1:
-                    print(f"\r{title_rating_ct} title-year-rating matches for {plex_title}".ljust(padwidth))
+                    print(
+                        f"\r{title_rating_ct} title-year-rating matches for {plex_title}".ljust(
+                            padwidth
+                        )
+                    )
             else:
                 print(f"Unknown type: {plex_type}")
 
             if item is not None:
                 # print(f"\rPicked {item.title} - {item.year} - {item.contentRating} for {plex_title}".ljust(padwidth))
                 if not item.isWatched:
-                    print(f"\rMarked watched for {connected_plex_user} - {plex_target}".ljust(padwidth))
+                    print(
+                        f"\rMarked watched for {connected_plex_user} - {plex_target}".ljust(
+                            padwidth
+                        )
+                    )
                     item.markWatched()
                 # else:
                 #     print(f"\rAlready marked watched for {connected_plex_user}")

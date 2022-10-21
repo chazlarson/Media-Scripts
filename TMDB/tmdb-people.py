@@ -1,28 +1,20 @@
-import tmdbsimple as tmdb
 import requests
 from dotenv import load_dotenv
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
 import os
-import sys
-import textwrap
 from tmdbapis import TMDbAPIs
-import requests
-import pathlib
 from pathlib import Path
-import platform
 from timeit import default_timer as timer
-import time
 
 start = timer()
 
 load_dotenv()
 
-TMDB_KEY = os.getenv('TMDB_KEY')
-POSTER_DIR = os.getenv('POSTER_DIR')
+TMDB_KEY = os.getenv("TMDB_KEY")
+POSTER_DIR = os.getenv("POSTER_DIR")
 PERSON_DEPTH = 0
 try:
-    PERSON_DEPTH = int(os.getenv('PERSON_DEPTH'))
+    PERSON_DEPTH = int(os.getenv("PERSON_DEPTH"))
 except:
     PERSON_DEPTH = 0
 
@@ -30,7 +22,7 @@ except:
 TMDb = TMDbAPIs(TMDB_KEY, language="en")
 
 image_path = POSTER_DIR
-people_name_file = 'people_list.txt'
+people_name_file = "people_list.txt"
 
 items = []
 
@@ -42,6 +34,7 @@ if people_file.is_file():
             items.append(line.strip())
 
 idx = 1
+
 
 def save_image(person, idx, UPPER):
 
@@ -62,9 +55,9 @@ def save_image(person, idx, UPPER):
 item_total = len(items)
 print(f"{item_total} item(s) retrieved...")
 item_count = 1
-with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
+with alive_bar(item_total, dual_line=True, title="TMDB people") as bar:
     for item in items:
-        bar.text = f'->   starting: {item}'
+        bar.text = f"->   starting: {item}"
         item_count = item_count + 1
 
         try:
@@ -76,7 +69,7 @@ with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
             try:
                 results = TMDb.people_search(str(item))
                 if not results:
-                    bar.text = f'->  NOT FOUND: {item}'
+                    bar.text = f"->  NOT FOUND: {item}"
                     continue
 
                 idx = 0
@@ -85,7 +78,7 @@ with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
                 if len(results) < PERSON_DEPTH:
                     UPPER = len(results)
 
-                for i in range(0,UPPER):
+                for i in range(0, UPPER):
                     try:
                         person = results[i]
                         idx = idx + 1
@@ -93,10 +86,8 @@ with alive_bar(item_total, dual_line=True, title='TMDB people') as bar:
                         save_image(person, idx, UPPER)
 
                     except Exception as ex:
-                        print(f'->  exception: {item} - {ex.args[0]}')
+                        print(f"->  exception: {item} - {ex.args[0]}")
             except Exception as ex:
-                print(f'->  exception: {item} - {ex.args[0]}')
+                print(f"->  exception: {item} - {ex.args[0]}")
 
             bar()
-
-

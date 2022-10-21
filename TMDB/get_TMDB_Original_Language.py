@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 import sys
 import textwrap
 from tmdbapis import TMDbAPIs
-import requests
-import pathlib
 from pathlib import Path
 from timeit import default_timer as timer
 import time
@@ -17,16 +15,16 @@ start = timer()
 
 load_dotenv()
 
-PLEX_URL = os.getenv('PLEX_URL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-PMM_CACHE = os.getenv('PMM_CACHE')
-INPUT_FILES = os.getenv('INPUT_FILES')
-LIBRARY_NAME = os.getenv('LIBRARY_NAME')
-LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
-TMDB_KEY = os.getenv('TMDB_KEY')
-TVDB_KEY = os.getenv('TVDB_KEY')
-REMOVE_LABELS = os.getenv('REMOVE_LABELS')
-DELAY = int(os.getenv('DELAY'))
+PLEX_URL = os.getenv("PLEX_URL")
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+PMM_CACHE = os.getenv("PMM_CACHE")
+INPUT_FILES = os.getenv("INPUT_FILES")
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+TMDB_KEY = os.getenv("TMDB_KEY")
+TVDB_KEY = os.getenv("TVDB_KEY")
+REMOVE_LABELS = os.getenv("REMOVE_LABELS")
+DELAY = int(os.getenv("DELAY"))
 
 if not DELAY:
     DELAY = 0
@@ -51,9 +49,9 @@ delim = "\t"
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-tmdb_str = 'tmdb://'
-tvdb_str = 'tvdb://'
-imdb_str = 'imdb://'
+tmdb_str = "tmdb://"
+tvdb_str = "tvdb://"
+imdb_str = "imdb://"
 
 local_dir = f"{os.getcwd()}/posters"
 
@@ -65,8 +63,20 @@ movie_dir = f"{local_dir}/movies"
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
+
 class Plex_item:
-    def __init__(self, Part_File, Part_File_Combined, Title, Country, Audio_Stream_Language, Audio_Stream_Title, IMDB_ID, TMDB_ID, TVDB_ID):
+    def __init__(
+        self,
+        Part_File,
+        Part_File_Combined,
+        Title,
+        Country,
+        Audio_Stream_Language,
+        Audio_Stream_Title,
+        IMDB_ID,
+        TMDB_ID,
+        TVDB_ID,
+    ):
         self._Part_File = Part_File
         self._Part_File_Combined = Part_File_Combined
         self._Title = Title
@@ -90,7 +100,7 @@ class Plex_item:
                 self._IMDB_ID,
                 self._TMDB_ID,
                 self._TVDB_ID,
-                self._Original_Language
+                self._Original_Language,
             ]
         )
 
@@ -136,7 +146,7 @@ class Plex_item:
 
     @property
     def Audio_Stream_Title(self):
-        return self._Audio_Stream_Title,
+        return (self._Audio_Stream_Title,)
 
     @Audio_Stream_Title.setter
     def Audio_Stream_Title(self, a):
@@ -144,7 +154,7 @@ class Plex_item:
 
     @property
     def IMDB_ID(self):
-        return self._IMDB_ID,
+        return (self._IMDB_ID,)
 
     @IMDB_ID.setter
     def IMDB_ID(self, a):
@@ -152,7 +162,7 @@ class Plex_item:
 
     @property
     def TMDB_ID(self):
-        return self._TMDB_ID,
+        return (self._TMDB_ID,)
 
     @TMDB_ID.setter
     def TMDB_ID(self, a):
@@ -160,7 +170,7 @@ class Plex_item:
 
     @property
     def TVDB_ID(self):
-        return self._TVDB_ID,
+        return (self._TVDB_ID,)
 
     @TVDB_ID.setter
     def TVDB_ID(self, a):
@@ -174,17 +184,18 @@ class Plex_item:
     def Original_Language(self, a):
         self._Original_Language = a
 
+
 def getTID(theList):
     tmid = None
     tvid = None
     imdbid = None
     for guid in theList:
         if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str,'')
+            tmid = guid.id.replace(tmdb_str, "")
         if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str,'')
+            tvid = guid.id.replace(tvdb_str, "")
         if imdb_str in guid.id:
-            imdbid = guid.id.replace(imdb_str,'')
+            imdbid = guid.id.replace(imdb_str, "")
     return tmid, tvid, imdbid
 
 
@@ -202,6 +213,7 @@ def getHeaders():
 
     return headers
 
+
 def writeResults(itemList, lib):
 
     output_name = f"./{lib}-output.txt"
@@ -212,8 +224,21 @@ def writeResults(itemList, lib):
         for item in itemList:
             wr.writerow(list(item))
 
-def getPlexItem(fname, full_path, title, countries, streams, streamTitles, imdb_id, tmdb_id, tvdb_id):
-    pi = Plex_item(fname, full_path, title, countries, streams, streamTitles, imdb_id, tmdb_id, tvdb_id)
+
+def getPlexItem(
+    fname, full_path, title, countries, streams, streamTitles, imdb_id, tmdb_id, tvdb_id
+):
+    pi = Plex_item(
+        fname,
+        full_path,
+        title,
+        countries,
+        streams,
+        streamTitles,
+        imdb_id,
+        tmdb_id,
+        tvdb_id,
+    )
 
     tmThing = getTMDBItem(pi)
 
@@ -224,19 +249,24 @@ def getPlexItem(fname, full_path, title, countries, streams, streamTitles, imdb_
 
     return pi
 
+
 def getTMDBItem(theItem):
 
     isShow = False
     try:
-        isShow = theItem.TYPE == 'show'
+        isShow = theItem.TYPE == "show"
     except:
-        isShow = not ('movie' in theItem.Part_File_Combined)
+        isShow = not ("movie" in theItem.Part_File_Combined)
 
     tmdbItem = None
     try:
         if isShow:
             try:
-                tmdbItem = tmdb.tv_show(theItem.TMDB_ID[0]) if item.TMDB_ID else tmdb.find_by_id(tvdb_id=theItem.TVDB_ID[0]).tv_results[0]
+                tmdbItem = (
+                    tmdb.tv_show(theItem.TMDB_ID[0])
+                    if item.TMDB_ID
+                    else tmdb.find_by_id(tvdb_id=theItem.TVDB_ID[0]).tv_results[0]
+                )
             except:
                 if theItem.tvdb_id is not None:
                     tmdbItem = tmdb.find_by_id(tvdb_id=theItem.TVDB_ID[0]).tv_results[0]
@@ -249,42 +279,39 @@ def getTMDBItem(theItem):
         tmdbItem = None
     return tmdbItem
 
-def getOriginalLanguage(theItem):
 
-    output_name = f"./{lib}-output.txt"
+# def getOriginalLanguage(theItem):
 
-    with open(output_name, "wt") as csv_file:
-        wr = csv.writer(csv_file, delimiter=delim)
-        wr.writerow(list(getHeaders()))
-        for item in itemList:
-            wr.writerow(list(item))
+#     output_name = f"./{lib}-output.txt"
 
-def progress(count, total, status=''):
+
+def progress(count, total, status=""):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=30)
 
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(30)))
+    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
+
 
 print("tmdb config...")
 
 base_url = tmdb.configuration().secure_base_image_url
-size_str = 'original'
+size_str = "original"
 
 item_count = 1
 plex_items = []
 
-if (len(file_array) > 0):
+if len(file_array) > 0:
     for fn in file_array:
         print(f"{os.linesep}getting items from [{fn}]...")
-        item_total = sum(1 for i in open(fn, 'rb'))
+        item_total = sum(1 for i in open(fn, "rb"))
         print(f"looping over {item_total} items...")
         with open(fn) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter='\t')
+            csv_reader = csv.reader(csv_file, delimiter="\t")
             item_count = 0
             for row in csv_reader:
                 if item_count == 0:
@@ -293,14 +320,24 @@ if (len(file_array) > 0):
                     fName = row[0]
                     fPath = row[1]
                     title = row[2]
-                    countries = row[3].split('%')
-                    audioStreams = row[4].split('%')
-                    audioStreamTitles = row[5].split('%')
+                    countries = row[3].split("%")
+                    audioStreams = row[4].split("%")
+                    audioStreamTitles = row[5].split("%")
                     imdb_id = row[6]
                     tmdb_id = row[7]
                     tvdb_id = row[8]
 
-                    pi = getPlexItem(fName, fPath, title, countries, audioStreams, audioStreamTitles, imdb_id, tmdb_id, tvdb_id)
+                    pi = getPlexItem(
+                        fName,
+                        fPath,
+                        title,
+                        countries,
+                        audioStreams,
+                        audioStreamTitles,
+                        imdb_id,
+                        tmdb_id,
+                        tvdb_id,
+                    )
 
                     item_count += 1
 
@@ -345,14 +382,24 @@ else:
                             audioStreams.append(stream.language)
                             audioStreamTitles.append(stream.displayTitle)
 
-                    pi = getPlexItem(Path(filePath).name, filePath, title, countries, audioStreams, audioStreamTitles, imdb_id, tmdb_id, tvdb_id)
+                    pi = getPlexItem(
+                        Path(filePath).name,
+                        filePath,
+                        title,
+                        countries,
+                        audioStreams,
+                        audioStreamTitles,
+                        imdb_id,
+                        tmdb_id,
+                        tvdb_id,
+                    )
 
                     plex_items.append(pi)
 
                     progress(item_count, item_total, pi.title)
 
                 except Exception as ex:
-                    progress(item_count, item_total, "EX: " + item.title)
+                    progress(item_count, item_total, f"EX: {ex} {item.title}")
 
                 # Wait between items in case hammering the Plex server turns out badly.
                 time.sleep(DELAY)

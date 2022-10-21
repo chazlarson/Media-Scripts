@@ -1,65 +1,76 @@
-
 from plexapi.server import PlexServer
-from plexapi.utils import download
 import os
 import json
 from dotenv import load_dotenv
 
 import sys
 import textwrap
-import requests
-from pathlib import Path, PurePath
-from helpers import booler, redact, getTID, validate_filename, getPath
 
 load_dotenv()
 
-PLEX_URL = os.getenv('PLEX_URL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-PLEX_OWNER = os.getenv('PLEX_OWNER')
+PLEX_URL = os.getenv("PLEX_URL")
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+PLEX_OWNER = os.getenv("PLEX_OWNER")
 
-LIBRARY_MAP = os.getenv('LIBRARY_MAP')
+LIBRARY_MAP = os.getenv("LIBRARY_MAP")
 
 lib_map = json.loads(LIBRARY_MAP)
 
-def progress(count, total, status=''):
+
+def progress(count, total, status=""):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=80)
 
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
+    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
+
 
 def get_user_acct(acct_list, username):
     for acct in acct_list:
         if acct.username == username:
             return acct
 
+
 def get_data_line(username, type, section, video):
     file_line = ""
-    if type == 'show':
+    if type == "show":
         file_line = f"{username}\t{type}\t{section}\t{video.grandparentTitle}\t{video.seasonEpisode}\t{video.title}"
-    elif type == 'movie':
+    elif type == "movie":
         file_line = f"{username}\t{type}\t{section}\t{video.title}\t{video.year}\t{video.contentRating}"
     print(file_line)
     return file_line
 
+
 def process_section(ps, user):
     plex_sections = ps.library.sections()
     for plex_section in plex_sections:
-        if plex_section.type != 'artist':
+        if plex_section.type != "artist":
             print(f"------------ {plex_section.title} ------------")
             items = plex.library.section(plex_section.title)
-            if items.type == 'show':
+            if items.type == "show":
                 print("Gathering unwatched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
-                    file_string = file_string + get_data_line(account.username, items.type, plex_section.title, video) + f"{os.linesep}"
-            elif items.type == 'movie':
+                    file_string = (
+                        file_string
+                        + get_data_line(
+                            account.username, items.type, plex_section.title, video
+                        )
+                        + f"{os.linesep}"
+                    )
+            elif items.type == "movie":
                 print("Gathering unwatched movies...")
                 for video in items.search(unwatched=False):
-                    file_string = file_string + get_data_line(account.username, items.type, plex_section.title, video) + f"{os.linesep}"
+                    file_string = (
+                        file_string
+                        + get_data_line(
+                            account.username, items.type, plex_section.title, video
+                        )
+                        + f"{os.linesep}"
+                    )
             else:
                 file_line = f"Unknown type: {items.type}"
                 print(file_line)
@@ -69,6 +80,7 @@ def process_section(ps, user):
             print(file_line)
             file_string = file_string + f"{file_line}{os.linesep}"
     return False
+
 
 padwidth = 95
 count = 0
@@ -88,17 +100,29 @@ print(f"------------ {account.username} ------------")
 try:
     plex_sections = plex.library.sections()
     for plex_section in plex_sections:
-        if plex_section.type != 'artist':
+        if plex_section.type != "artist":
             print(f"------------ {plex_section.title} ------------")
             items = plex.library.section(plex_section.title)
-            if items.type == 'show':
+            if items.type == "show":
                 print("Gathering unwatched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
-                    file_string = file_string + get_data_line(account.username, items.type, plex_section.title, video) + f"{os.linesep}"
-            elif items.type == 'movie':
+                    file_string = (
+                        file_string
+                        + get_data_line(
+                            account.username, items.type, plex_section.title, video
+                        )
+                        + f"{os.linesep}"
+                    )
+            elif items.type == "movie":
                 print("Gathering unwatched movies...")
                 for video in items.search(unwatched=False):
-                    file_string = file_string + get_data_line(account.username, items.type, plex_section.title, video) + f"{os.linesep}"
+                    file_string = (
+                        file_string
+                        + get_data_line(
+                            account.username, items.type, plex_section.title, video
+                        )
+                        + f"{os.linesep}"
+                    )
             else:
                 file_line = f"Unknown type: {items.type}"
                 print(file_line)
@@ -123,15 +147,33 @@ for plex_user in all_users:
 
         plex_sections = user_plex.library.sections()
         for plex_section in plex_sections:
-            if plex_section.type != 'artist':
+            if plex_section.type != "artist":
                 print(f"------------ {plex_section.title} ------------")
                 items = user_plex.library.section(plex_section.title)
-                if items.type == 'show':
+                if items.type == "show":
                     for video in items.searchEpisodes(unwatched=False):
-                        file_string = file_string + get_data_line(plex_user.username, items.type, plex_section.title, video) + f"{os.linesep}"
-                elif items.type == 'movie':
+                        file_string = (
+                            file_string
+                            + get_data_line(
+                                plex_user.username,
+                                items.type,
+                                plex_section.title,
+                                video,
+                            )
+                            + f"{os.linesep}"
+                        )
+                elif items.type == "movie":
                     for video in items.search(unwatched=False):
-                        file_string = file_string + get_data_line(plex_user.username, items.type, plex_section.title, video) + f"{os.linesep}"
+                        file_string = (
+                            file_string
+                            + get_data_line(
+                                plex_user.username,
+                                items.type,
+                                plex_section.title,
+                                video,
+                            )
+                            + f"{os.linesep}"
+                        )
                 else:
                     file_line = f"Unknown type: {items.type}"
                     file_string = file_string + f"{file_line}{os.linesep}"
@@ -147,6 +189,5 @@ for plex_user in all_users:
 
 print(f"{os.linesep}")
 if len(file_string) > 0:
-    with open(f"status.txt", 'w', encoding='utf-8') as myfile:
+    with open("status.txt", "w", encoding="utf-8") as myfile:
         myfile.write(f"{file_string}{os.linesep}")
-

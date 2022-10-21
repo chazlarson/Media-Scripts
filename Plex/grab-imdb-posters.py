@@ -1,32 +1,27 @@
-
 from plexapi.server import PlexServer
-from plexapi.utils import download
 import os
 import imdb
 from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
-import requests
-from pathlib import Path, PurePath
-from helpers import booler, redact, getTID, validate_filename, getPath
+from helpers import booler, getTID
 
 load_dotenv()
 
-PLEX_URL = os.getenv('PLEX_URL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-LIBRARY_NAME = os.getenv('LIBRARY_NAME')
-LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
-POSTER_DIR = os.getenv('POSTER_DIR')
-POSTER_DEPTH =  int(os.getenv('POSTER_DEPTH'))
-POSTER_DOWNLOAD =  booler(os.getenv('POSTER_DOWNLOAD'))
-POSTER_CONSOLIDATE =  booler(os.getenv('POSTER_CONSOLIDATE'))
+PLEX_URL = os.getenv("PLEX_URL")
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+POSTER_DIR = os.getenv("POSTER_DIR")
+POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
+POSTER_DOWNLOAD = booler(os.getenv("POSTER_DOWNLOAD"))
+POSTER_CONSOLIDATE = booler(os.getenv("POSTER_CONSOLIDATE"))
 
 if POSTER_DEPTH is None:
     POSTER_DEPTH = 0
 
 if POSTER_DOWNLOAD:
-    script_string = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO DO STUFF{os.linesep}{os.linesep}cd \"{POSTER_DIR}\"{os.linesep}{os.linesep}"
+    script_string = f'#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO DO STUFF{os.linesep}{os.linesep}cd "{POSTER_DIR}"{os.linesep}{os.linesep}'
 else:
     script_string = ""
 
@@ -35,19 +30,20 @@ if LIBRARY_NAMES:
 else:
     lib_array = [LIBRARY_NAME]
 
-imdb_str = 'imdb://'
-tmdb_str = 'tmdb://'
-tvdb_str = 'tvdb://'
+imdb_str = "imdb://"
+tmdb_str = "tmdb://"
+tvdb_str = "tvdb://"
 
-def progress(count, total, status=''):
+
+def progress(count, total, status=""):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=80)
 
-    sys.stdout.write('[%s] %s%s ... %s\r' % (bar, percents, '%', stat_str.ljust(80)))
+    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
 
 
@@ -82,7 +78,7 @@ for lib in lib_array:
 
     print("{os.linesep}")
 
-print(f"processing items...")
+print("processing items...")
 item_total = len(all_items)
 print(f"looping over {item_total} items...")
 item_count = 0
@@ -98,10 +94,10 @@ for item in all_items:
 
     # id
     code = "6468322"
-    imdid = item['imdb'].replace('tt','')
+    imdid = item["imdb"].replace("tt", "")
 
     # getting information
     series = ia.get_movie(imdid)
 
     # getting cover url of the series
-    cover = series.data['cover url']
+    cover = series.data["cover url"]

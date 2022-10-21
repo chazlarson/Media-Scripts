@@ -4,7 +4,7 @@
 #
 # You can run this on a completely separate machine to where PMM is running.
 #
-# Download it somewhere, 
+# Download it somewhere,
 # python3 -m pip install pyopenssl
 # python3 -m pip install requests secrets
 # python3 pmm_mal_auth.py
@@ -20,11 +20,15 @@
 #
 # Some yaml will be printed, ready to copy-paste into your PMM config.yml.
 
-import requests, webbrowser, secrets, re, os
+import requests
+import webbrowser
+import secrets
+import re
+import os
 
 urls = {
-    "oauth_token": f"https://myanimelist.net/v1/oauth2/token",
-    "oauth_authorize": f"https://myanimelist.net/v1/oauth2/authorize",
+    "oauth_token": "https://myanimelist.net/v1/oauth2/token",
+    "oauth_authorize": "https://myanimelist.net/v1/oauth2/authorize",
 }
 
 print("Let's authenticate against MyAnimeList!{os.linesep}{os.linesep}")
@@ -38,7 +42,9 @@ url = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_
 
 print(f"We're going to open {url}{os.linesep}{os.linesep}")
 print(f"Log in and click the Allow option.{os.linesep}")
-print(f"You will be redirected to a localhost url that probably won't load.{os.linesep}")
+print(
+    f"You will be redirected to a localhost url that probably won't load.{os.linesep}"
+)
 print(f"That's fine.  Copy that localhost URL and paste it below.{os.linesep}")
 tmpVar = input("Hit enter when ready: ").strip()
 
@@ -58,7 +64,7 @@ data = {
     "client_secret": client_secret,
     "code": code,
     "code_verifier": code_verifier,
-    "grant_type": "authorization_code"
+    "grant_type": "authorization_code",
 }
 
 new_authorization = session.post(urls["oauth_token"], data=data).json()
@@ -67,14 +73,14 @@ if "error" in new_authorization:
     print(f"ERROR: invalid code.{os.linesep}")
     exit()
 
-print (f"{os.linesep}{os.linesep}Copy the following into your PMM config.yml:")
-print (f"############################################")
-print (f"mal:")
-print (f"  client_id: {client_id}")
-print (f"  client_secret: {client_secret}")
-print (f"  authorization:")
-print (f"    access_token: {new_authorization['access_token']}")
-print (f"    token_type: {new_authorization['token_type']}")
-print (f"    expires_in: {new_authorization['expires_in']}")
-print (f"    refresh_token: {new_authorization['refresh_token']}")
-print (f"############################################")
+print(f"{os.linesep}{os.linesep}Copy the following into your PMM config.yml:")
+print("############################################")
+print("mal:")
+print(f"  client_id: {client_id}")
+print(f"  client_secret: {client_secret}")
+print("  authorization:")
+print(f"    access_token: {new_authorization['access_token']}")
+print(f"    token_type: {new_authorization['token_type']}")
+print(f"    expires_in: {new_authorization['expires_in']}")
+print(f"    refresh_token: {new_authorization['refresh_token']}")
+print("############################################")

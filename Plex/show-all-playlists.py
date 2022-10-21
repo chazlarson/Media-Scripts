@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PLEX_URL = os.getenv('PLEX_URL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-PLEX_OWNER = os.getenv('PLEX_OWNER')
+PLEX_URL = os.getenv("PLEX_URL")
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+PLEX_OWNER = os.getenv("PLEX_OWNER")
 
 print(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
@@ -29,14 +29,17 @@ for plex_user in all_users:
             print(f"\n------------ {plex_user.username} ------------")
 
             for pl in playlists:
-                print(f"------------ {plex_user.username} playlist: {pl.title} ------------")
+                print(
+                    f"------------ {plex_user.username} playlist: {pl.title} ------------"
+                )
                 items = pl.items()
                 for item in items:
                     typestr = f"{item.type}".ljust(7)
                     output = item.title
-                    if item.type == 'episode':
-                        output = f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
+                    if item.type == "episode":
+                        output = (
+                            f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
+                        )
                     print(f"{typestr} - {output}")
     except Exception as ex:
         handle_this_silently = "please"
-
