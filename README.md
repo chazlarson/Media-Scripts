@@ -89,5 +89,5 @@ See the [TMDB Scripts README](TMDB/README.md) for details.
 
 # Other script repos of interest
 
-[bullmoose](https://github.com/bullmoose20/Plex-Stuff)
-[Casvt](https://github.com/Casvt/Plex-scripts)
+1. [bullmoose](https://github.com/bullmoose20/Plex-Stuff)
+2. [Casvt](https://github.com/Casvt/Plex-scripts)
