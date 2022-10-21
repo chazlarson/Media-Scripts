@@ -21,14 +21,17 @@ All these scripts use the same `.env` and requirements.
 
 TODO: move `.env` file to top level and use it from there.
 
-### `.env` contents
-
-```
+.env contents
 TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
 PLEX_TOKEN=PLEX-TOKEN
 PLEX_OWNER=yournamehere                      # account name of the server owner
+TARGET_PLEX_URL=https://plex.domain2.tld     # As above, the target of apply_all_status
+TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO             # As above, the target of apply_all_status
+TARGET_PLEX_OWNER=yournamehere               # As above, the target of apply_all_status
+LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
+                                             # In apply_all_status, map libraries according to this JSON.
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
@@ -38,21 +41,34 @@ DELAY=1                                      # optional delay between items
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
-POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
-POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-TRACK_RESET_STATUS=1                         # if set to 1, reset_posters keeps track of status and picks up where it left off
-ARTWORK_AND_POSTER=1                         # if set to 1, current background is downloaded with current poster
-PERSON_DEPTH=10                              # how deep to go into the search results for TMDB people
+POSTER_DOWNLOAD=False                        # generate a script rather than downloading
+POSTER_CONSOLIDATE=True                      # posters are separated into folders by library
+TRACK_RESET_STATUS=True                      # reset-posters-* keeps track of status and picks up where it left off
+ARTWORK=True                                 # current background is downloaded with current poster
+PLEX_PATHS=False
+NAME_IN_TITLE=True
+POSTER_NAME=poster
+BACKGROUND_NAME=background
+RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
+RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
+INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
+ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
 ```
 
 ## Plex scripts:
 
-1. user-emails.py - extract user emails from your shares
-2. reset-posters.py - reset all artwork in a library
-3. grab-current-posters.py - Grab currently-set posters and optionally background artwork
-4. grab-all-posters.py - grab some or all of the artwork for a library from plex
-5. grab-all-status.py - grab watch status for all users all libraries from plex
-6. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
+ 1. user-emails.py - extract user emails from your shares
+ 2. reset-posters-tmdb.py - reset all artwork in a library to TMDB default
+ 3. reset-posters-plex.py - reset all artwork in a library to Plex default
+ 4. grab-current-posters.py - Grab currently-set posters and optionally background artwork
+ 5. grab-all-posters.py - grab some or all of the artwork for a library from plex
+ 6. grab-all-status.py - grab watch status for all users all libraries from plex
+ 7. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
+ 8. show-all-playlists.py - Show contents of all user playlists
+ 9. delete-collections.py - delete most or all collections from one or more libraries
+10. refresh-metadata.py - Refresh metadata individually on items in a library
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
