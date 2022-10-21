@@ -86,3 +86,8 @@ See the [Plex-Meta-Manager Scripts README](Plex-Meta-Manager/README.md) for deta
 1. tmdb-people.py - retrieve TMDB images for a list of people
 
 See the [TMDB Scripts README](TMDB/README.md) for details.
+
+# Other script repos of interest
+
+[bullmoose](https://github.com/bullmoose20/Plex-Stuff)
+[Casvt](https://github.com/Casvt/Plex-scripts)
