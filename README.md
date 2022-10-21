@@ -22,6 +22,7 @@ All these scripts use the same `.env` and requirements.
 TODO: move `.env` file to top level and use it from there.
 
 .env contents
+```
 TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
