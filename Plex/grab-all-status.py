@@ -12,7 +12,7 @@ PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
-LIBRARY_MAP = os.getenv("LIBRARY_MAP")
+LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 
 lib_map = json.loads(LIBRARY_MAP)
 
