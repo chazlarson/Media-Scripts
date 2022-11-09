@@ -52,7 +52,7 @@ def process_section(ps, user):
             print(f"------------ {plex_section.title} ------------")
             items = plex.library.section(plex_section.title)
             if items.type == "show":
-                print("Gathering unwatched episodes...")
+                print("Gathering watched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
                     file_string = (
                         file_string
@@ -62,7 +62,7 @@ def process_section(ps, user):
                         + f"{os.linesep}"
                     )
             elif items.type == "movie":
-                print("Gathering unwatched movies...")
+                print("Gathering watched movies...")
                 for video in items.search(unwatched=False):
                     file_string = (
                         file_string
@@ -104,7 +104,7 @@ try:
             print(f"------------ {plex_section.title} ------------")
             items = plex.library.section(plex_section.title)
             if items.type == "show":
-                print("Gathering unwatched episodes...")
+                print("Gathering watched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
                     file_string = (
                         file_string
@@ -114,7 +114,7 @@ try:
                         + f"{os.linesep}"
                     )
             elif items.type == "movie":
-                print("Gathering unwatched movies...")
+                print("Gathering watched movies...")
                 for video in items.search(unwatched=False):
                     file_string = (
                         file_string
