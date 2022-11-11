@@ -4,6 +4,7 @@
 **/*.png
 **/*.yml
 
+Plex/movies
 **/config
 **/posters
 **/current_posters
@@ -15,3 +16,4 @@
 **/*-output.txt
 
 Other
+Plex-Meta-Manager/current_artwork

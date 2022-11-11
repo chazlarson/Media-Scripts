@@ -139,53 +139,61 @@ except:
 user_ct = len(all_users)
 user_idx = 0
 for plex_user in all_users:
-    user_acct = account.user(plex_user.username)
-    user_idx += 1
-    print(f"------------ {plex_user.username} {user_idx}/{user_ct} ------------")
-    try:
-        user_plex = PlexServer(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
+    isManagedUser = plex_user.home and int(plex_user.restricted) == 1
 
-        plex_sections = user_plex.library.sections()
-        for plex_section in plex_sections:
-            if plex_section.type != "artist":
-                print(f"------------ {plex_section.title} ------------")
-                items = user_plex.library.section(plex_section.title)
-                if items.type == "show":
-                    for video in items.searchEpisodes(unwatched=False):
-                        file_string = (
-                            file_string
-                            + get_data_line(
-                                plex_user.username,
-                                items.type,
-                                plex_section.title,
-                                video,
+    if not isManagedUser:
+        user_acct = account.user(plex_user.username)
+    else:
+        user_acct = None
+        print(f"Skipping managed user: {plex_user.title}")
+
+    user_idx += 1
+    if user_acct is not None:
+        print(f"------------ {plex_user.username} {user_idx}/{user_ct} ------------")
+        try:
+            user_plex = PlexServer(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
+
+            plex_sections = user_plex.library.sections()
+            for plex_section in plex_sections:
+                if plex_section.type != "artist":
+                    print(f"------------ {plex_section.title} ------------")
+                    items = user_plex.library.section(plex_section.title)
+                    if items.type == "show":
+                        for video in items.searchEpisodes(unwatched=False):
+                            file_string = (
+                                file_string
+                                + get_data_line(
+                                    plex_user.username,
+                                    items.type,
+                                    plex_section.title,
+                                    video,
+                                )
+                                + f"{os.linesep}"
                             )
-                            + f"{os.linesep}"
-                        )
-                elif items.type == "movie":
-                    for video in items.search(unwatched=False):
-                        file_string = (
-                            file_string
-                            + get_data_line(
-                                plex_user.username,
-                                items.type,
-                                plex_section.title,
-                                video,
+                    elif items.type == "movie":
+                        for video in items.search(unwatched=False):
+                            file_string = (
+                                file_string
+                                + get_data_line(
+                                    plex_user.username,
+                                    items.type,
+                                    plex_section.title,
+                                    video,
+                                )
+                                + f"{os.linesep}"
                             )
-                            + f"{os.linesep}"
-                        )
+                    else:
+                        file_line = f"Unknown type: {items.type}"
+                        file_string = file_string + f"{file_line}{os.linesep}"
+                        print(file_line)
                 else:
-                    file_line = f"Unknown type: {items.type}"
+                    file_line = f"Skipping {plex_section.title}"
                     file_string = file_string + f"{file_line}{os.linesep}"
                     print(file_line)
-            else:
-                file_line = f"Skipping {plex_section.title}"
-                file_string = file_string + f"{file_line}{os.linesep}"
-                print(file_line)
-    except:
-        file_line = f"Exception processing {plex_user.username}"
-        file_string = file_string + f"{file_line}{os.linesep}"
-        print(file_line)
+        except:
+            file_line = f"Exception processing {plex_user.username}"
+            file_string = file_string + f"{file_line}{os.linesep}"
+            print(file_line)
 
 print(f"{os.linesep}")
 if len(file_string) > 0:
