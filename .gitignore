@@ -14,6 +14,7 @@ Plex/movies
 **/venv
 **/.venv
 **/*-output.txt
+**/status.txt
 
 Other
 Plex-Meta-Manager/current_artwork
