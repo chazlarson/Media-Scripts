@@ -95,7 +95,7 @@ with open("status.txt") as fp:
             plex_rating = parts[5].strip()
 
         if plex_user != connected_plex_user:
-            if plex_user == PLEX_OWNER:
+            if plex_user.lower() == PLEX_OWNER.lower():
                 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
             else:
                 user_acct = get_user_acct(all_users, plex_user)
