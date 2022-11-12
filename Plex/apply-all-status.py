@@ -29,9 +29,9 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-def get_user_acct(acct_list, username):
+def get_user_acct(acct_list, title):
     for acct in acct_list:
-        if acct.username == username:
+        if acct.title == title:
             return acct
 
 

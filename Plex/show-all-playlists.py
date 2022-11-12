@@ -19,18 +19,18 @@ item = None
 user_ct = len(all_users)
 user_idx = 0
 for plex_user in all_users:
-    user_acct = account.user(plex_user.username)
+    user_acct = account.user(plex_user.title)
     user_idx += 1
     try:
         user_plex = PlexServer(PLEX_URL, user_acct.get_token(PMI))
 
         playlists = user_plex.playlists()
         if len(playlists) > 0:
-            print(f"\n------------ {plex_user.username} ------------")
+            print(f"\n------------ {plex_user.title} ------------")
 
             for pl in playlists:
                 print(
-                    f"------------ {plex_user.username} playlist: {pl.title} ------------"
+                    f"------------ {plex_user.title} playlist: {pl.title} ------------"
                 )
                 items = pl.items()
                 for item in items:
