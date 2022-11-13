@@ -166,7 +166,7 @@ with open("status.txt") as fp:
                 for thing in things:
                     if item is None:
                         title_ct += 1
-                        unWatched = not thing.isWatched
+                        unWatched = not thing.isPlayed
                         if thing.title == plex_title:
                             title_match_ct += 1
                             if thing.year == int(plex_year):
@@ -199,13 +199,13 @@ with open("status.txt") as fp:
 
             if item is not None:
                 # print(f"\rPicked {item.title} - {item.year} - {item.contentRating} for {plex_title}".ljust(padwidth))
-                if not item.isWatched:
+                if not item.isPlayed:
                     print(
                         f"\rMarked watched for {connected_plex_user} - {plex_target}".ljust(
                             padwidth
                         )
                     )
-                    item.markWatched()
+                    item.markPlayed()
                 # else:
                 #     print(f"\rAlready marked watched for {connected_plex_user}")
             # sys.stdout.write(f"\r ".ljust(padwidth))
