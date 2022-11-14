@@ -29,9 +29,9 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-def get_user_acct(acct_list, username):
+def get_user_acct(acct_list, title):
     for acct in acct_list:
-        if acct.username == username:
+        if acct.title == title:
             return acct
 
 
@@ -95,7 +95,7 @@ with open("status.txt") as fp:
             plex_rating = parts[5].strip()
 
         if plex_user != connected_plex_user:
-            if plex_user == PLEX_OWNER:
+            if plex_user.lower() == PLEX_OWNER.lower():
                 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
             else:
                 user_acct = get_user_acct(all_users, plex_user)
@@ -166,7 +166,7 @@ with open("status.txt") as fp:
                 for thing in things:
                     if item is None:
                         title_ct += 1
-                        unWatched = not thing.isWatched
+                        unWatched = not thing.isPlayed
                         if thing.title == plex_title:
                             title_match_ct += 1
                             if thing.year == int(plex_year):
@@ -199,13 +199,13 @@ with open("status.txt") as fp:
 
             if item is not None:
                 # print(f"\rPicked {item.title} - {item.year} - {item.contentRating} for {plex_title}".ljust(padwidth))
-                if not item.isWatched:
+                if not item.isPlayed:
                     print(
                         f"\rMarked watched for {connected_plex_user} - {plex_target}".ljust(
                             padwidth
                         )
                     )
-                    item.markWatched()
+                    item.markPlayed()
                 # else:
                 #     print(f"\rAlready marked watched for {connected_plex_user}")
             # sys.stdout.write(f"\r ".ljust(padwidth))
