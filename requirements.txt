@@ -12,3 +12,4 @@ tmdbapis
 tmdbsimple
 tmdbv3api
 tvdb_v4_official
+piexif

@@ -13,6 +13,10 @@ from plexapi.server import PlexServer
 from plexapi.utils import download
 from helpers import booler, getTID, validate_filename
 
+import json
+import piexif
+import piexif.helper
+
 try:
     import magic
 
@@ -194,7 +198,21 @@ def get_posters(item, artwork_path, tmid, tvid):
                                 savepath=artwork_path,
                             )
 
-                            rename_by_type(final_file_path)
+                            local_file = str(rename_by_type(final_file_path))
+
+                            # %% Write out exif data
+                            # load existing exif data from image
+                            # exif_dict = piexif.load(local_file)
+                            # # insert custom data in usercomment field
+                            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                            #     "PMM WAS HERE",
+                            #     encoding="unicode"
+                            # )
+                            # # insert mutated data (serialised into JSON) into image
+                            # piexif.insert(
+                            #     piexif.dump(exif_dict),
+                            #     local_file
+                            # )
 
                         else:
                             mkdir_flag = "" if IS_WINDOWS else "-p "
@@ -242,13 +260,17 @@ def rename_by_type(target):
     else:
         logging.info(f"no libmagic; assuming {extension}")
         extension = ".jpg"
+    
+    new_name = p.with_suffix(extension)
 
     if "html" in extension:
         logging.info(f"deleting html file {p}")
         p.unlink()
     else:
         logging.info(f"changing file extension to {extension}")
-        p.rename(p.with_suffix(extension))
+        p.rename(new_name)
+    
+    return new_name
 
 
 def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
@@ -331,127 +353,6 @@ for lib in lib_array:
                         artwork_path = Path(tgt_dir, dir_name)
                         
                         get_posters(item, artwork_path, tmid, tvid)
-                        # while attempts < 5:
-                        #     try:
-
-                        #         bar_and_log(
-                        #             bar, f"{title} - getting posters - attempt {attempts}"
-                        #         )
-
-                        #         posters = item.posters()
-
-                        #         bar_and_log(bar, f"{title} - {len(posters)} posters")
-
-                        #         import fnmatch
-
-                        #         count = 0
-
-                        #         if os.path.exists(artwork_path):
-                        #             count = len(
-                        #                 fnmatch.filter(os.listdir(artwork_path), "*.*")
-                        #             )
-                        #             logging.info(f"{count} files in {artwork_path}")
-
-                        #         posters_to_go = count - POSTER_DEPTH
-
-                        #         if posters_to_go < 0:
-                        #             poster_to_go = abs(posters_to_go)
-                        #         else:
-                        #             poster_to_go = 0
-
-                        #         logging.info(
-                        #             f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
-                        #         )
-
-                        #         no_more_to_get = count >= len(posters)
-                        #         full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
-                        #         no_point_in_looking = full_for_now or no_more_to_get
-
-                        #         if not no_point_in_looking:
-                        #             idx = 1
-                        #             for poster in posters:
-                        #                 if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                        #                     bar_and_log(
-                        #                         bar,
-                        #                         f"Reached max depth of {POSTER_DEPTH}; exiting loop",
-                        #                     )
-                        #                     break
-
-                        #                 poster_obj = {}
-                        #                 tgt_file_path = f"collection-{title}-{str(idx).zfill(3)}{tgt_ext}"
-                        #                 final_file_path = os.path.join(
-                        #                     artwork_path, tgt_file_path
-                        #                 )
-
-                        #                 poster_obj["folder"] = artwork_path
-                        #                 poster_obj["file"] = tgt_file_path
-
-                        #                 src_URL = poster.key
-                        #                 if src_URL[0] == "/":
-                        #                     src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
-                        #                     poster_obj["URL"] = src_URL
-                        #                 else:
-                        #                     poster_obj["URL"] = src_URL
-
-                        #                 bar.text = f"{title} - {idx}"
-                        #                 logging.info("--------------------------------")
-                        #                 logging.info(f"processing {title} - {idx}")
-
-                        #                 if not os.path.exists(final_file_path):
-                        #                     logging.info(
-                        #                         f"{final_file_path} does not yet exist"
-                        #                     )
-                        #                     if POSTER_DOWNLOAD:
-                        #                         p = Path(artwork_path)
-                        #                         p.mkdir(parents=True, exist_ok=True)
-
-                        #                         logging.info(f"downloading {src_URL}")
-                        #                         logging.info(f"to {tgt_file_path}")
-                        #                         thumbPath = download(
-                        #                             f"{src_URL}",
-                        #                             PLEX_TOKEN,
-                        #                             filename=tgt_file_path,
-                        #                             savepath=artwork_path,
-                        #                         )
-
-                        #                         rename_by_type(final_file_path)
-
-                        #                     else:
-                        #                         mkdir_flag = "" if IS_WINDOWS else "-p "
-                        #                         script_line_start = ""
-                        #                         if idx == 1:
-                        #                             script_line_start = f'mkdir {mkdir_flag}"{dir_name}"{os.linesep}'
-
-                        #                         script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(dir_name, tgt_file_path)}" "{src_URL}"'
-
-                        #                         script_string = (
-                        #                             script_string
-                        #                             + f"{script_line}{os.linesep}"
-                        #                         )
-                        #                 else:
-                        #                     logging.info(
-                        #                         f"{final_file_path} ALREADY EXISTS"
-                        #                     )
-
-                        #                 idx += 1
-                        #         else:
-                        #             if not reported_item_status:
-                        #                 logging.info(
-                        #                     f"Grabbed all available posters: {no_more_to_get}"
-                        #                 )
-                        #                 if full_for_now:
-                        #                     logging.info(
-                        #                         f"{POSTER_DEPTH} image(s) retrieved already"
-                        #                     )
-                        #                 logging.info(
-                        #                     f"No point is looking anymore: {no_point_in_looking}"
-                        #                 )
-                        #                 reported_item_status = True
-
-                        #         attempts = 6
-                        #     except Exception as ex:
-                        #         progress_str = f"EX: {ex} {item.title}"
-                        #         logging.info(progress_str)
 
                         bar()
 
