@@ -2,7 +2,9 @@
 **/.direnv
 **/*.csv
 **/*.png
+**/*.pyc
 **/*.yml
+**/*.log
 
 Plex/movies
 **/config
