@@ -245,7 +245,7 @@ def rename_by_type(target):
         print('Cannot guess file type; assuming jpg')
         extension = ".jpg"
     else:
-        extension = kind.extension
+        extension = f".{kind.extension}"
 
     new_name = p.with_suffix(extension)
 
