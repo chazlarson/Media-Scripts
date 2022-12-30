@@ -65,10 +65,10 @@ if IS_WINDOWS:
     SCRIPT_FILE = "get_images.bat"
     SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
 
+SCRIPT_STRING = ""
+
 if POSTER_DOWNLOAD:
-    script_string = SCRIPT_SEED
-else:
-    script_string = ""
+    SCRIPT_STRING = SCRIPT_SEED
 
 if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
@@ -90,6 +90,7 @@ except Unauthorized:
 logging.info("connection success")
 
 def get_posters(item, artwork_path, tmid, tvid):
+    global SCRIPT_STRING
     attempts = 0
     all_posters = item.posters()
 
@@ -207,8 +208,8 @@ def get_posters(item, artwork_path, tmid, tvid):
 
                             script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(dir_name, tgt_file_path)}" "{src_URL}"'
 
-                            script_string = (
-                                script_string + f"{script_line}{os.linesep}"
+                            SCRIPT_STRING = (
+                                SCRIPT_STRING + f"{script_line}{os.linesep}"
                             )
                     else:
                         logging.info(f"{final_file_path} ALREADY EXISTS")
@@ -294,10 +295,11 @@ def get_file(src_URL, bar, item, target_path, target_file):
         download_file(src_URL, target_path, target_file)
     else:
         bar_and_log(bar, f"{item.title} - building download command")
-        script_string += add_script_line(target_path, target_file, src_URL_with_token)
+        SCRIPT_STRING += add_script_line(target_path, target_file, src_URL_with_token)
 
 
 for lib in lib_array:
+    
     try:
         the_lib = plex.library.section(lib)
 
@@ -412,9 +414,9 @@ for lib in lib_array:
         print(os.linesep)
         if not POSTER_DOWNLOAD:
             scr_path = os.path.join(tgt_dir, SCRIPT_FILE)
-            if len(script_string) > 0:
+            if len(SCRIPT_STRING) > 0:
                 with open(scr_path, "w", encoding="utf-8") as myfile:
-                    myfile.write(f"{script_string}{os.linesep}")
+                    myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
