@@ -320,6 +320,8 @@ POSTER_DOWNLOAD=0                            # if set to 0, generate a script ra
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
 INCLUDE_COLLECTION_ARTWORK=1                 # If set to 1, collection posters are retrieved
 ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection posters are retrieved
+GRAB_SEASONS=1                               # grab season posters
+GRAB_EPISODES=1                              # grab episode posters [requires GRAB_SEASONS]
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
