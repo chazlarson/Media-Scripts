@@ -1,5 +1,4 @@
 import logging
-import mimetypes
 import os
 import platform
 from pathlib import Path
@@ -17,18 +16,8 @@ import json
 import piexif
 import piexif.helper
 
-try:
-    import magic
-
-    USE_MAGIC = True
-except:
-    print("================== ATTENTION ==================")
-    print("There was a problem importing the python-magic library")
-    print("This typically means you haven't installed libmagic")
-    print("Script will default to .jpg extension on all images")
-    print("================== ATTENTION ==================")
-    USE_MAGIC = False
-
+import filetype
+ID_FILES = True
 
 load_dotenv()
 
@@ -53,8 +42,7 @@ if not POSTER_DOWNLOAD:
     print("Downloading disabled; file identification not possible")
     print("Script will default to .jpg extension on all images")
     print("================== ATTENTION ==================")
-    USE_MAGIC = False
-
+    ID_FILES = False
 POSTER_CONSOLIDATE = booler(os.getenv("POSTER_CONSOLIDATE"))
 INCLUDE_COLLECTION_ARTWORK = booler(os.getenv("INCLUDE_COLLECTION_ARTWORK"))
 ONLY_COLLECTION_ARTWORK = booler(os.getenv("ONLY_COLLECTION_ARTWORK"))
@@ -90,9 +78,6 @@ else:
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
-
-if USE_MAGIC:
-    mime = magic.Magic(mime=True)
 
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
@@ -154,7 +139,7 @@ def get_posters(item, artwork_path, tmid, tvid):
                         break
 
                     poster_obj = {}
-                    tgt_ext = ".dat" if USE_MAGIC else ".jpg"
+                    tgt_ext = ".dat" if ID_FILES else ".jpg"
                     if item.TYPE == "season":
                         tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-S{item.seasonNumber}-{str(idx).zfill(3)}{tgt_ext}"
                     elif item.TYPE == "episode":
@@ -254,13 +239,13 @@ def get_posters(item, artwork_path, tmid, tvid):
 def rename_by_type(target):
     p = Path(target)
 
-    if USE_MAGIC:
-        logging.info(f"determining file type of {target}")
-        extension = mimetypes.guess_extension(mime.from_file(target), strict=False)
-    else:
-        logging.info(f"no libmagic; assuming {extension}")
+    kind = filetype.guess(target)
+    if kind is None:
+        print('Cannot guess file type; assuming jpg')
         extension = ".jpg"
-    
+    else:
+        extension = kind.extension
+
     new_name = p.with_suffix(extension)
 
     if "html" in extension:
@@ -324,7 +309,7 @@ for lib in lib_array:
             print(f"{item_total} collection(s) retrieved...")
             item_count = 1
 
-            tgt_ext = ".dat" if USE_MAGIC else ".jpg"
+            tgt_ext = ".dat"
 
             if item_total > 0:
                 with alive_bar(

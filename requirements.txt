@@ -5,7 +5,6 @@ PlexAPI
 pre-commit
 pyopenssl
 python-dotenv
-python-magic
 requests
 ruamel.yaml
 tmdbapis
@@ -13,3 +12,4 @@ tmdbsimple
 tmdbv3api
 tvdb_v4_official
 piexif
+filetype
