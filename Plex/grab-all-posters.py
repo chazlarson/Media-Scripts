@@ -86,6 +86,9 @@ try:
 except Unauthorized:
     print("Plex Error: Plex token is invalid")
     exit()
+except Exception as ex:
+  print(f"Plex Error: {ex.args}")
+  exit()
 
 logging.info("connection success")
 
