@@ -1,4 +1,6 @@
+import logging
 from plexapi.server import PlexServer
+from plexapi.exceptions import Unauthorized
 import os
 from dotenv import load_dotenv
 import sys
@@ -19,6 +21,15 @@ from helpers import getTID
 start = timer()
 
 load_dotenv()
+
+logging.basicConfig(
+    filename="metadata_extractor.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info("Starting metadata_extractor.py")
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -67,7 +78,18 @@ base_url = tmdb.configuration().secure_base_image_url
 size_str = "original"
 
 print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+logging.info(f"connecting to {PLEX_URL}...")
+try:
+    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+except Unauthorized:
+    print("Plex Error: Plex token is invalid")
+    exit()
+except Exception as ex:
+  print(f"Plex Error: {ex.args}")
+  exit()
+
+logging.info("connection success")
+
 print(f"getting items from [{LIBRARY_NAME}]...")
 items = plex.library.section(LIBRARY_NAME).all()
 item_total = len(items)

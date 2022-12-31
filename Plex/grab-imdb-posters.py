@@ -1,4 +1,6 @@
+import logging
 from plexapi.server import PlexServer
+from plexapi.exceptions import Unauthorized
 import os
 import imdb
 from dotenv import load_dotenv
@@ -34,6 +36,15 @@ imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
+SCRIPT_NAME = "grab-imdb-posters"
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME}.py")
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -46,11 +57,21 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
 
-
 all_items = []
 
 print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+logging.info(f"connecting to {PLEX_URL}...")
+try:
+    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+except Unauthorized:
+    print("Plex Error: Plex token is invalid")
+    exit()
+except Exception as ex:
+  print(f"Plex Error: {ex.args}")
+  exit()
+
+logging.info("connection success")
+
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
     items = plex.library.section(lib).all()

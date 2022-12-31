@@ -1,5 +1,8 @@
+from plexapi.exceptions import Unauthorized
+import logging
 from alive_progress import alive_bar
 from plexapi.server import PlexServer
+from plexapi.exceptions import Unauthorized
 import os
 from dotenv import load_dotenv
 
@@ -11,6 +14,16 @@ from pathlib import Path
 start = timer()
 
 load_dotenv()
+
+SCRIPT_NAME = "reset-posters-plex"
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME}.py")
 
 PLEX_URL = os.getenv("PLEX_URL")
 
@@ -44,7 +57,18 @@ else:
     lib_array = [LIBRARY_NAME]
 
 print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+logging.info(f"connecting to {PLEX_URL}...")
+try:
+    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+except Unauthorized:
+    print("Plex Error: Plex token is invalid")
+    exit()
+except Exception as ex:
+  print(f"Plex Error: {ex.args}")
+  exit()
+
+logging.info("connection success")
+
 for lib in lib_array:
     id_array = []
     status_file_name = plex.library.section(lib).uuid + ".txt"
