@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import platform
 from pathlib import Path
 
@@ -92,6 +93,10 @@ except Exception as ex:
 
 logging.info("connection success")
 
+def get_valid_filename(s):
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
+
 def get_SE_str(item):
     if item.TYPE == "season":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
@@ -167,6 +172,8 @@ def get_posters(item, artwork_path, tmid, tvid):
                     final_file_path = os.path.join(
                         artwork_path, tgt_file_path
                     )
+
+                    # final_file_path = get_valid_filename(final_file_path)
 
                     poster_obj["folder"] = artwork_path
                     poster_obj["file"] = tgt_file_path
@@ -396,7 +403,8 @@ for lib in lib_array:
  
                             # loop over all:
                             for s in seasons:
-                                season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{s.title}")
+                                safe_season_title = get_valid_filename(s.title)
+                                season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{safe_season_title}")
                                 get_posters(s, season_artwork_path, tmid, tvid)
                                 if GRAB_EPISODES:
                                     # get episodes
@@ -404,7 +412,8 @@ for lib in lib_array:
 
                                     # loop over all
                                     for e in episodes:
-                                        episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{e.title}")
+                                        safe_episode_title = get_valid_filename(e.title)
+                                        episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{safe_episode_title}")
                                         get_posters(e, episode_artwork_path, tmid, tvid)
 
                     bar()
