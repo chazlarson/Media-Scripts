@@ -92,6 +92,17 @@ except Exception as ex:
 
 logging.info("connection success")
 
+def get_SE_str(item):
+    if item.TYPE == "season":
+        ret_val = f"S{str(item.seasonNumber).zfill(2)}"
+    elif item.TYPE == "episode":
+        ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
+    else:
+        ret_val = f""
+    
+    return ret_val
+
+
 def get_posters(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
     attempts = 0
@@ -99,12 +110,7 @@ def get_posters(item, artwork_path, tmid, tvid):
 
     while attempts < 5:
         try:
-            if item.TYPE == "season":
-                progress_str = f"S{item.seasonNumber} - {item.title} - {len(all_posters)} posters"
-            elif item.TYPE == "episode":
-                progress_str = f"S{item.seasonNumber}E{item.episodeNumber} - {item.title} - {len(all_posters)} posters"
-            else:
-                progress_str = f"{item.title} - {len(all_posters)} posters"
+            progress_str = f"{get_SE_str(item)} - {item.title} - {len(all_posters)} posters"
 
             logging.info(progress_str)
             bar.text = progress_str
@@ -132,6 +138,14 @@ def get_posters(item, artwork_path, tmid, tvid):
             no_more_to_get = count >= len(all_posters)
             full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
             no_point_in_looking = full_for_now or no_more_to_get
+            if no_more_to_get:
+                logging.info(
+                    f"Grabbed all available posters: {no_more_to_get}"
+                )
+            if full_for_now:
+                logging.info(
+                    f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
+                )
 
             if not no_point_in_looking:
                 idx = 1
@@ -145,9 +159,9 @@ def get_posters(item, artwork_path, tmid, tvid):
                     poster_obj = {}
                     tgt_ext = ".dat" if ID_FILES else ".jpg"
                     if item.TYPE == "season":
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-S{item.seasonNumber}-{str(idx).zfill(3)}{tgt_ext}"
+                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}{tgt_ext}"
                     elif item.TYPE == "episode":
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-S{item.seasonNumber}E{item.episodeNumber}-{str(idx).zfill(3)}{tgt_ext}"
+                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
                     else:
                         tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{str(idx).zfill(3)}{tgt_ext}"
                     final_file_path = os.path.join(
@@ -207,9 +221,9 @@ def get_posters(item, artwork_path, tmid, tvid):
                             mkdir_flag = "" if IS_WINDOWS else "-p "
                             script_line_start = ""
                             if idx == 1:
-                                script_line_start = f'mkdir {mkdir_flag}"{dir_name}"{os.linesep}'
+                                script_line_start = f'mkdir {mkdir_flag}"{artwork_path}"{os.linesep}'
 
-                            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(dir_name, tgt_file_path)}" "{src_URL}"'
+                            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(artwork_path, tgt_file_path)}" "{src_URL}"'
 
                             SCRIPT_STRING = (
                                 SCRIPT_STRING + f"{script_line}{os.linesep}"
@@ -218,19 +232,6 @@ def get_posters(item, artwork_path, tmid, tvid):
                         logging.info(f"{final_file_path} ALREADY EXISTS")
 
                     idx += 1
-            else:
-                if not reported_item_status:
-                    logging.info(
-                        f"Grabbed all available posters: {no_more_to_get}"
-                    )
-                    if full_for_now:
-                        logging.info(
-                            f"{POSTER_DEPTH} image(s) retrieved already"
-                        )
-                    logging.info(
-                        f"No point is looking anymore: {no_point_in_looking}"
-                    )
-                    reported_item_status = True
 
             attempts = 6
         except Exception as ex:
@@ -320,7 +321,6 @@ for lib in lib_array:
                 with alive_bar(
                     item_total, dual_line=True, title="Grab Collection Posters"
                 ) as bar:
-                    reported_item_status = False
                     for item in items:
 
                         logging.info("================================")
@@ -361,7 +361,6 @@ for lib in lib_array:
             external_links = []
 
             with alive_bar(item_total, dual_line=True, title="Grab all posters") as bar:
-                reported_item_status = False
                 for item in items:
 
                     logging.info("================================")
@@ -396,7 +395,7 @@ for lib in lib_array:
  
                             # loop over all:
                             for s in seasons:
-                                season_artwork_path = Path(artwork_path, f"S{s.seasonNumber}-{s.title}")
+                                season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{s.title}")
                                 get_posters(s, season_artwork_path, tmid, tvid)
                                 if GRAB_EPISODES:
                                     # get episodes
@@ -404,7 +403,7 @@ for lib in lib_array:
 
                                     # loop over all
                                     for e in episodes:
-                                        episode_artwork_path = Path(season_artwork_path, f"S{e.seasonNumber}E{e.episodeNumber}-{e.title}")
+                                        episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{e.title}")
                                         get_posters(e, episode_artwork_path, tmid, tvid)
 
                     bar()
@@ -427,3 +426,5 @@ for lib in lib_array:
 
         print(progress_str)
 
+
+# %%
