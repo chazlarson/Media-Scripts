@@ -200,10 +200,10 @@ def get_posters(item, artwork_path, tmid, tvid):
                                 filename=tgt_file_path,
                                 savepath=artwork_path,
                             )
+                            logging.info(f"Downloaded {thumbPath}")
 
-                            local_file = str(rename_by_type(final_file_path))
-
-                            # %% Write out exif data
+                            # local_file = str(rename_by_type(final_file_path))
+                            # Write out exif data
                             # load existing exif data from image
                             # exif_dict = piexif.load(local_file)
                             # # insert custom data in usercomment field
