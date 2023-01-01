@@ -202,7 +202,8 @@ def get_posters(item, artwork_path, tmid, tvid):
                             )
                             logging.info(f"Downloaded {thumbPath}")
 
-                            # local_file = str(rename_by_type(final_file_path))
+                            local_file = str(rename_by_type(final_file_path))
+
                             # Write out exif data
                             # load existing exif data from image
                             # exif_dict = piexif.load(local_file)
@@ -425,6 +426,3 @@ for lib in lib_array:
         logging.info(progress_str)
 
         print(progress_str)
-
-
-# %%
