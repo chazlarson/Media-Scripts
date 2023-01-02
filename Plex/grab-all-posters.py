@@ -105,6 +105,27 @@ def get_SE_str(item):
     
     return ret_val
 
+def check_for_images(file_path):
+    # PosixPath('extracted_posters/TV Shows/67385-Naked Attraction/S08-Season 8/S08E04-Ian & Kerry')
+    # 'extracted_posters/TV Shows/67385-Naked Attraction/S08-Season 8/S08E04-Ian & Kerry/67385-314821-1185-S08E04-001.dat'
+    jpg_path = file_path.replace(".dat", ".jpg")
+    png_path = file_path.replace(".dat", ".png")
+
+    dat_here = os.path.exists(file_path)
+    jpg_here = os.path.exists(jpg_path)
+    png_here = os.path.exists(png_path)
+
+    if dat_here:
+        os.remove(file_path)
+
+    if jpg_here and png_here:
+        os.remove(jpg_path)
+        os.remove(png_path)
+        
+    if jpg_here or png_here:
+        return True
+
+    return False
 
 def get_posters(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
@@ -161,12 +182,9 @@ def get_posters(item, artwork_path, tmid, tvid):
 
                     poster_obj = {}
                     tgt_ext = ".dat" if ID_FILES else ".jpg"
-                    if item.TYPE == "season":
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}{tgt_ext}"
-                    elif item.TYPE == "episode":
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
-                    else:
-                        tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{str(idx).zfill(3)}{tgt_ext}"
+                    tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
+                    tgt_file_path.replace("--", "-")
+
                     final_file_path = os.path.join(
                         artwork_path, tgt_file_path
                     )
@@ -189,7 +207,7 @@ def get_posters(item, artwork_path, tmid, tvid):
                     logging.info("--------------------------------")
                     logging.info(f"processing {progress_str} - {idx}")
 
-                    if not os.path.exists(final_file_path):
+                    if not check_for_images(final_file_path):
                         logging.info(
                             f"{final_file_path} does not yet exist"
                         )
