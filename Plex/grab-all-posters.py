@@ -3,6 +3,8 @@ import os
 import re
 import platform
 from pathlib import Path
+import sys
+from pathvalidate import ValidationError, validate_filename
 
 import time
 
@@ -92,10 +94,6 @@ except Exception as ex:
   exit()
 
 logging.info("connection success")
-
-def get_valid_filename(s):
-    s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '', s)
 
 def get_SE_str(item):
     if item.TYPE == "season":
@@ -403,7 +401,7 @@ for lib in lib_array:
  
                             # loop over all:
                             for s in seasons:
-                                safe_season_title = get_valid_filename(s.title)
+                                safe_season_title = validate_filename(s.title)[0]
                                 season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{safe_season_title}")
                                 get_posters(s, season_artwork_path, tmid, tvid)
                                 if GRAB_EPISODES:
@@ -412,7 +410,7 @@ for lib in lib_array:
 
                                     # loop over all
                                     for e in episodes:
-                                        safe_episode_title = get_valid_filename(e.title)
+                                        safe_episode_title = validate_filename(e.title)[0]
                                         episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{safe_episode_title}")
                                         get_posters(e, episode_artwork_path, tmid, tvid)
 
