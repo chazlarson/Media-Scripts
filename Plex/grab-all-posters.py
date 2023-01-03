@@ -264,7 +264,6 @@ def get_posters(item, artwork_path, tmid, tvid):
 
             attempts  += 1
 
-
 def rename_by_type(target):
     p = Path(target)
 
@@ -286,7 +285,6 @@ def rename_by_type(target):
     
     return new_name
 
-
 def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
     if IS_WINDOWS:
         script_line = f'{os.linesep}mkdir "{artwork_path}"{os.linesep}curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
@@ -294,11 +292,9 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
         script_line = f'{os.linesep}mkdir -p "{artwork_path}" && curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
     return f"{script_line}{os.linesep}"
 
-
 def bar_and_log(the_bar, msg):
     logging.info(msg)
     the_bar.text = msg
-
 
 def download_file(src_URL, target_path, target_filename):
     p = Path(target_path)
@@ -309,12 +305,10 @@ def download_file(src_URL, target_path, target_filename):
     )
     rename_by_type(dlPath)
 
-
 def get_file(src_URL, bar, item, target_path, target_file):
     if src_URL[0] == "/":
         src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
         src_URL = f"{PLEX_URL}{src_URL}"
-        # src_URL_no_token = f"{PLEX_URL}{src_URL}?X-Plex-Token=REDACTED"
 
     bar_and_log(bar, f"{item.title} - art: {src_URL}")
 
@@ -401,7 +395,7 @@ for lib in lib_array:
                         os.makedirs(tgt_dir)
 
                     old_dir_name, msg = validate_filename(item.title)
-                    dir_name, msg = validate_filename(f"{tmid}-{item.title}")
+                    dir_name, msg = validate_filename(f"{item.title}-{tmid}")
                     attempts = 0
 
                     old_path = Path(tgt_dir, old_dir_name)
