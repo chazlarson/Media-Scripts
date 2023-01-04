@@ -322,6 +322,7 @@ INCLUDE_COLLECTION_ARTWORK=1                 # If set to 1, collection posters a
 ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection posters are retrieved
 GRAB_SEASONS=1                               # grab season posters
 GRAB_EPISODES=1                              # grab episode posters [requires GRAB_SEASONS]
+GRAB_BACKGROUNDS=1                           # If set to 1, backgrounds are retrieved [into a folder `backgrounds`]
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -352,65 +353,60 @@ The image names are: `TMDBID-TVDBID-RATINGKEY-INCREMENT.ext`
 
 POSTER_CONSOLIDATE=1:
 ```
-extracted_posters
+extracted_posters/
 └── all_libraries
-    ├── 100402-Captain America The Winter Soldier
-    │   ├── 100402-965-1456628-001.png
-    │   ├── 100402-965-1456628-002.png
+    ├── 3 12 Hours-847208
+    │   ├── 847208-None-80--001.jpg
+    │   ├── 847208-None-80--002.jpg
+    │   └── backgrounds
+    │       ├── 847208-None-80-background-001.jpg
+    │       └── 847208-None-80-background-002.jpg
+    └── 9-1-1 Lone Star-89393
+        ├── 89393-364080-353--001.jpg
+        ├── 89393-364080-353--002.jpg
+        ├── S01-Season 1
+        │   ├── 89393-364080-388-S01-001.jpg
+        │   ├── 89393-364080-388-S01-002.jpg
+        │   ├── S01E01-Pilot
+        │   │   ├── 89393-364080-389-S01E01-001.jpg
+        │   │   └── 89393-364080-389-S01E01-002.jpg
 ...
-    │   ├── 100402-965-1456628-014.png
-    │   └── 100402-965-1456628-015.png
-    ├── 10061-Escape from L.A
-    │   ├── 10061-2520-1985150-001.png
-    │   ├── 10061-2520-1985150-002.png
-...
-    │   ├── 10061-2520-1985150-014.png
-    │   └── 10061-2520-1985150-015.png
-...
+        │   └── backgrounds
+        │       ├── 89393-364080-388-background-001.jpg
+        │       └── 89393-364080-388-background-002.jpg
+        └── backgrounds
+            ├── 89393-364080-353-background-001.jpg
+            └── 89393-364080-353-background-002.jpg
 ```
 
 POSTER_CONSOLIDATE=0:
 ```
-extracted_posters
-├── Movies - 4K
-│   └── 100402-Captain America The Winter Soldier
-│       ├── 100402-965-1456628-001.png
-│       ├── 100402-965-1456628-002.png
+extracted_posters/
+├── Movies
+│   └── 3 12 Hours-847208
+│       ├── 847208-None-80--001.jpg
+│       ├── 847208-None-80--002.jpg
+│       └── backgrounds
+│           ├── 847208-None-80-background-001.jpg
+│           └── 847208-None-80-background-002.jpg
+└── TV Shows
+    └── 9-1-1 Lone Star-89393
+        ├── 89393-364080-353--001.jpg
+        ├── 89393-364080-353--002.jpg
+        ├── S01-Season 1
+        │   ├── 89393-364080-388-S01-001.jpg
+        │   ├── 89393-364080-388-S01-002.jpg
+        │   ├── S01E01-Pilot
+        │   │   ├── 89393-364080-389-S01E01-001.jpg
+        │   │   └── 89393-364080-389-S01E01-002.jpg
 ...
-│       ├── 100402-965-1456628-014.png
-│       └── 100402-965-1456628-015.png
-└── Movies - 1080p
-    └── 10061-Escape from L.A
-        ├── 10061-2520-1985150-001.png
-        ├── 10061-2520-1985150-002.png
-...
-        ├── 10061-2520-1985150-014.png
-        └── 10061-2520-1985150-015.png
-...
+        │   └── backgrounds
+        │       ├── 89393-364080-388-background-001.jpg
+        │       └── 89393-364080-388-background-002.jpg
+        └── backgrounds
+            ├── 89393-364080-353-background-001.jpg
+            └── 89393-364080-353-background-002.jpg
 ```
-
-NEW: The script now downloads the image and examines it to find out its type before adding an extension.  This requires that "libmagic" be installed on the host system.
-
-This is described [here](https://pypi.org/project/python-magic/) and reproduced below:
-
-Debian/Ubuntu:
-```
-sudo apt-get install libmagic1
-```
-
-Windows:
-You'll need DLLs for libmagic. @julian-r maintains a pypi package with the DLLs, you can fetch it with:
-
-```
-pip install python-magic-bin
-```
-
-OSX:
-When using Homebrew: `brew install libmagic`
-When using macports: `port install file`
-
-If `libmagic` is not installed, the script will default to a jpg extension for all files.
-
 
 ## grab-all-status.py
 
