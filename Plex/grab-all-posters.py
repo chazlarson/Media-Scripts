@@ -51,6 +51,7 @@ INCLUDE_COLLECTION_ARTWORK = booler(os.getenv("INCLUDE_COLLECTION_ARTWORK"))
 ONLY_COLLECTION_ARTWORK = booler(os.getenv("ONLY_COLLECTION_ARTWORK"))
 DELAY = int(os.getenv("DELAY"))
 
+GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
 GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
 GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
 
@@ -95,6 +96,25 @@ except Exception as ex:
 
 logging.info("connection success")
 
+
+# Image Type                          Image Path With Folders
+#                                     asset_folders: true
+# Collection/Movie/Show poster        assets/ASSET_NAME/poster.ext
+# Collection/Movie/Show background    assets/ASSET_NAME/background.ext
+# Season poster                       assets/ASSET_NAME/Season##.ext
+# Season background                   assets/ASSET_NAME/Season##_background.ext
+# Episode poster                      assets/ASSET_NAME/S##E##.ext
+# Episode background                  assets/ASSET_NAME/S##E##_background.ext
+
+# For Collections replace ASSET_NAME with the mapping name used with the collection unless system_name is specified, which you would then use what’s specified in system_name.
+# For Movies replace ASSET_NAME with the exact name of the folder the video file is stored in.
+# i.e. if you have Movies/Star Wars (1977)/Star Wars (1977) [1080p].mp4 then your asset directory would look at either assets/Star Wars (1977)/poster.png or assets/Star Wars (1977).png for the poster.
+# For Shows, Seasons, and Episodes replace ASSET_NAME with the exact name of the folder for the show as a whole.
+# i.e. if you have Shows/Game of Thrones/Season 1/Game of Thrones - S01E01.mp4 then your asset directory would look at either assets/Game of Thrones/poster.png or assets/Game of Thrones.png for the poster.
+# For Seasons replace ## with the zero padded season number (00 for specials)
+# For Episodes replacing the first ## with the zero padded season number (00 for specials), the second ## with the zero padded episode number
+# Replace .ext with the image extension
+
 def get_SE_str(item):
     if item.TYPE == "season":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
@@ -126,6 +146,145 @@ def check_for_images(file_path):
         return True
 
     return False
+
+def get_art(item, artwork_path, tmid, tvid):
+    global SCRIPT_STRING
+    attempts = 0
+    all_art = item.arts()
+
+    bg_path = Path(artwork_path, "backgrounds")
+
+    while attempts < 5:
+        try:
+            progress_str = f"{item.title} - {len(all_art)} backgrounds"
+
+            logging.info(progress_str)
+            bar.text = progress_str
+
+            import fnmatch
+
+            count = 0
+            posters_to_go = 0
+
+            if os.path.exists(bg_path):
+                count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
+                logging.info(f"{count} files in {bg_path}")
+
+            posters_to_go = count - POSTER_DEPTH
+
+            if posters_to_go < 0:
+                poster_to_go = abs(posters_to_go)
+            else:
+                poster_to_go = 0
+
+            logging.info(
+                f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
+            )
+
+            no_more_to_get = count >= len(all_art)
+            full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+            no_point_in_looking = full_for_now or no_more_to_get
+            if no_more_to_get:
+                logging.info(
+                    f"Grabbed all available posters: {no_more_to_get}"
+                )
+            if full_for_now:
+                logging.info(
+                    f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
+                )
+
+            if not no_point_in_looking:
+                idx = 1
+                for art in all_art:
+                    if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                        logging.info(
+                            f"Reached max depth of {POSTER_DEPTH}; exiting loop"
+                        )
+                        break
+
+                    art_obj = {}
+                    tgt_ext = ".dat" if ID_FILES else ".jpg"
+                    tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-background-{str(idx).zfill(3)}{tgt_ext}"
+                    tgt_file_path.replace("--", "-")
+
+                    final_file_path = os.path.join(
+                        bg_path, tgt_file_path
+                    )
+
+                    # final_file_path = get_valid_filename(final_file_path)
+
+                    art_obj["folder"] = bg_path
+                    art_obj["file"] = tgt_file_path
+
+                    src_URL = art.key
+                    if src_URL[0] == "/":
+                        src_URL = f"{PLEX_URL}{art.key}&X-Plex-Token={PLEX_TOKEN}"
+                        art_obj["URL"] = src_URL
+                        # plex_links.append(poster_obj)
+                    else:
+                        art_obj["URL"] = src_URL
+                        # external_links.append(poster_obj)
+
+                    bar.text = f"{progress_str} - {idx}"
+                    logging.info("--------------------------------")
+                    logging.info(f"processing {progress_str} - {idx}")
+
+                    if not check_for_images(final_file_path):
+                        logging.info(
+                            f"{final_file_path} does not yet exist"
+                        )
+                        if POSTER_DOWNLOAD:
+                            p = Path(bg_path)
+                            p.mkdir(parents=True, exist_ok=True)
+
+                            logging.info(f"downloading {src_URL}")
+                            logging.info(f"to {tgt_file_path}")
+                            thumbPath = download(
+                                f"{src_URL}",
+                                PLEX_TOKEN,
+                                filename=tgt_file_path,
+                                savepath=bg_path,
+                            )
+                            logging.info(f"Downloaded {thumbPath}")
+
+                            local_file = str(rename_by_type(final_file_path))
+
+                            # Write out exif data
+                            # load existing exif data from image
+                            # exif_dict = piexif.load(local_file)
+                            # # insert custom data in usercomment field
+                            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                            #     "PMM WAS HERE",
+                            #     encoding="unicode"
+                            # )
+                            # # insert mutated data (serialised into JSON) into image
+                            # piexif.insert(
+                            #     piexif.dump(exif_dict),
+                            #     local_file
+                            # )
+
+                        else:
+                            mkdir_flag = "" if IS_WINDOWS else "-p "
+                            script_line_start = ""
+                            if idx == 1:
+                                script_line_start = f'mkdir {mkdir_flag}"{bg_path}"{os.linesep}'
+
+                            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(bg_path, tgt_file_path)}" "{src_URL}"'
+
+                            SCRIPT_STRING = (
+                                SCRIPT_STRING + f"{script_line}{os.linesep}"
+                            )
+                    else:
+                        logging.info(f"{final_file_path} ALREADY EXISTS")
+
+                    idx += 1
+
+            attempts = 6
+        except Exception as ex:
+            progress_str = f"EX: {ex} {item.title}"
+            logging.info(progress_str)
+
+            attempts  += 1
 
 def get_posters(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
@@ -263,6 +422,9 @@ def get_posters(item, artwork_path, tmid, tvid):
             logging.info(progress_str)
 
             attempts  += 1
+
+    if GRAB_BACKGROUNDS:
+        get_art(item, artwork_path, tmid, tvid)
 
 def rename_by_type(target):
     p = Path(target)
