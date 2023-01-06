@@ -75,9 +75,9 @@ if POSTER_DOWNLOAD:
     SCRIPT_STRING = SCRIPT_SEED
 
 if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
+    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
 else:
-    lib_array = [LIBRARY_NAME]
+    LIB_ARRAY = [LIBRARY_NAME]
 
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
@@ -115,6 +115,55 @@ logging.info("connection success")
 # For Episodes replacing the first ## with the zero padded season number (00 for specials), the second ## with the zero padded episode number
 # Replace .ext with the image extension
 
+def get_asset_names(item):
+    ret_val = {}
+
+# item.media[0].parts[0].file
+# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
+# movie
+# '/mnt/local/Media/test-movies/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/3 ½ Stunden (2021) {imdb-tt13475394} - WEBRip-1080p-SAVASTANOS.mkv'
+#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/poster.ext
+#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/background.ext
+# show
+# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
+#  want: assets/Adam-12 (1968) {tvdb-78686}/poster.ext
+#  want: assets/Adam-12 (1968) {tvdb-78686}/background.ext
+    if item.TYPE == "season":
+        ret_val['poster'] = f"Season{str(item.seasonNumber).zfill(2)}"
+        ret_val['background'] = f"{ret_val['poster']}_background"
+        ret_val['asset'] = f"{{item.grandparentTitle}}"
+        #  NO PATH INFORMATION
+#  want: assets/Adam-12 (1968) {tvdb-78686}/Season03.ext
+#  want: assets/Adam-12 (1968) {tvdb-78686}/Season03_background.ext
+    elif item.TYPE == "episode":
+#  want: assets/Adam-12 (1968) {tvdb-78686}/S03E01.ext
+#  want: assets/Adam-12 (1968) {tvdb-78686}/S03E01_background.ext
+        # episode: foo = Path(item.media[0].parts[0].file)
+        # foo.parts[len(foo.parts)-3]
+        # '9-1-1 - Lone Star (2020) {tvdb-364080}'
+        ret_val['poster'] = f"{get_SE_str(item)}"
+        ret_val['background'] = f"{ret_val['poster']}_background"
+        ret_val['asset'] = f"{{item.grandparentTitle}}"
+    else:
+        # show: item.locations[0]
+        # '/mnt/local/Media/test-shows/9-1-1 - Lone Star (2020) {tvdb-364080}'
+        # movie: foo = Path(item.media[0].parts[0].file)
+        # foo.parts[len(foo.parts)-2]
+        # '3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}'
+        ret_val['poster'] = f"bing"
+        ret_val['background'] = f"bang"
+        ret_val['asset'] = f"boing"
+# movie
+# '/mnt/local/Media/test-movies/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/3 ½ Stunden (2021) {imdb-tt13475394} - WEBRip-1080p-SAVASTANOS.mkv'
+#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/poster.ext
+#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/background.ext
+# show
+# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
+#  want: assets/Adam-12 (1968) {tvdb-78686}/poster.ext
+#  want: assets/Adam-12 (1968) {tvdb-78686}/background.ext
+    
+    return ret_val
+
 def get_SE_str(item):
     if item.TYPE == "season":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
@@ -123,6 +172,25 @@ def get_SE_str(item):
     else:
         ret_val = f""
     
+    return ret_val
+
+def get_progress_string(item):
+    if item.TYPE == "season":
+        ret_val = f"{item.parentTitle} - {get_SE_str(item)} - {item.title}"
+    elif item.TYPE == "episode":
+        ret_val = f"{item.grandparentTitle} - {item.parentTitle} - {get_SE_str(item)} - {item.title}"
+    else:
+        ret_val = f"{item.title}"
+
+    return ret_val
+
+def get_image_name(tmid, tvid, item, idx, tgt_ext, background=False):
+    ret_val = ""
+    if background:
+        ret_val = f"{tmid}-{tvid}-{item.ratingKey}-background-{str(idx).zfill(3)}{tgt_ext}"
+    else:
+        ret_val = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
+    ret_val = ret_val.replace("--", "-")
     return ret_val
 
 def check_for_images(file_path):
@@ -147,6 +215,75 @@ def check_for_images(file_path):
 
     return False
 
+def process_the_thing(params):
+
+    tmid = params['tmid']
+    tvid = params['tvid']
+    item = params['item']
+    idx = params['idx']
+    folder_path = params['path']
+    background = params['background']
+    src_URL = params['src_URL']
+    provider = params['provider']
+    source = params['source']
+
+    tgt_ext = ".dat" if ID_FILES else ".jpg"
+    tgt_filename = get_image_name(tmid, tvid, item, idx, tgt_ext, background)
+
+    final_file_path = os.path.join(
+        folder_path, tgt_filename
+    )
+
+    if not check_for_images(final_file_path):
+        logging.info(
+            f"{final_file_path} does not yet exist"
+        )
+        if POSTER_DOWNLOAD:
+            p = Path(folder_path)
+            p.mkdir(parents=True, exist_ok=True)
+
+
+            logging.info(f"provider: {provider} - source: {source}")
+            logging.info(f"downloading {src_URL}")
+            logging.info(f"to {tgt_filename}")
+            thumbPath = download(
+                f"{src_URL}",
+                PLEX_TOKEN,
+                filename=tgt_filename,
+                savepath=folder_path,
+            )
+            logging.info(f"Downloaded {thumbPath}")
+
+            local_file = str(rename_by_type(final_file_path))
+
+            # Write out exif data
+            # load existing exif data from image
+            # exif_dict = piexif.load(local_file)
+            # # insert custom data in usercomment field
+            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+            #     src_URL,
+            #     encoding="unicode"
+            # )
+            # # insert mutated data (serialised into JSON) into image
+            # piexif.insert(
+            #     piexif.dump(exif_dict),
+            #     local_file
+            # )
+
+        else:
+            mkdir_flag = "" if IS_WINDOWS else "-p "
+            script_line_start = ""
+            if idx == 1:
+                script_line_start = f'mkdir {mkdir_flag}"{folder_path}"{os.linesep}'
+
+            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(folder_path, tgt_filename)}" "{src_URL}"'
+
+            SCRIPT_STRING = (
+                SCRIPT_STRING + f"{script_line}{os.linesep}"
+            )
+    else:
+        logging.info(f"{final_file_path} ALREADY EXISTS")
+
 def get_art(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
     attempts = 0
@@ -156,7 +293,7 @@ def get_art(item, artwork_path, tmid, tvid):
 
     while attempts < 5:
         try:
-            progress_str = f"{item.title} - {len(all_art)} backgrounds"
+            progress_str = f"{get_progress_string(item)} - {len(all_art)} backgrounds"
 
             logging.info(progress_str)
             bar.text = progress_str
@@ -202,80 +339,29 @@ def get_art(item, artwork_path, tmid, tvid):
                         )
                         break
 
-                    art_obj = {}
-                    tgt_ext = ".dat" if ID_FILES else ".jpg"
-                    tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-background-{str(idx).zfill(3)}{tgt_ext}"
-                    tgt_file_path.replace("--", "-")
+                    art_params = {}
+                    art_params['tmid'] = tmid
+                    art_params['tvid'] = tvid
+                    art_params['item'] = item
+                    art_params['idx'] = idx
+                    art_params['path'] = bg_path
+                    art_params['provider'] = art.provider
+                    art_params['source'] = 'remote'
 
-                    final_file_path = os.path.join(
-                        bg_path, tgt_file_path
-                    )
-
-                    # final_file_path = get_valid_filename(final_file_path)
-
-                    art_obj["folder"] = bg_path
-                    art_obj["file"] = tgt_file_path
+                    art_params['background'] = True
 
                     src_URL = art.key
                     if src_URL[0] == "/":
                         src_URL = f"{PLEX_URL}{art.key}&X-Plex-Token={PLEX_TOKEN}"
-                        art_obj["URL"] = src_URL
-                        # plex_links.append(poster_obj)
-                    else:
-                        art_obj["URL"] = src_URL
-                        # external_links.append(poster_obj)
+                        art_params['source'] = 'local'
+
+                    art_params['src_URL'] = src_URL
 
                     bar.text = f"{progress_str} - {idx}"
                     logging.info("--------------------------------")
                     logging.info(f"processing {progress_str} - {idx}")
 
-                    if not check_for_images(final_file_path):
-                        logging.info(
-                            f"{final_file_path} does not yet exist"
-                        )
-                        if POSTER_DOWNLOAD:
-                            p = Path(bg_path)
-                            p.mkdir(parents=True, exist_ok=True)
-
-                            logging.info(f"downloading {src_URL}")
-                            logging.info(f"to {tgt_file_path}")
-                            thumbPath = download(
-                                f"{src_URL}",
-                                PLEX_TOKEN,
-                                filename=tgt_file_path,
-                                savepath=bg_path,
-                            )
-                            logging.info(f"Downloaded {thumbPath}")
-
-                            local_file = str(rename_by_type(final_file_path))
-
-                            # Write out exif data
-                            # load existing exif data from image
-                            # exif_dict = piexif.load(local_file)
-                            # # insert custom data in usercomment field
-                            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-                            #     "PMM WAS HERE",
-                            #     encoding="unicode"
-                            # )
-                            # # insert mutated data (serialised into JSON) into image
-                            # piexif.insert(
-                            #     piexif.dump(exif_dict),
-                            #     local_file
-                            # )
-
-                        else:
-                            mkdir_flag = "" if IS_WINDOWS else "-p "
-                            script_line_start = ""
-                            if idx == 1:
-                                script_line_start = f'mkdir {mkdir_flag}"{bg_path}"{os.linesep}'
-
-                            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(bg_path, tgt_file_path)}" "{src_URL}"'
-
-                            SCRIPT_STRING = (
-                                SCRIPT_STRING + f"{script_line}{os.linesep}"
-                            )
-                    else:
-                        logging.info(f"{final_file_path} ALREADY EXISTS")
+                    process_the_thing(art_params)
 
                     idx += 1
 
@@ -293,7 +379,8 @@ def get_posters(item, artwork_path, tmid, tvid):
 
     while attempts < 5:
         try:
-            progress_str = f"{get_SE_str(item)} - {item.title} - {len(all_posters)} posters"
+            # progress_str = f"{item.title} - {get_SE_str(item)} - {len(all_posters)} posters"
+            progress_str = f"{get_progress_string(item)} - {len(all_posters)} posters"
 
             logging.info(progress_str)
             bar.text = progress_str
@@ -339,80 +426,30 @@ def get_posters(item, artwork_path, tmid, tvid):
                         )
                         break
 
-                    poster_obj = {}
-                    tgt_ext = ".dat" if ID_FILES else ".jpg"
-                    tgt_file_path = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
-                    tgt_file_path.replace("--", "-")
+                    art_params = {}
+                    art_params['tmid'] = tmid
+                    art_params['tvid'] = tvid
+                    art_params['item'] = item
+                    art_params['idx'] = idx
+                    art_params['path'] = artwork_path
+                    art_params['provider'] = poster.provider
+                    art_params['source'] = 'remote'
 
-                    final_file_path = os.path.join(
-                        artwork_path, tgt_file_path
-                    )
-
-                    # final_file_path = get_valid_filename(final_file_path)
-
-                    poster_obj["folder"] = artwork_path
-                    poster_obj["file"] = tgt_file_path
+                    art_params['background'] = False
 
                     src_URL = poster.key
                     if src_URL[0] == "/":
                         src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
-                        poster_obj["URL"] = src_URL
-                        # plex_links.append(poster_obj)
-                    else:
-                        poster_obj["URL"] = src_URL
-                        # external_links.append(poster_obj)
+                        art_params['source'] = 'local'
+                        
+
+                    art_params['src_URL'] = src_URL
 
                     bar.text = f"{progress_str} - {idx}"
                     logging.info("--------------------------------")
                     logging.info(f"processing {progress_str} - {idx}")
 
-                    if not check_for_images(final_file_path):
-                        logging.info(
-                            f"{final_file_path} does not yet exist"
-                        )
-                        if POSTER_DOWNLOAD:
-                            p = Path(artwork_path)
-                            p.mkdir(parents=True, exist_ok=True)
-
-                            logging.info(f"downloading {src_URL}")
-                            logging.info(f"to {tgt_file_path}")
-                            thumbPath = download(
-                                f"{src_URL}",
-                                PLEX_TOKEN,
-                                filename=tgt_file_path,
-                                savepath=artwork_path,
-                            )
-                            logging.info(f"Downloaded {thumbPath}")
-
-                            local_file = str(rename_by_type(final_file_path))
-
-                            # Write out exif data
-                            # load existing exif data from image
-                            # exif_dict = piexif.load(local_file)
-                            # # insert custom data in usercomment field
-                            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-                            #     "PMM WAS HERE",
-                            #     encoding="unicode"
-                            # )
-                            # # insert mutated data (serialised into JSON) into image
-                            # piexif.insert(
-                            #     piexif.dump(exif_dict),
-                            #     local_file
-                            # )
-
-                        else:
-                            mkdir_flag = "" if IS_WINDOWS else "-p "
-                            script_line_start = ""
-                            if idx == 1:
-                                script_line_start = f'mkdir {mkdir_flag}"{artwork_path}"{os.linesep}'
-
-                            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(artwork_path, tgt_file_path)}" "{src_URL}"'
-
-                            SCRIPT_STRING = (
-                                SCRIPT_STRING + f"{script_line}{os.linesep}"
-                            )
-                    else:
-                        logging.info(f"{final_file_path} ALREADY EXISTS")
+                    process_the_thing(art_params)
 
                     idx += 1
 
@@ -482,7 +519,7 @@ def get_file(src_URL, bar, item, target_path, target_file):
         SCRIPT_STRING += add_script_line(target_path, target_file, src_URL_with_token)
 
 
-for lib in lib_array:
+for lib in LIB_ARRAY:
     
     try:
         the_lib = plex.library.section(lib)
@@ -567,7 +604,7 @@ for lib in lib_array:
                         os.rename(old_path, artwork_path)
 
                     get_posters(item, artwork_path, tmid, tvid)
-
+                    get_asset_names(item)
                     if item.TYPE == "show":
                         if GRAB_SEASONS:
                             # get seasons
@@ -578,6 +615,7 @@ for lib in lib_array:
                                 safe_season_title = validate_filename(s.title)[0]
                                 season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{safe_season_title}")
                                 get_posters(s, season_artwork_path, tmid, tvid)
+                                get_asset_names(s)
                                 if GRAB_EPISODES:
                                     # get episodes
                                     episodes = s.episodes()
@@ -587,6 +625,7 @@ for lib in lib_array:
                                         safe_episode_title = validate_filename(e.title)[0]
                                         episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{safe_episode_title}")
                                         get_posters(e, episode_artwork_path, tmid, tvid)
+                                        get_asset_names(e)
 
                     bar()
 
