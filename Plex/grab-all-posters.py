@@ -55,6 +55,8 @@ GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
 GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
 GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
 
+USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
+
 if not DELAY:
     DELAY = 0
 
@@ -189,7 +191,11 @@ def get_image_name(tmid, tvid, item, idx, tgt_ext, background=False):
     if background:
         ret_val = f"{tmid}-{tvid}-{item.ratingKey}-background-{str(idx).zfill(3)}{tgt_ext}"
     else:
-        ret_val = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
+        if tmid is None and tvid is None:
+            # this is probably a collection
+            ret_val = f"{item.title}-{str(idx).zfill(3)}{tgt_ext}"
+        else:
+            ret_val = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
     ret_val = ret_val.replace("--", "-")
     return ret_val
 
@@ -374,6 +380,7 @@ def get_art(item, artwork_path, tmid, tvid):
 
 def get_posters(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
+
     attempts = 0
     all_posters = item.posters()
 
@@ -544,7 +551,7 @@ for lib in LIB_ARRAY:
                         logging.info(f"Starting {item.title}")
 
                         title = item.title
-                        tmpDict = {}
+
                         item_count = item_count + 1
                         if POSTER_CONSOLIDATE:
                             tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
@@ -559,7 +566,7 @@ for lib in LIB_ARRAY:
 
                         artwork_path = Path(tgt_dir, dir_name)
                         
-                        get_posters(item, artwork_path, tmid, tvid)
+                        get_posters(item, artwork_path, None, None)
 
                         bar()
 
@@ -583,7 +590,7 @@ for lib in LIB_ARRAY:
                     logging.info("================================")
                     logging.info(f"Starting {item.title}")
                     imdbid, tmid, tvid = getTID(item.guids)
-                    tmpDict = {}
+
                     item_count = item_count + 1
                     if POSTER_CONSOLIDATE:
                         tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
