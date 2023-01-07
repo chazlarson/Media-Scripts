@@ -22,6 +22,9 @@ import piexif.helper
 import filetype
 ID_FILES = True
 
+URL_ARRAY = []
+STATUS_FILE_NAME = "URLS.txt"
+
 load_dotenv()
 
 logging.basicConfig(
@@ -55,6 +58,7 @@ GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
 GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
 GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
 
+TRACK_URLS = booler(os.getenv("TRACK_URLS"))
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 
 if not DELAY:
@@ -176,6 +180,46 @@ def get_SE_str(item):
     
     return ret_val
 
+TOPLEVEL_TMID = ""
+TOPLEVEL_TVID = ""
+
+def get_subdir(item):
+    global TOPLEVEL_TMID
+    ret_val = ""
+    se_str = get_SE_str(item)
+    s_bit = se_str[:3]
+    
+    level_01 = None # 9-1-1 Lone Star-89393
+    level_02 = None # S01-Season 1
+    level_03 = None # S01E01-Pilot
+
+    if item.type == 'collection':
+        level_01, msg = validate_filename(f"collection-{item.title}")
+    else:
+        imdbid, tmid, tvid = getTID(item.guids)
+        if item.type == 'season':
+            level_01, msg = validate_filename(f"{item.parentTitle}-{TOPLEVEL_TMID}") # show level
+            safe_season_title, msg = validate_filename(item.title)
+            level_02 = f"{s_bit}-{safe_season_title}"
+        elif item.type == 'episode':
+            level_01, msg = validate_filename(f"{item.grandparentTitle}-{TOPLEVEL_TMID}") # show level
+            safe_season_title, msg = validate_filename(item.parentTitle)
+            level_02 = f"{s_bit}-{safe_season_title}"
+            safe_episode_title, msg = validate_filename(item.title)
+            level_03 = f"{se_str}-{safe_episode_title}" # episode level
+        else:
+            TOPLEVEL_TMID = tmid
+            TOPLEVEL_TVID = tvid
+            level_01, msg = validate_filename(f"{item.title}-{TOPLEVEL_TMID}") # show level
+
+    ret_val = Path(level_01)
+    if level_02:
+        ret_val = Path(ret_val, level_02)
+    if level_03:
+        ret_val = Path(ret_val, level_03)
+
+    return ret_val
+
 def get_progress_string(item):
     if item.TYPE == "season":
         ret_val = f"{item.parentTitle} - {get_SE_str(item)} - {item.title}"
@@ -186,16 +230,23 @@ def get_progress_string(item):
 
     return ret_val
 
-def get_image_name(tmid, tvid, item, idx, tgt_ext, background=False):
+def get_image_name(params, tgt_ext, background=False):
     ret_val = ""
+    item = params['item']
+    idx = params['idx']
+    provider = params['provider']
+    source = params['source']
+    safe_name, msg = validate_filename(item.title)
+
+    base_name = f"{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
+
     if background:
-        ret_val = f"{tmid}-{tvid}-{item.ratingKey}-background-{str(idx).zfill(3)}{tgt_ext}"
+        ret_val = f"background-{base_name}"
     else:
-        if tmid is None and tvid is None:
-            # this is probably a collection
-            ret_val = f"{item.title}-{str(idx).zfill(3)}{tgt_ext}"
+        if item.TYPE == "season" or item.TYPE == "episode":
+            ret_val = f"{get_SE_str(item)}-{safe_name}-{base_name}"
         else:
-            ret_val = f"{tmid}-{tvid}-{item.ratingKey}-{get_SE_str(item)}-{str(idx).zfill(3)}{tgt_ext}"
+            ret_val = f"{safe_name}-{base_name}"
     ret_val = ret_val.replace("--", "-")
     return ret_val
 
@@ -233,62 +284,72 @@ def process_the_thing(params):
     provider = params['provider']
     source = params['source']
 
-    tgt_ext = ".dat" if ID_FILES else ".jpg"
-    tgt_filename = get_image_name(tmid, tvid, item, idx, tgt_ext, background)
+    if not TRACK_URLS or (TRACK_URLS and URL_ARRAY.count(src_URL) == 0):
+        tgt_ext = ".dat" if ID_FILES else ".jpg"
+        tgt_filename = get_image_name(params, tgt_ext, background)
 
-    final_file_path = os.path.join(
-        folder_path, tgt_filename
-    )
-
-    if not check_for_images(final_file_path):
-        logging.info(
-            f"{final_file_path} does not yet exist"
+        final_file_path = os.path.join(
+            folder_path, tgt_filename
         )
-        if POSTER_DOWNLOAD:
-            p = Path(folder_path)
-            p.mkdir(parents=True, exist_ok=True)
 
-
-            logging.info(f"provider: {provider} - source: {source}")
-            logging.info(f"downloading {src_URL}")
-            logging.info(f"to {tgt_filename}")
-            thumbPath = download(
-                f"{src_URL}",
-                PLEX_TOKEN,
-                filename=tgt_filename,
-                savepath=folder_path,
+        if not check_for_images(final_file_path):
+            logging.info(
+                f"{final_file_path} does not yet exist"
             )
-            logging.info(f"Downloaded {thumbPath}")
+            if POSTER_DOWNLOAD:
+                p = Path(folder_path)
+                p.mkdir(parents=True, exist_ok=True)
 
-            local_file = str(rename_by_type(final_file_path))
 
-            # Write out exif data
-            # load existing exif data from image
-            # exif_dict = piexif.load(local_file)
-            # # insert custom data in usercomment field
-            # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-            #     src_URL,
-            #     encoding="unicode"
-            # )
-            # # insert mutated data (serialised into JSON) into image
-            # piexif.insert(
-            #     piexif.dump(exif_dict),
-            #     local_file
-            # )
+                logging.info(f"provider: {provider} - source: {source}")
+                logging.info(f"downloading {src_URL}")
+                logging.info(f"to {tgt_filename}")
+                thumbPath = download(
+                    f"{src_URL}",
+                    PLEX_TOKEN,
+                    filename=tgt_filename,
+                    savepath=folder_path,
+                )
+                logging.info(f"Downloaded {thumbPath}")
 
+                local_file = str(rename_by_type(final_file_path))
+
+                if local_file.find('.del') > 0:
+                    os.remove(local_file)
+
+                # Write out exif data
+                # load existing exif data from image
+                # exif_dict = piexif.load(local_file)
+                # # insert custom data in usercomment field
+                # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                #     src_URL,
+                #     encoding="unicode"
+                # )
+                # # insert mutated data (serialised into JSON) into image
+                # piexif.insert(
+                #     piexif.dump(exif_dict),
+                #     local_file
+                # )
+
+                URL_ARRAY.append(src_URL)
+
+                with open(STATUS_FILE_NAME, "a", encoding="utf-8") as sf:
+                    sf.write(f"{src_URL}{os.linesep}")
+            else:
+                mkdir_flag = "" if IS_WINDOWS else "-p "
+                script_line_start = ""
+                if idx == 1:
+                    script_line_start = f'mkdir {mkdir_flag}"{folder_path}"{os.linesep}'
+
+                script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(folder_path, tgt_filename)}" "{src_URL}"'
+
+                SCRIPT_STRING = (
+                    SCRIPT_STRING + f"{script_line}{os.linesep}"
+                )
         else:
-            mkdir_flag = "" if IS_WINDOWS else "-p "
-            script_line_start = ""
-            if idx == 1:
-                script_line_start = f'mkdir {mkdir_flag}"{folder_path}"{os.linesep}'
-
-            script_line = f'{script_line_start}curl -C - -fLo "{os.path.join(folder_path, tgt_filename)}" "{src_URL}"'
-
-            SCRIPT_STRING = (
-                SCRIPT_STRING + f"{script_line}{os.linesep}"
-            )
+            logging.info(f"{final_file_path} ALREADY EXISTS")
     else:
-        logging.info(f"{final_file_path} ALREADY EXISTS")
+        logging.info(f"{src_URL} ALREADY DOWNLOADED")
 
 def get_art(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
@@ -378,15 +439,35 @@ def get_art(item, artwork_path, tmid, tvid):
 
             attempts  += 1
 
-def get_posters(item, artwork_path, tmid, tvid):
+def get_posters(lib, item):
     global SCRIPT_STRING
+
+    imdbid = None
+    tmid = None
+    tvid = None
+
+    if item.type != 'collection':
+        imdbid, tmid, tvid = getTID(item.guids)
+    
+    if POSTER_CONSOLIDATE:
+        tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
+    else:
+        tgt_dir = os.path.join(POSTER_DIR, lib)
+
+    if not os.path.exists(tgt_dir):
+        os.makedirs(tgt_dir)
+
+    attempts = 0
+
+    item_path= get_subdir(item)
+
+    artwork_path = Path(tgt_dir, item_path)
 
     attempts = 0
     all_posters = item.posters()
 
     while attempts < 5:
         try:
-            # progress_str = f"{item.title} - {get_SE_str(item)} - {len(all_posters)} posters"
             progress_str = f"{get_progress_string(item)} - {len(all_posters)} posters"
 
             logging.info(progress_str)
@@ -475,8 +556,15 @@ def rename_by_type(target):
 
     kind = filetype.guess(target)
     if kind is None:
-        print('Cannot guess file type; assuming jpg')
-        extension = ".jpg"
+        with open(target, 'r') as file:
+            content = file.read()
+	    	# check if string present or not
+            if '404 Not Found' in content:
+                logging.info('Contains 404, deleting')
+                extension = ".del"
+            else:
+                logging.info('Cannot guess file type; using txt')
+                extension = ".txt"
     else:
         extension = f".{kind.extension}"
 
@@ -525,11 +613,19 @@ def get_file(src_URL, bar, item, target_path, target_file):
         bar_and_log(bar, f"{item.title} - building download command")
         SCRIPT_STRING += add_script_line(target_path, target_file, src_URL_with_token)
 
-
 for lib in LIB_ARRAY:
-    
     try:
         the_lib = plex.library.section(lib)
+
+        URL_ARRAY = []
+        title, msg = validate_filename(f"{the_lib.title}")
+        STATUS_FILE_NAME = f"{title}-{the_lib.uuid}.txt"
+        status_file = Path(STATUS_FILE_NAME)
+
+        if status_file.is_file():
+            with open(f"{STATUS_FILE_NAME}") as fp:
+                for line in fp:
+                    URL_ARRAY.append(line.strip())
 
         if INCLUDE_COLLECTION_ARTWORK:
             print(f"getting collections from [{lib}]...")
@@ -537,7 +633,6 @@ for lib in LIB_ARRAY:
             items = the_lib.collections()
             item_total = len(items)
             print(f"{item_total} collection(s) retrieved...")
-            item_count = 1
 
             tgt_ext = ".dat"
 
@@ -550,23 +645,7 @@ for lib in LIB_ARRAY:
                         logging.info("================================")
                         logging.info(f"Starting {item.title}")
 
-                        title = item.title
-
-                        item_count = item_count + 1
-                        if POSTER_CONSOLIDATE:
-                            tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
-                        else:
-                            tgt_dir = os.path.join(POSTER_DIR, lib)
-
-                        if not os.path.exists(tgt_dir):
-                            os.makedirs(tgt_dir)
-
-                        dir_name, msg = validate_filename(f"collection-{title}")
-                        attempts = 0
-
-                        artwork_path = Path(tgt_dir, dir_name)
-                        
-                        get_posters(item, artwork_path, None, None)
+                        get_posters(lib, item)
 
                         bar()
 
@@ -589,28 +668,8 @@ for lib in LIB_ARRAY:
 
                     logging.info("================================")
                     logging.info(f"Starting {item.title}")
-                    imdbid, tmid, tvid = getTID(item.guids)
 
-                    item_count = item_count + 1
-                    if POSTER_CONSOLIDATE:
-                        tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
-                    else:
-                        tgt_dir = os.path.join(POSTER_DIR, lib)
-
-                    if not os.path.exists(tgt_dir):
-                        os.makedirs(tgt_dir)
-
-                    old_dir_name, msg = validate_filename(item.title)
-                    dir_name, msg = validate_filename(f"{item.title}-{tmid}")
-                    attempts = 0
-
-                    old_path = Path(tgt_dir, old_dir_name)
-                    artwork_path = Path(tgt_dir, dir_name)
-
-                    if os.path.exists(old_path):
-                        os.rename(old_path, artwork_path)
-
-                    get_posters(item, artwork_path, tmid, tvid)
+                    get_posters(lib, item)
                     get_asset_names(item)
                     if item.TYPE == "show":
                         if GRAB_SEASONS:
@@ -619,9 +678,7 @@ for lib in LIB_ARRAY:
  
                             # loop over all:
                             for s in seasons:
-                                safe_season_title = validate_filename(s.title)[0]
-                                season_artwork_path = Path(artwork_path, f"{get_SE_str(s)}-{safe_season_title}")
-                                get_posters(s, season_artwork_path, tmid, tvid)
+                                get_posters(lib, s)
                                 get_asset_names(s)
                                 if GRAB_EPISODES:
                                     # get episodes
@@ -629,9 +686,7 @@ for lib in LIB_ARRAY:
 
                                     # loop over all
                                     for e in episodes:
-                                        safe_episode_title = validate_filename(e.title)[0]
-                                        episode_artwork_path = Path(season_artwork_path, f"{get_SE_str(e)}-{safe_episode_title}")
-                                        get_posters(e, episode_artwork_path, tmid, tvid)
+                                        get_posters(lib, e)
                                         get_asset_names(e)
 
                     bar()

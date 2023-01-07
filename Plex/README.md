@@ -323,6 +323,7 @@ ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection post
 GRAB_SEASONS=1                               # grab season posters
 GRAB_EPISODES=1                              # grab episode posters [requires GRAB_SEASONS]
 GRAB_BACKGROUNDS=1                           # If set to 1, backgrounds are retrieved [into a folder `backgrounds`]
+TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -334,6 +335,14 @@ If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one dire
 If "INCLUDE_COLLECTION_ARTWORK" is `1`, the script will grab artwork for all the collections in the target library.
 
 If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
+
+If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if hte same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
+
+If you delete the directory of extracted posters intending to download them again, be sure to delete these files, or nothing will be downloaded on that second pass.
+
+Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with missing parts absent as seen in the lists below.  The ID in 
+
+The "provider" is the original source of the image [tmdb, fanarttv, etc] and "source" will be "local" [downloaded from the plex server] or "remote" [downloaded from somewhere else].  A source of "none" means the image was uploaded to plex by a tool like PMM.  The remote URL can be found in the log.
 
 ### Usage
 1. setup as above
@@ -356,56 +365,67 @@ POSTER_CONSOLIDATE=1:
 extracted_posters/
 └── all_libraries
     ├── 3 12 Hours-847208
-    │   ├── 847208-None-80--001.jpg
-    │   ├── 847208-None-80--002.jpg
+    │   ├── 3 12 Hours-tmdb-local-001.jpg
+    │   ├── 3 12 Hours-tmdb-remote-002.jpg
     │   └── backgrounds
-    │       ├── 847208-None-80-background-001.jpg
-    │       └── 847208-None-80-background-002.jpg
-    └── 9-1-1 Lone Star-89393
-        ├── 89393-364080-353--001.jpg
-        ├── 89393-364080-353--002.jpg
-        ├── S01-Season 1
-        │   ├── 89393-364080-388-S01-001.jpg
-        │   ├── 89393-364080-388-S01-002.jpg
-        │   ├── S01E01-Pilot
-        │   │   ├── 89393-364080-389-S01E01-001.jpg
-        │   │   └── 89393-364080-389-S01E01-002.jpg
-...
-        │   └── backgrounds
-        │       ├── 89393-364080-388-background-001.jpg
-        │       └── 89393-364080-388-background-002.jpg
-        └── backgrounds
-            ├── 89393-364080-353-background-001.jpg
-            └── 89393-364080-353-background-002.jpg
+    │       ├── background-tmdb-local-001.jpg
+    │       └── background-tmdb-remote-002.jpg
+    ├── 9-1-1 Lone Star-89393
+    │   ├── 9-1-1 Lone Star-local-local-001.jpg
+    │   ├── 9-1-1 Lone Star-tmdb-local-002.jpg
+    │   ├── S01-Season 1
+    │   │   ├── S01-Season 1-local-local-001.jpg
+    │   │   ├── S01-Season 1-tmdb-local-002.jpg
+    │   │   ├── S01E01-Pilot
+    │   │   │   ├── S01E01-Pilot-local-local-001.jpg
+    │   │   │   └── S01E01-Pilot-tmdb-remote-002.jpg
+    │   │   └── backgrounds
+    │   │       ├── background-fanarttv-remote-001.jpg
+    │   │       └── background-fanarttv-remote-002.jpg
+    │   └── backgrounds
+    │       ├── background-local-local-001.jpg
+    │       └── background-tmdb-remote-002.jpg
+    ├── collection-ABC
+    │   ├── ABC-None-local-001.jpg
+    │   └── ABC-None-local-002.jpg
+    └── collection-IMDb Top 250
+        ├── IMDb Top 250-None-local-001.jpg
+        └── IMDb Top 250-None-local-002.png
 ```
 
 POSTER_CONSOLIDATE=0:
 ```
 extracted_posters/
+extracted_posters/
 ├── Movies
-│   └── 3 12 Hours-847208
-│       ├── 847208-None-80--001.jpg
-│       ├── 847208-None-80--002.jpg
-│       └── backgrounds
-│           ├── 847208-None-80-background-001.jpg
-│           └── 847208-None-80-background-002.jpg
+│   ├── 3 12 Hours-847208
+│   │   ├── 3 12 Hours-tmdb-local-001.jpg
+│   │   ├── 3 12 Hours-tmdb-remote-002.jpg
+│   │   └── backgrounds
+│   │       ├── background-tmdb-local-001.jpg
+│   │       └── background-tmdb-remote-002.jpg
+│   └── collection-IMDb Top 250
+│       ├── IMDb Top 250-None-local-001.jpg
+│       └── IMDb Top 250-None-local-002.png
 └── TV Shows
-    └── 9-1-1 Lone Star-89393
-        ├── 89393-364080-353--001.jpg
-        ├── 89393-364080-353--002.jpg
-        ├── S01-Season 1
-        │   ├── 89393-364080-388-S01-001.jpg
-        │   ├── 89393-364080-388-S01-002.jpg
-        │   ├── S01E01-Pilot
-        │   │   ├── 89393-364080-389-S01E01-001.jpg
-        │   │   └── 89393-364080-389-S01E01-002.jpg
-...
-        │   └── backgrounds
-        │       ├── 89393-364080-388-background-001.jpg
-        │       └── 89393-364080-388-background-002.jpg
-        └── backgrounds
-            ├── 89393-364080-353-background-001.jpg
-            └── 89393-364080-353-background-002.jpg
+    ├── 9-1-1 Lone Star-89393
+    │   ├── 9-1-1 Lone Star-local-local-001.jpg
+    │   ├── 9-1-1 Lone Star-tmdb-local-002.jpg
+    │   ├── S01-Season 1
+    │   │   ├── S01-Season 1-local-local-001.jpg
+    │   │   ├── S01-Season 1-tmdb-local-002.jpg
+    │   │   ├── S01E01-Pilot
+    │   │   │   ├── S01E01-Pilot-local-local-001.jpg
+    │   │   │   └── S01E01-Pilot-tmdb-remote-002.jpg
+    │   │   └── backgrounds
+    │   │       ├── background-fanarttv-remote-001.jpg
+    │   │       └── background-fanarttv-remote-002.jpg
+    │   └── backgrounds
+    │       ├── background-local-local-001.jpg
+    │       └── background-tmdb-remote-002.jpg
+    └── collection-ABC
+        ├── ABC-None-local-001.jpg
+        └── ABC-None-local-002.jpg
 ```
 
 ## grab-all-status.py
