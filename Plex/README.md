@@ -35,6 +35,7 @@ POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=False                        # generate a script rather than downloading
 POSTER_CONSOLIDATE=True                      # posters are separated into folders by library
+TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
 TRACK_RESET_STATUS=True                      # reset-posters-* keeps track of status and picks up where it left off
 ARTWORK=True                                 # current background is downloaded with current poster
 PLEX_PATHS=False
@@ -46,6 +47,9 @@ RESET_EPISODES=True                          # reset-posters-plex resets episode
 KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
 INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
 ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
+GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
+GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
 ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
 LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
 ```
