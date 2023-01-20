@@ -13,13 +13,19 @@ from dotenv import load_dotenv
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
-from helpers import booler, getTID, validate_filename
+from helpers import booler, get_ids, validate_filename
 
 import json
 import piexif
 import piexif.helper
 
 import filetype
+
+import requests
+import time
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
+
 ID_FILES = True
 
 URL_ARRAY = []
@@ -57,6 +63,10 @@ DELAY = int(os.getenv("DELAY"))
 GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
 GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
 GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
+ONLY_CURRENT = booler(os.getenv("ONLY_CURRENT"))
+
+if ONLY_CURRENT:
+    POSTER_DIR = os.getenv("CURRENT_POSTER_DIR")
 
 TRACK_URLS = booler(os.getenv("TRACK_URLS"))
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
@@ -92,7 +102,7 @@ tvdb_str = "tvdb://"
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
 try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+    plex = PlexServer(PLEX_URL, PLEX_TOKEN, timeout=360)
 except Unauthorized:
     print("Plex Error: Plex token is invalid")
     exit()
@@ -102,7 +112,39 @@ except Exception as ex:
 
 logging.info("connection success")
 
+def download_url(args):
+    t0 = time.time()
+    url, fn = args[0], args[1]
+    try:
+        r = requests.get(url)
+        with open(fn, 'wb') as f:
+            f.write(r.content)
+        return(url, time.time() - t0)
+    except Exception as e:
+        print('Exception in download_url():', e)
 
+def download_parallel(args):
+    cpus = cpu_count()
+    results = ThreadPool(cpus - 1).imap_unordered(download_url, args)
+    for result in results:
+        print('url:', result[0], 'time (s):', result[1])
+
+# urls = ['https://www.northwestknowledge.net/metdata/data/pr_1979.nc',
+# 'https://www.northwestknowledge.net/metdata/data/pr_1980.nc',
+# 'https://www.northwestknowledge.net/metdata/data/pr_1981.nc',
+# 'https://www.northwestknowledge.net/metdata/data/pr_1982.nc']
+
+# fns = [r'C:\Users\konrad\Downloads\pr_1979.nc',
+# r'C:\Users\konrad\Downloads\pr_1980.nc',
+# r'C:\Users\konrad\Downloads\pr_1981.nc',
+# r'C:\Users\konrad\Downloads\pr_1982.nc']
+
+# inputs = zip(urls, fns)
+
+# download_parallel(inputs)
+
+def get_asset_names(item):
+    ret_val = {}
 # Image Type                          Image Path With Folders
 #                                     asset_folders: true
 # Collection/Movie/Show poster        assets/ASSET_NAME/poster.ext
@@ -121,8 +163,6 @@ logging.info("connection success")
 # For Episodes replacing the first ## with the zero padded season number (00 for specials), the second ## with the zero padded episode number
 # Replace .ext with the image extension
 
-def get_asset_names(item):
-    ret_val = {}
 
 # item.media[0].parts[0].file
 # '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
@@ -196,7 +236,7 @@ def get_subdir(item):
     if item.type == 'collection':
         level_01, msg = validate_filename(f"collection-{item.title}")
     else:
-        imdbid, tmid, tvid = getTID(item.guids)
+        imdbid, tmid, tvid = get_ids(item.guids, None)
         if item.type == 'season':
             level_01, msg = validate_filename(f"{item.parentTitle}-{TOPLEVEL_TMID}") # show level
             safe_season_title, msg = validate_filename(item.title)
@@ -304,37 +344,43 @@ def process_the_thing(params):
                 logging.info(f"provider: {provider} - source: {source}")
                 logging.info(f"downloading {src_URL}")
                 logging.info(f"to {tgt_filename}")
-                thumbPath = download(
-                    f"{src_URL}",
-                    PLEX_TOKEN,
-                    filename=tgt_filename,
-                    savepath=folder_path,
-                )
-                logging.info(f"Downloaded {thumbPath}")
+                try:
+                    thumbPath = download(
+                        f"{src_URL}",
+                        PLEX_TOKEN,
+                        filename=tgt_filename,
+                        savepath=folder_path,
+                    )
+                    logging.info(f"Downloaded {thumbPath}")
+                
 
-                local_file = str(rename_by_type(final_file_path))
+                    local_file = str(rename_by_type(final_file_path))
 
-                if local_file.find('.del') > 0:
-                    os.remove(local_file)
+                    if local_file.find('.del') > 0:
+                        os.remove(local_file)
 
-                # Write out exif data
-                # load existing exif data from image
-                # exif_dict = piexif.load(local_file)
-                # # insert custom data in usercomment field
-                # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-                #     src_URL,
-                #     encoding="unicode"
-                # )
-                # # insert mutated data (serialised into JSON) into image
-                # piexif.insert(
-                #     piexif.dump(exif_dict),
-                #     local_file
-                # )
+                    # Write out exif data
+                    # load existing exif data from image
+                    # exif_dict = piexif.load(local_file)
+                    # # insert custom data in usercomment field
+                    # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                    #     src_URL,
+                    #     encoding="unicode"
+                    # )
+                    # # insert mutated data (serialised into JSON) into image
+                    # piexif.insert(
+                    #     piexif.dump(exif_dict),
+                    #     local_file
+                    # )
 
-                URL_ARRAY.append(src_URL)
+                    URL_ARRAY.append(src_URL)
 
-                with open(STATUS_FILE_NAME, "a", encoding="utf-8") as sf:
-                    sf.write(f"{src_URL}{os.linesep}")
+                    with open(URL_FILE_NAME, "a", encoding="utf-8") as sf:
+                        sf.write(f"{src_URL}{os.linesep}")
+
+                except Exception as ex:
+                    logging.info(f"error on {src_URL}")
+                    logging.info(f"{ex}")
             else:
                 mkdir_flag = "" if IS_WINDOWS else "-p "
                 script_line_start = ""
@@ -351,10 +397,19 @@ def process_the_thing(params):
     else:
         logging.info(f"{src_URL} ALREADY DOWNLOADED")
 
+class poster_placeholder:
+    def __init__(self, provider, key):
+        self.provider = provider
+        self.key = key
+
 def get_art(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
     attempts = 0
-    all_art = item.arts()
+    if ONLY_CURRENT:
+        all_art = []
+        all_art.append(poster_placeholder('current', item.art))
+    else:
+        all_art = item.arts()
 
     bg_path = Path(artwork_path, "backgrounds")
 
@@ -367,35 +422,38 @@ def get_art(item, artwork_path, tmid, tvid):
 
             import fnmatch
 
-            count = 0
-            posters_to_go = 0
-
-            if os.path.exists(bg_path):
-                count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
-                logging.info(f"{count} files in {bg_path}")
-
-            posters_to_go = count - POSTER_DEPTH
-
-            if posters_to_go < 0:
-                poster_to_go = abs(posters_to_go)
+            if ONLY_CURRENT:
+                no_point_in_looking = False
             else:
-                poster_to_go = 0
+                count = 0
+                posters_to_go = 0
 
-            logging.info(
-                f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
-            )
+                if os.path.exists(bg_path):
+                    count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
+                    logging.info(f"{count} files in {bg_path}")
 
-            no_more_to_get = count >= len(all_art)
-            full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
-            no_point_in_looking = full_for_now or no_more_to_get
-            if no_more_to_get:
+                posters_to_go = count - POSTER_DEPTH
+
+                if posters_to_go < 0:
+                    poster_to_go = abs(posters_to_go)
+                else:
+                    poster_to_go = 0
+
                 logging.info(
-                    f"Grabbed all available posters: {no_more_to_get}"
+                    f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
                 )
-            if full_for_now:
-                logging.info(
-                    f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
-                )
+
+                no_more_to_get = count >= len(all_art)
+                full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                no_point_in_looking = full_for_now or no_more_to_get
+                if no_more_to_get:
+                    logging.info(
+                        f"Grabbed all available posters: {no_more_to_get}"
+                    )
+                if full_for_now:
+                    logging.info(
+                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
+                    )
 
             if not no_point_in_looking:
                 idx = 1
@@ -447,24 +505,34 @@ def get_posters(lib, item):
     tvid = None
 
     if item.type != 'collection':
-        imdbid, tmid, tvid = getTID(item.guids)
+        logging.info("Getting IDs")
+        imdbid, tmid, tvid = get_ids(item.guids, None)
     
+    logging.info("building dir")
     if POSTER_CONSOLIDATE:
         tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
     else:
         tgt_dir = os.path.join(POSTER_DIR, lib)
 
+    logging.info("checking dir")
     if not os.path.exists(tgt_dir):
+        logging.info("creating dir")
         os.makedirs(tgt_dir)
 
     attempts = 0
 
+    logging.info("getting subdir")
     item_path= get_subdir(item)
 
     artwork_path = Path(tgt_dir, item_path)
 
+    logging.info("retrieving posters")
     attempts = 0
-    all_posters = item.posters()
+    if ONLY_CURRENT:
+        all_posters = []
+        all_posters.append(poster_placeholder('current', item.thumb))
+    else:
+        all_posters = item.posters()
 
     while attempts < 5:
         try:
@@ -475,35 +543,38 @@ def get_posters(lib, item):
 
             import fnmatch
 
-            count = 0
-            posters_to_go = 0
-
-            if os.path.exists(artwork_path):
-                count = len(fnmatch.filter(os.listdir(artwork_path), "*.*"))
-                logging.info(f"{count} files in {artwork_path}")
-
-            posters_to_go = count - POSTER_DEPTH
-
-            if posters_to_go < 0:
-                poster_to_go = abs(posters_to_go)
+            if ONLY_CURRENT:
+                no_point_in_looking = False
             else:
-                poster_to_go = 0
+                count = 0
+                posters_to_go = 0
 
-            logging.info(
-                f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
-            )
+                if os.path.exists(artwork_path):
+                    count = len(fnmatch.filter(os.listdir(artwork_path), "*.*"))
+                    logging.info(f"{count} files in {artwork_path}")
 
-            no_more_to_get = count >= len(all_posters)
-            full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
-            no_point_in_looking = full_for_now or no_more_to_get
-            if no_more_to_get:
+                posters_to_go = count - POSTER_DEPTH
+
+                if posters_to_go < 0:
+                    poster_to_go = abs(posters_to_go)
+                else:
+                    poster_to_go = 0
+
                 logging.info(
-                    f"Grabbed all available posters: {no_more_to_get}"
+                    f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
                 )
-            if full_for_now:
-                logging.info(
-                    f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
-                )
+
+                no_more_to_get = count >= len(all_posters)
+                full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                no_point_in_looking = full_for_now or no_more_to_get
+                if no_more_to_get:
+                    logging.info(
+                        f"Grabbed all available posters: {no_more_to_get}"
+                    )
+                if full_for_now:
+                    logging.info(
+                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
+                    )
 
             if not no_point_in_looking:
                 idx = 1
@@ -526,6 +597,7 @@ def get_posters(lib, item):
                     art_params['background'] = False
 
                     src_URL = poster.key
+
                     if src_URL[0] == "/":
                         src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
                         art_params['source'] = 'local'
@@ -617,13 +689,22 @@ for lib in LIB_ARRAY:
     try:
         the_lib = plex.library.section(lib)
 
-        URL_ARRAY = []
-        title, msg = validate_filename(f"{the_lib.title}")
-        STATUS_FILE_NAME = f"{title}-{the_lib.uuid}.txt"
-        status_file = Path(STATUS_FILE_NAME)
+        id_array = []
+        status_file_name = f"{the_lib.uuid}-{POSTER_DEPTH}.txt"
+        status_file = Path(status_file_name)
 
         if status_file.is_file():
-            with open(f"{STATUS_FILE_NAME}") as fp:
+            with open(f"{status_file_name}") as fp:
+                for line in fp:
+                    id_array.append(line.strip())
+
+        URL_ARRAY = []
+        title, msg = validate_filename(f"{the_lib.title}")
+        URL_FILE_NAME = f"{title}-{the_lib.uuid}.txt"
+        url_file = Path(URL_FILE_NAME)
+
+        if url_file.is_file():
+            with open(f"{URL_FILE_NAME}") as fp:
                 for line in fp:
                     URL_ARRAY.append(line.strip())
 
@@ -653,8 +734,9 @@ for lib in LIB_ARRAY:
                         time.sleep(DELAY)
 
         if not ONLY_COLLECTION_ARTWORK:
-            print(f"getting {the_lib.type}s from [{lib}]...")
-            logging.info(f"getting {the_lib.type}s from [{lib}]...")
+            count = plex.library.section(lib).totalSize
+            print(f"getting {count} {the_lib.type}s from [{lib}]...")
+            logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
             items = plex.library.section(lib).all()
             item_total = len(items)
             logging.info(f"looping over {item_total} items...")
@@ -666,28 +748,38 @@ for lib in LIB_ARRAY:
             with alive_bar(item_total, dual_line=True, title="Grab all posters") as bar:
                 for item in items:
 
-                    logging.info("================================")
-                    logging.info(f"Starting {item.title}")
+                    if id_array.count(f"{item.ratingKey}") == 0:
+                        logging.info("================================")
+                        logging.info(f"Starting {item.title}")
 
-                    get_posters(lib, item)
-                    get_asset_names(item)
-                    if item.TYPE == "show":
-                        if GRAB_SEASONS:
-                            # get seasons
-                            seasons = item.seasons()
- 
-                            # loop over all:
-                            for s in seasons:
-                                get_posters(lib, s)
-                                get_asset_names(s)
-                                if GRAB_EPISODES:
-                                    # get episodes
-                                    episodes = s.episodes()
+                        get_posters(lib, item)
+                        get_asset_names(item)
+                        if item.TYPE == "show":
+                            if GRAB_SEASONS:
+                                # get seasons
+                                seasons = item.seasons()
+    
+                                # loop over all:
+                                for s in seasons:
+                                    get_posters(lib, s)
+                                    get_asset_names(s)
+                                    if GRAB_EPISODES:
+                                        # get episodes
+                                        episodes = s.episodes()
 
-                                    # loop over all
-                                    for e in episodes:
-                                        get_posters(lib, e)
-                                        get_asset_names(e)
+                                        # loop over all
+                                        for e in episodes:
+                                            get_posters(lib, e)
+                                            get_asset_names(e)
+                        id_array.append(item.ratingKey)
+                    else:
+                        logging.info("================================")
+                        logging.info(f"SKIPPING {item.title}")
+                        bar.text = f"SKIPPING {item.title}"
+
+                    # write out item_array to file.
+                    with open(status_file, "a", encoding="utf-8") as sf:
+                        sf.write(f"{item.ratingKey}{os.linesep}")
 
                     bar()
 

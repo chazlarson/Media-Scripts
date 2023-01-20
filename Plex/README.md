@@ -46,6 +46,7 @@ RESET_EPISODES=True                          # reset-posters-plex resets episode
 KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
 INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
 ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
 LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
 ```
 
@@ -53,7 +54,6 @@ LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a 
 1. [user-emails.py](#user-emailspy) - extract user emails from your shares
 1. [reset-posters-tmdb.py](#reset-posters-tmdbpy) - reset all artwork in a library to TMDB default
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
-1. [grab-current-posters.py](#grab-current-posterspy) - Grab currently-set posters and optionally background artwork
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
@@ -169,141 +169,6 @@ Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in 
 
 With `RESET_SEASONS=True`, if the season doesn't have artwork the series artwork will be used instead.
 
-## grab-current-posters.py
-
-Perhaps you want to get local copies of the currently-set posters [and maybe backgrounds] for everything in a library.
-
-Script-specific variables in .env:
-```
-CURRENT_POSTER_DIR=current_posters           # put downloaded posters here
-POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
-POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-ARTWORK=1                                    # if set to 1, background artwork is retrieved
-PLEX_PATHS=1                                 # if set to 1, files are stored in a mirror of the plex folders rooted at CURRENT_POSTER_DIR
-NAME_IN_TITLE=1                              # if set to 1, files will have the title added to the name: 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg
-POSTER_NAME=poster                           # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for posters
-BACKGROUND_NAME=background                   # This is the SOMETHING in 13 Reasons Why (2017) {tvdb-323168}-SOMETHING.jpg for backgrounds
-INCLUDE_COLLECTION_ARTWORK=1                 # If set to 1, collection posters are retrieved
-ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection posters are retrieved
-```
-
-If "POSTER_DOWNLOAD" is `0`, the script will build a shell script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
-
-If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one directory rather than separating them by library name.  The idea is that Plex shows the same set of posters for "Star Wars" whether it's in your "Movies" or "Movies - 4K" or whatever other libraries, so there's no reason to pull the same set of posters multiple times.  There is an example below.
-
-If "ARTWORK" is `1`, the script will also grab the background artwork.
-
-If "PLEX_PATHS" is `1`, the script will store all the images in a mirror of your Plex library paths, under the Plex local asset names.  This overrides POSTER_CONSOLIDATE"
-
-If "NAME_IN_TITLE" is `1`, files will have titles in their names:
-
-`PLEX_PATHS=1`:
-```
-13 Reasons Why (2017) {tvdb-323168}-poster.jpg
-13 Reasons Why (2017) {tvdb-323168}-background.jpg
-```
-`PLEX_PATHS=0`:
-```
-13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-poster.jpg
-13 Reasons Why (2017) {tvdb-323168}-66788-323168-1791734-background.jpg
-```
-
-Without NAME_IN_TITLE:
-
-`PLEX_PATHS=1`:
-```
-poster.jpg
-background.jpg
-```
-`PLEX_PATHS=0`:
-```
-66788-323168-1791734-poster.jpg
-66788-323168-1791734-background.jpg
-```
-
-`POSTER_NAME` and `BACKGROUND_NAME` control the "-poster" and "-background" in those names.  Make sure they are different; if they are both blank and you want to download both poster and background; the second one won't get downloaded since hte file will already exist.
-
-### Usage
-1. setup as above
-2. Run with `python grab-current-posters.py`
-
-```
-connecting to https://stream.BING.BANG...
-getting items from [Movies - 4K]...
-looping over 3254 items...
-[----------------------------------------] 0.2% ... The 3 Worlds of Gulliver - DOWNLOADING 18974-36224-1841313-BG-Movies - 4K.png
-```
-
-The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
-
-The image names are: `TMDBID-TVDBID-RATINGKEY-INCREMENT.ext`
-
-POSTER_CONSOLIDATE=1:
-```
-current_posters
-└── all_libraries
-    ├── 100402-Captain America The Winter Soldier
-    │   ├── 100402-965-1456628-Movies - 4K.png
-    │   └── 100402-965-1456628-BG-Movies - 4K.png
-    └── 10061-Escape from L.A
-        ├── 10061-2520-1985150-Movies - 4K.png
-        └── 10061-2520-1985150-BG-Movies - 4K.png
-...
-```
-
-POSTER_CONSOLIDATE=0:
-```
-CURRENT_posters
-├── Movies - 4K
-│   └── 100402-Captain America The Winter Soldier
-│       ├── 100402-965-1456628.png
-│       └── 100402-965-1456628-BG.png
-└── Movies - 1080p
-    └── 10061-Escape from L.A
-        ├── 10061-2520-1985150.png
-        └── 10061-2520-1985150-BG.png
-...
-
-```
-PLEX_PATHS=1:
-```
-current_posters
-└── mnt
-    └── unionfs
-        └── movies
-            └── 4k
-            │   └── Captain America The Winter Soldier (2014) {tmdb-100402}
-            │       ├── background.jpg
-            │       └── poster.png
-            └── 1080
-                └── Escape from L.A (1996) {tmdb-10061}
-                    ├── background.jpg
-                    └── poster.png
-...
-```
-
-NEW: The script now downloads the image and examines it to find out its type before adding an extension.  This requires that "libmagic" be installed on the host system.
-
-This is described [here](https://pypi.org/project/python-magic/) and reproduced below:
-
-Debian/Ubuntu:
-```
-sudo apt-get install libmagic1
-```
-
-Windows:
-You'll need DLLs for libmagic. @julian-r maintains a pypi package with the DLLs, you can fetch it with:
-
-```
-pip install python-magic-bin
-```
-
-OSX:
-When using Homebrew: `brew install libmagic`
-When using macports: `port install file`
-
-If `libmagic` is not installed, the script will default to a jpg extension for all files.
-
 ## grab-all-posters.py
 
 Perhaps you want to get local copies of some or all the posters Plex knows about for everything in a library.
@@ -315,6 +180,7 @@ This script will download some or all the posters for every item in a given set 
 Script-specific variables in .env:
 ```
 POSTER_DIR=extracted_posters                 # put downloaded posters here
+CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
@@ -323,6 +189,7 @@ ONLY_COLLECTION_ARTWORK=0                    # If set to 1, ONLY collection post
 GRAB_SEASONS=1                               # grab season posters
 GRAB_EPISODES=1                              # grab episode posters [requires GRAB_SEASONS]
 GRAB_BACKGROUNDS=1                           # If set to 1, backgrounds are retrieved [into a folder `backgrounds`]
+ONLY_CURRENT=0                               # if set to 1, only current artwork is retrieved; also CURRENT_POSTER_DIR is used
 TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
 ```
 
