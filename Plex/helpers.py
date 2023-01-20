@@ -1,6 +1,10 @@
 from pathlib import Path
 from pathvalidate import is_valid_filename, sanitize_filename
 import itertools
+from plexapi.exceptions import Unauthorized
+from plexapi.server import PlexServer
+from tmdbapis import TMDbAPIs
+
 
 
 def booler(thing):
@@ -13,23 +17,40 @@ def redact(thing, badthing):
     return thing.replace(badthing, "(REDACTED)")
 
 
+def get_plex(PLEX_URL, PLEX_TOKEN):
+    print(f"connecting to {PLEX_URL}...")
+    try:
+        plex = PlexServer(PLEX_URL, PLEX_TOKEN, timeout=360)
+    except Unauthorized:
+        print("Plex Error: Plex token is invalid")
+        exit()
+    except Exception as ex:
+        print(f"Plex Error: {ex.args}")
+        exit()
+    return plex
+
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
-
-def getTID(theList):
+def get_ids(theList, TMDB_KEY):
     imdbid = None
     tmid = None
     tvid = None
     for guid in theList:
         if imdb_str in guid.id:
-            imdid = guid.id.replace(imdb_str, "")
+            imdbid = guid.id.replace(imdb_str, "")
         if tmdb_str in guid.id:
             tmid = guid.id.replace(tmdb_str, "")
         if tvdb_str in guid.id:
             tvid = guid.id.replace(tvdb_str, "")
+
     return imdbid, tmid, tvid
+
+def imdb_from_tmdb(tmdb_id, TMDB_KEY):
+    tmdb = TMDbAPIs(TMDB_KEY, language="en")
+
+    # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
 
 
 def validate_filename(filename):
@@ -39,7 +60,6 @@ def validate_filename(filename):
         mapping_name = sanitize_filename(filename)
         stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
         return mapping_name, stat_string
-
 
 def getPath(library, item, season=False):
     if item.type == "collection":
@@ -59,7 +79,6 @@ def getPath(library, item, season=False):
                             Path(part.file).parent.parent,
                             Path(part.file).parent.parent.stem,
                         )
-
 
 def normalise_environment(key_values):
     """Converts denormalised dict of (string -> string) pairs, where the first string
