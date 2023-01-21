@@ -29,6 +29,12 @@ from multiprocessing.pool import ThreadPool
 import sqlalchemy as db
 from sqlalchemy.dialects.sqlite import insert
 
+CHANGE_FILE_NAME = "changes.txt"
+change_file = Path(CHANGE_FILE_NAME)
+# Delete any existing change file
+if change_file.is_file:
+    change_file.unlink()
+
 def get_connection():
     engine = db.create_engine('sqlite:///ids.sqlite')
     metadata = db.MetaData()
@@ -63,6 +69,19 @@ def get_completed():
 
     return ResultSet
 
+def get_count():
+    engine, metadata, connection = get_connection()
+    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
+
+    query = db.select(keys)
+    ResultProxy = connection.execute(query)
+    ResultSet = ResultProxy.fetchall()
+    count = len(ResultSet)
+    
+    connection.close()
+
+    return count
+
 def insert_record(payload):
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
@@ -80,6 +99,34 @@ def insert_record(payload):
 
     result = connection.execute(do_update_stmt)
     connection.close()
+
+def get_diffs(payload):
+    engine, metadata, connection = get_connection()
+    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
+
+    query = db.select(keys).where(keys.columns.guid == payload['guid'])
+    ResultProxy = connection.execute(query)
+    ResultSet = ResultProxy.fetchall()
+    diffs = {
+        'new': False,
+        'updated': False,
+        'changes': {}
+    }
+    if len(ResultSet) > 0:
+        if ResultSet[0]['imdb'] != payload['imdb']:
+            diffs['changes']['imdb']= payload['imdb']
+        if ResultSet[0]['tmdb'] != payload['tmdb']:
+            diffs['changes']['tmdb']= payload['tmdb']
+        if ResultSet[0]['tmdb'] != payload['tmdb']:
+            diffs['changes']['tmdb']= payload['tmdb']
+        diffs['updated'] = len(diffs['changes']) > 0
+    else:
+        diffs['new'] = True
+        diffs['changes']['imdb']= payload['imdb']
+        diffs['changes']['tmdb']= payload['tmdb']
+        diffs['changes']['tmdb']= payload['tmdb']
+    
+    return diffs
 
 load_dotenv()
 
@@ -152,7 +199,19 @@ def get_IDs(type, item):
                             'complete': complete
                         }
 
-                        insert_record(payload)
+                        if guid =='5d77709531d95e001f1a5216':
+                            guid = guid
+
+                        diffs = get_diffs(payload)
+                            
+                        if diffs['new'] or diffs['updated']:
+                            # record change
+                            action = 'new' if diffs['new'] else 'updated'
+
+                            with open(change_file, "a", encoding="utf-8") as cf:
+                                cf.write(f"{guid} - {item.title} - {action} - {diffs['changes']} {os.linesep}")
+
+                            insert_record(payload)
                 except Exception as ex:
                     print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
@@ -174,6 +233,8 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
 
+with open(change_file, "a", encoding="utf-8") as cf:
+    cf.write(f"start: {get_count()} records{os.linesep}")
 
 for lib in LIB_ARRAY:
     completed_things = get_completed()
@@ -216,3 +277,7 @@ for lib in LIB_ARRAY:
         logging.info(progress_str)
 
         print(progress_str)
+
+with open(change_file, "a", encoding="utf-8") as cf:
+    cf.write(f"end: {get_count()} records{os.linesep}")
+
