@@ -58,6 +58,7 @@ LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a 
 1. [user-emails.py](#user-emailspy) - extract user emails from your shares
 1. [reset-posters-tmdb.py](#reset-posters-tmdbpy) - reset all artwork in a library to TMDB default
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
+1. [grab-all-IDs.py](#grab-all-IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
@@ -172,6 +173,13 @@ RESET_EPISODES=True                          # reset-posters-plex resets episode
 Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
 
 With `RESET_SEASONS=True`, if the season doesn't have artwork the series artwork will be used instead.
+
+## grab-all-IDs.py
+
+Perhaps you want to gather all the IDs for everything in a library.
+
+This script will go through a library and grab PLex RatingKey [which may be unique], IMDB ID, TMDB ID, and TVDB ID for everything in the list of libraries specified in the `.env`.  It stores the data in a sqlite database called `ids.sqlite`; the repo copy of this file contains that data for 105871 movies and 26699 TV Shows.
+
 
 ## grab-all-posters.py
 
