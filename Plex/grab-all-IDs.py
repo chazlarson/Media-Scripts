@@ -32,7 +32,7 @@ from sqlalchemy.dialects.sqlite import insert
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
 # Delete any existing change file
-if change_file.is_file:
+if change_file.is_file():
     change_file.unlink()
 
 def get_connection():
@@ -198,9 +198,6 @@ def get_IDs(type, item):
                             'type': type,
                             'complete': complete
                         }
-
-                        if guid =='5d77709531d95e001f1a5216':
-                            guid = guid
 
                         diffs = get_diffs(payload)
                             
