@@ -27,6 +27,7 @@ from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 
 import sqlalchemy as db
+from sqlalchemy.dialects.sqlite import insert
 
 def get_connection():
     engine = db.create_engine('sqlite:///ids.sqlite')
@@ -38,36 +39,46 @@ def get_connection():
         ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
     except db.exc.NoSuchTableError as nste:
         defaultitem = db.Table('keys', metadata,
-                db.Column('rating', db.Integer(), primary_key=True),
+                db.Column('guid', db.String(25), primary_key=True),
                 db.Column('imdb', db.String(25), nullable=True),
                 db.Column('tmdb', db.String(25), nullable=True),
                 db.Column('tvdb', db.String(25), nullable=True),
-                db.Column('title', db.String(255), primary_key=True),
-                db.Column('library', db.String(255), primary_key=True),
+                db.Column('title', db.String(255), nullable=True),
+                db.Column('type', db.String(25), nullable=True),
+                db.Column('complete', db.Boolean),
                 )
         metadata.create_all(engine)
 
     return engine, metadata, connection
 
-from sqlalchemy.dialects.sqlite import insert
-
-def insert_record(payload):
-    # insert into database here
+def get_completed():
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(rating=payload['rating'], 
+
+    query = db.select(keys).where(keys.columns.complete == True)
+    ResultProxy = connection.execute(query)
+    ResultSet = ResultProxy.fetchall()
+
+    connection.close()
+
+    return ResultSet
+
+def insert_record(payload):
+    engine, metadata, connection = get_connection()
+    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
+    stmt = insert(keys).values(guid=payload['guid'], 
                                     imdb=payload['imdb'], 
                                     tmdb=payload['tmdb'], 
                                     tvdb=payload['tvdb'], 
                                     title=payload['title'], 
-                                    library=payload['library'])
+                                    type=payload['type'], 
+                                    complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
-        index_elements=['rating', 'title', 'library'],
-        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], library=payload['library'])
+        index_elements=['guid'],
+        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], type=payload['type'], complete=payload['complete'])
     )
 
     result = connection.execute(do_update_stmt)
-    # connection.commit()
     connection.close()
 
 load_dotenv()
@@ -113,36 +124,55 @@ def get_progress_string(item):
 
     return ret_val
 
-def get_IDs(lib, item):
+def get_IDs(type, item):
     imdbid = None
     tmid = None
     tvid = None
+    raw_guid = item.guid
+    bits = raw_guid.split('/')
+    # plex://movie/5d776b59ad5437001f79c6f8
+    # local://3961921
+    if bits[0] == 'plex:':
+        try:
+            guid = bits[3]
+        
+            if guid not in COMPLETE_ARRAY:
+                try:
+                    if item.type != 'collection':
+                        logging.info("Getting IDs")
+                        imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
+                        complete = imdbid is not None and tmid is not None and tvid is not None 
+                        payload = {
+                            'guid': guid,
+                            'imdb': imdbid,
+                            'tmdb': tmid,
+                            'tvdb': tvid,
+                            'title': item.title,
+                            'type': type,
+                            'complete': complete
+                        }
 
-    try:
-        if item.type != 'collection':
-            logging.info("Getting IDs")
-            imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
-            # print(f"{item.ratingKey} - imdb: {imdbid} - tmdb: {tmid} - tvdb: {tvid} - {item.title} - {lib}")
-
-            payload = {
-                'rating': item.ratingKey,
-                'imdb': imdbid,
-                'tmdb': tmid,
-                'tvdb': tvid,
-                'title': item.title,
-                'library': lib
-            }
-
-            insert_record(payload)
-    except Exception as ex:
-        print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
-        logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
+                        insert_record(payload)
+                except Exception as ex:
+                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
+                    logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
+            else:
+                logging.info(f"{guid} already complete")
+        except Exception as ex:
+            logging.info(f"No guid: {bits}")
         
 def bar_and_log(the_bar, msg):
     logging.info(msg)
     the_bar.text = msg
 
+COMPLETE_ARRAY = []
+
 for lib in LIB_ARRAY:
+    completed_things = get_completed()
+
+    for thing in completed_things:
+        COMPLETE_ARRAY.append(thing['guid'])
+
     try:
         the_lib = plex.library.section(lib)
 
@@ -162,7 +192,7 @@ for lib in LIB_ARRAY:
                 logging.info("================================")
                 logging.info(f"Starting {item.title}")
 
-                get_IDs(lib, item)
+                get_IDs(the_lib.type, item)
 
                 bar()
 
