@@ -167,6 +167,14 @@ def bar_and_log(the_bar, msg):
 
 COMPLETE_ARRAY = []
 
+if LIBRARY_NAMES == 'ALL_LIBRARIES':
+    LIB_ARRAY = []
+    all_libs = plex.library.sections()
+    for lib in all_libs:
+        if lib.type == 'movie' or lib.type == 'show':
+            LIB_ARRAY.append(lib.title.strip())
+
+
 for lib in LIB_ARRAY:
     completed_things = get_completed()
 
