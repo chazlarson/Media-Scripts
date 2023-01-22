@@ -10,6 +10,7 @@ import time
 
 from alive_progress import alive_bar
 from dotenv import load_dotenv
+import plexapi
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
@@ -49,8 +50,9 @@ def get_connection():
                 db.Column('imdb', db.String(25), nullable=True),
                 db.Column('tmdb', db.String(25), nullable=True),
                 db.Column('tvdb', db.String(25), nullable=True),
-                db.Column('title', db.String(255), nullable=True),
-                db.Column('type', db.String(25), nullable=True),
+                db.Column('title', db.String(255), nullable=False),
+                db.Column('year', db.Integer),
+                db.Column('type', db.String(25), nullable=False),
                 db.Column('complete', db.Boolean),
                 )
         metadata.create_all(engine)
@@ -90,14 +92,21 @@ def insert_record(payload):
                                     tmdb=payload['tmdb'], 
                                     tvdb=payload['tvdb'], 
                                     title=payload['title'], 
+                                    year=payload['year'], 
                                     type=payload['type'], 
                                     complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
-        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], type=payload['type'], complete=payload['complete'])
+        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], year=payload['year'], type=payload['type'], complete=payload['complete'])
     )
 
     result = connection.execute(do_update_stmt)
+
+    # for Sql
+    # print(do_update_stmt.compile(compile_kwargs={"literal_binds": True}))
+    # INSERT INTO keys (guid, imdb, tmdb, tvdb, title, type, complete) VALUES ('5d77709531d95e001f1a5216', NULL, '557680', NULL, '"Eiyuu" Kaitai', 'movie', 0) ON CONFLICT (guid) DO UPDATE SET imdb = ?, tmdb = ?, tvdb = ?, title = ?, type = ?, complete = ?
+    # need to update that second set of '?'
+
     connection.close()
 
 def get_diffs(payload):
@@ -119,12 +128,15 @@ def get_diffs(payload):
             diffs['changes']['tmdb']= payload['tmdb']
         if ResultSet[0]['tmdb'] != payload['tmdb']:
             diffs['changes']['tmdb']= payload['tmdb']
+        if ResultSet[0]['year'] != payload['year']:
+            diffs['changes']['year']= payload['year']
         diffs['updated'] = len(diffs['changes']) > 0
     else:
         diffs['new'] = True
         diffs['changes']['imdb']= payload['imdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
+        diffs['changes']['year']= payload['year']
     
     return diffs
 
@@ -195,6 +207,7 @@ def get_IDs(type, item):
                             'tmdb': tmid,
                             'tvdb': tvid,
                             'title': item.title,
+                            'year': item.year,
                             'type': type,
                             'complete': complete
                         }
@@ -233,6 +246,29 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"start: {get_count()} records{os.linesep}")
 
+from plexapi import utils
+
+def get_type(type):
+    if type == 'movie':
+        return plexapi.video.Movie
+    if type == 'show':
+        return plexapi.video.Show
+
+def get_all(the_lib):
+    logging.info(f"Loading All items from library: {the_lib.title}")
+    lib_size = the_lib.totalViewSize()
+    lib_type = get_type(the_lib.type)
+    key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
+    container_start = 0
+    container_size = 500
+    results = []
+    while lib_size is None or container_start <= lib_size:
+        results.extend(plex.fetchItems(key, lib_type, container_start, container_size))
+        print(f"Loaded: {container_start}/{lib_size}", end='\r')
+        container_start += container_size
+    print(f"Completed loading {lib_size} {the_lib.type.capitalize()}s")
+    return results
+
 for lib in LIB_ARRAY:
     completed_things = get_completed()
 
@@ -245,7 +281,8 @@ for lib in LIB_ARRAY:
         count = plex.library.section(lib).totalSize
         print(f"getting {count} {the_lib.type}s from [{lib}]...")
         logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        items = plex.library.section(lib).all()
+        items = get_all(the_lib)
+        # items = the_lib.all()
         item_total = len(items)
         logging.info(f"looping over {item_total} items...")
         item_count = 1
