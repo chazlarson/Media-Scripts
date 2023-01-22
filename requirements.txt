@@ -13,3 +13,4 @@ tmdbv3api
 tvdb_v4_official
 piexif
 filetype
+sqlalchemy<2.0
