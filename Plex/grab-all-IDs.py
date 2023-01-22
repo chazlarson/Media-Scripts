@@ -52,6 +52,7 @@ def get_connection():
                 db.Column('tvdb', db.String(25), nullable=True),
                 db.Column('title', db.String(255), nullable=False),
                 db.Column('year', db.Integer),
+                db.Column('source', db.Integer),
                 db.Column('type', db.String(25), nullable=False),
                 db.Column('complete', db.Boolean),
                 )
@@ -173,16 +174,6 @@ foo = plex.library.sections()
 
 logging.info("connection success")
 
-def get_progress_string(item):
-    if item.TYPE == "season":
-        ret_val = f"{item.parentTitle} - {get_SE_str(item)} - {item.title}"
-    elif item.TYPE == "episode":
-        ret_val = f"{item.grandparentTitle} - {item.parentTitle} - {get_SE_str(item)} - {item.title}"
-    else:
-        ret_val = f"{item.title}"
-
-    return ret_val
-
 def get_IDs(type, item):
     imdbid = None
     tmid = None
@@ -219,7 +210,7 @@ def get_IDs(type, item):
                             action = 'new' if diffs['new'] else 'updated'
 
                             with open(change_file, "a", encoding="utf-8") as cf:
-                                cf.write(f"{guid} - {item.title} - {action} - {diffs['changes']} {os.linesep}")
+                                cf.write(f"{action} - {payload} {os.linesep}")
 
                             insert_record(payload)
                 except Exception as ex:
