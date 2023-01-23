@@ -1,0 +1,9 @@
+
+after running, set source to 0 on all null
+
+sqlite3 ids.sqlite "update keys set source=0 where source is null;" ".headers on;" ".mode csv" ".output ids.csv" "select * from keys;" ".exit"
+
+Maybe use this to git add-commit-push the db and csv?
+
+https://terracoders.com/blog/git-add-commit-and-push-all-once-bash-function
+
