@@ -292,10 +292,8 @@ for lib in LIB_ARRAY:
         print(progress_str)
 
 logging.info("================================")
-logging.info(f"NEW: {len(NEW)}")
-logging.info(f"UPDATED: {len(UPDATED)}")
-print(f"NEW: {len(NEW)}")
-print(f"UPDATED: {len(UPDATED)}")
+logging.info(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+print(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
 
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"end: {get_count()} records{os.linesep}")
