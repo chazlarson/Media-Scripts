@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 from timeit import default_timer as timer
 import time
-from helpers import booler
+from helpers import booler, get_all, get_plex
 from pathlib import Path
 
 start = timer()
@@ -47,31 +47,30 @@ except:
     DELAY = 0
 
 if TARGET_LABELS:
-    lbl_array = TARGET_LABELS.split(",")
+    LBL_ARRAY = TARGET_LABELS.split(",")
 else:
-    lbl_array = ["xy22y1973"]
+    LBL_ARRAY = ["xy22y1973"]
 
 if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
+    LIB_ARRAY = LIBRARY_NAMES.split(",")
 else:
-    lib_array = [LIBRARY_NAME]
+    LIB_ARRAY = [LIBRARY_NAME]
 
 print(f"connecting to {PLEX_URL}...")
-logging.info(f"connecting to {PLEX_URL}...")
-try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-except Unauthorized:
-    print("Plex Error: Plex token is invalid")
-    exit()
-except Exception as ex:
-  print(f"Plex Error: {ex.args}")
-  exit()
-
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 logging.info("connection success")
 
-for lib in lib_array:
+if LIBRARY_NAMES == 'ALL_LIBRARIES':
+    LIB_ARRAY = []
+    all_libs = plex.library.sections()
+    for lib in all_libs:
+        if lib.type == 'movie' or lib.type == 'show':
+            LIB_ARRAY.append(lib.title.strip())
+
+for lib in LIB_ARRAY:
     id_array = []
-    status_file_name = plex.library.section(lib).uuid + ".txt"
+    the_lib = plex.library.section(lib)
+    status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
 
     if status_file.is_file():
@@ -79,16 +78,16 @@ for lib in lib_array:
             for line in fp:
                 id_array.append(line.strip())
 
-    for lbl in lbl_array:
+    for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
             print(f"{os.linesep}getting all items from the library [{lib}]...")
-            items = plex.library.section(lib).all()
+            items = get_all(the_lib)
             REMOVE_LABELS = False
         else:
             print(
                 f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]..."
             )
-            items = plex.library.section(lib).search(label=lbl)
+            items = the_lib.search(label=lbl)
         item_total = len(items)
         print(f"{item_total} item(s) retrieved...")
         item_count = 1

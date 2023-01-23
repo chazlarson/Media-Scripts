@@ -23,11 +23,12 @@ PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+UNMATCHED_ONLY = os.getenv("UNMATCHED_ONLY")
 
 if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
+    LIB_ARRAY = LIBRARY_NAMES.split(",")
 else:
-    lib_array = [LIBRARY_NAME]
+    LIB_ARRAY = [LIBRARY_NAME]
 
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
@@ -48,14 +49,26 @@ def progress(count, total, status=""):
 print(f"connecting to {PLEX_URL}...")
 logging.info(f"connecting to {PLEX_URL}...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-for lib in lib_array:
+
+if LIBRARY_NAMES == 'ALL_LIBRARIES':
+    LIB_ARRAY = []
+    all_libs = plex.library.sections()
+    for lib in all_libs:
+        if lib.type == 'movie' or lib.type == 'show':
+            LIB_ARRAY.append(lib.title.strip())
+
+for lib in LIB_ARRAY:
+    the_lib = plex.library.section(lib)
     print(f"getting items from [{lib}]...")
     logging.info(f"getting items from [{lib}]...")
-    items = plex.library.section(lib).all()
+    if UNMATCHED_ONLY:
+        items = the_lib.search(unmatched=True)
+    else:
+        items = the_lib.all()
     item_total = len(items)
     print(f"looping over {item_total} items...")
     logging.info(f"looping over {item_total} items...")
-    item_count = 1
+    item_count = 0
 
     plex_links = []
     external_links = []

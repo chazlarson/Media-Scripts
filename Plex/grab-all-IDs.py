@@ -159,8 +159,6 @@ else:
 logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
-foo = plex.library.sections()
-
 logging.info("connection success")
 
 def get_IDs(type, item):
@@ -226,27 +224,6 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"start: {get_count()} records{os.linesep}")
-
-def get_type(type):
-    if type == 'movie':
-        return plexapi.video.Movie
-    if type == 'show':
-        return plexapi.video.Show
-
-def get_all(the_lib):
-    logging.info(f"Loading All items from library: {the_lib.title}")
-    lib_size = the_lib.totalViewSize()
-    lib_type = get_type(the_lib.type)
-    key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
-    container_start = 0
-    container_size = 500
-    results = []
-    while lib_size is None or container_start <= lib_size:
-        results.extend(plex.fetchItems(key, lib_type, container_start, container_size))
-        print(f"Loaded: {container_start}/{lib_size}", end='\r')
-        container_start += container_size
-    print(f"Completed loading {lib_size} {the_lib.type.capitalize()}s")
-    return results
 
 for lib in LIB_ARRAY:
     completed_things = get_completed()

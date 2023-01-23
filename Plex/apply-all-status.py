@@ -5,7 +5,7 @@ import sys
 import textwrap
 from dotenv import load_dotenv
 from plexapi.server import PlexServer
-
+from helpers import get_all, get_plex
 load_dotenv()
 
 PLEX_URL = os.getenv("TARGET_PLEX_URL")
@@ -43,7 +43,7 @@ current_show = None
 last_library = None
 
 print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
@@ -96,10 +96,10 @@ with open("status.txt") as fp:
 
         if plex_user != connected_plex_user:
             if plex_user.lower() == PLEX_OWNER.lower():
-                plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+                plex = get_plex(PLEX_URL, PLEX_TOKEN)
             else:
                 user_acct = get_user_acct(all_users, plex_user)
-                plex = PlexServer(PLEX_URL, user_acct.get_token(PMI))
+                plex = get_plex(PLEX_URL, user_acct.get_token(PMI))
             connected_plex_user = plex_user
             print(f"------------ {connected_plex_user} ------------")
 

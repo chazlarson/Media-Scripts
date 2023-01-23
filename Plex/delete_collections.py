@@ -3,6 +3,7 @@ from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv
 import time
+from helpers import get_plex
 
 load_dotenv()
 
@@ -21,9 +22,9 @@ if not PLEX_TIMEOUT:
     PLEX_TIMEOUT = 120
 
 if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
+    LIB_ARRAY = LIBRARY_NAMES.split(",")
 else:
-    lib_array = [LIBRARY_NAME]
+    LIB_ARRAY = [LIBRARY_NAME]
 
 if KEEP_COLLECTIONS:
     keeper_array = KEEP_COLLECTIONS.split(",")
@@ -32,7 +33,14 @@ else:
 
 os.environ["PLEXAPI_PLEXAPI_TIMEOUT"] = str(PLEX_TIMEOUT)
 
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
+
+if LIBRARY_NAMES == 'ALL_LIBRARIES':
+    LIB_ARRAY = []
+    all_libs = plex.library.sections()
+    for lib in all_libs:
+        if lib.type == 'movie' or lib.type == 'show':
+            LIB_ARRAY.append(lib.title.strip())
 
 coll_obj = {}
 coll_obj["collections"] = {}
@@ -42,10 +50,9 @@ def get_sort_text(argument):
     switcher = {0: "release", 1: "alpha", 2: "custom"}
     return switcher.get(argument, "invalid-sort")
 
-
-for lib in lib_array:
-    movies = plex.library.section(lib)
-    items = movies.collections()
+for lib in LIB_ARRAY:
+    the_lib = plex.library.section(lib)
+    items = the_lib.collections()
     item_total = len(items)
     print(f"{item_total} collection(s) retrieved...")
     item_count = 1

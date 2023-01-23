@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import sys
 import textwrap
 
+from helpers import get_all, get_plex
+
 load_dotenv()
 
 PLEX_URL = os.getenv("PLEX_URL")
@@ -88,7 +90,7 @@ connected_plex_user = PLEX_OWNER
 connected_plex_library = ""
 
 print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
@@ -102,7 +104,8 @@ try:
     for plex_section in plex_sections:
         if plex_section.type != "artist":
             print(f"------------ {plex_section.title} ------------")
-            items = plex.library.section(plex_section.title)
+            the_lib = plex.library.section(plex_section.title)
+            items = get_all(the_lib)
             if items.type == "show":
                 print("Gathering watched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
@@ -143,13 +146,15 @@ for plex_user in all_users:
     user_idx += 1
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
-        user_plex = PlexServer(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
+        user_plex = get_plex(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
 
         plex_sections = user_plex.library.sections()
         for plex_section in plex_sections:
             if plex_section.type != "artist":
                 print(f"------------ {plex_section.title} ------------")
-                items = user_plex.library.section(plex_section.title)
+                the_lib = user_plex.library.section(plex_section.title)
+
+                items = get_all(the_lib)
                 if items.type == "show":
                     for video in items.searchEpisodes(unwatched=False):
                         file_string = (

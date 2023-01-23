@@ -2,6 +2,7 @@ from plexapi.server import PlexServer
 from plexapi.exceptions import Unauthorized
 import os
 from dotenv import load_dotenv
+from helpers import get_plex
 
 load_dotenv()
 
@@ -10,14 +11,7 @@ PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
 print(f"connecting to {PLEX_URL}...")
-try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-except Unauthorized:
-    print("Plex Error: Plex token is invalid")
-    exit()
-except Exception as ex:
-  print(f"Plex Error: {ex.args}")
-  exit()
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 PMI = plex.machineIdentifier
 
@@ -31,7 +25,7 @@ for plex_user in all_users:
     user_acct = account.user(plex_user.title)
     user_idx += 1
     try:
-        user_plex = PlexServer(PLEX_URL, user_acct.get_token(PMI))
+        user_plex = get_plex(PLEX_URL, user_acct.get_token(PMI))
 
         playlists = user_plex.playlists()
         if len(playlists) > 0:

@@ -1,30 +1,28 @@
+import json
 import logging
 import os
-import re
 import platform
-from pathlib import Path
+import re
 import sys
-from pathvalidate import ValidationError, validate_filename
-
-import time
-
-from alive_progress import alive_bar
-from dotenv import load_dotenv
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from helpers import booler, get_ids, validate_filename
-
-import json
-import piexif
-import piexif.helper
-
-import filetype
-
-import requests
 import time
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
+
+import filetype
+import piexif
+import piexif.helper
+import plexapi
+import requests
+from alive_progress import alive_bar
+from dotenv import load_dotenv
+from pathvalidate import ValidationError, validate_filename
+from plexapi import utils
+from plexapi.exceptions import Unauthorized
+from plexapi.server import PlexServer
+from plexapi.utils import download
+
+from helpers import booler, get_ids, get_plex, get_all, validate_filename
 
 ID_FILES = True
 
@@ -99,18 +97,18 @@ imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
-print(f"connecting to {PLEX_URL}...")
+
 logging.info(f"connecting to {PLEX_URL}...")
-try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN, timeout=360)
-except Unauthorized:
-    print("Plex Error: Plex token is invalid")
-    exit()
-except Exception as ex:
-  print(f"Plex Error: {ex.args}")
-  exit()
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
+
+if LIBRARY_NAMES == 'ALL_LIBRARIES':
+    LIB_ARRAY = []
+    all_libs = plex.library.sections()
+    for lib in all_libs:
+        if lib.type == 'movie' or lib.type == 'show':
+            LIB_ARRAY.append(lib.title.strip())
 
 def download_url(args):
     t0 = time.time()
@@ -734,10 +732,7 @@ for lib in LIB_ARRAY:
                         time.sleep(DELAY)
 
         if not ONLY_COLLECTION_ARTWORK:
-            count = plex.library.section(lib).totalSize
-            print(f"getting {count} {the_lib.type}s from [{lib}]...")
-            logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-            items = plex.library.section(lib).all()
+            items = get_all(the_lib)
             item_total = len(items)
             logging.info(f"looping over {item_total} items...")
             item_count = 1

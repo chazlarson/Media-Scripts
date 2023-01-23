@@ -1,6 +1,7 @@
 from plexapi.server import PlexServer
 from dotenv import load_dotenv
 import os
+from helpers import get_plex
 
 load_dotenv()
 
@@ -8,7 +9,7 @@ PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 
 print("connecting...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 plexacc = plex.myPlexAccount()
 print("getting users...")
 users = plexacc.users()
