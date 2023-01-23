@@ -1,34 +1,30 @@
+import json
 import logging
 import os
-import re
 import platform
-from pathlib import Path
+import re
 import sys
-from pathvalidate import ValidationError, validate_filename
-
-import time
-
-from alive_progress import alive_bar
-from dotenv import load_dotenv
-import plexapi
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from helpers import booler, get_ids, validate_filename, get_plex
-
-import json
-import piexif
-import piexif.helper
-
-import filetype
-
-import requests
 import time
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 
+import filetype
+import piexif
+import piexif.helper
+import plexapi
+import requests
 import sqlalchemy as db
+from alive_progress import alive_bar
+from dotenv import load_dotenv
+from pathvalidate import ValidationError, validate_filename
+from plexapi import utils
+from plexapi.exceptions import Unauthorized
+from plexapi.server import PlexServer
+from plexapi.utils import download
 from sqlalchemy.dialects.sqlite import insert
+
+from helpers import booler, get_ids, get_plex, validate_filename
 
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
@@ -103,11 +99,6 @@ def insert_record(payload):
 
     result = connection.execute(do_update_stmt)
 
-    # for Sql
-    # print(do_update_stmt.compile(compile_kwargs={"literal_binds": True}))
-    # INSERT INTO keys (guid, imdb, tmdb, tvdb, title, type, complete) VALUES ('5d77709531d95e001f1a5216', NULL, '557680', NULL, '"Eiyuu" Kaitai', 'movie', 0) ON CONFLICT (guid) DO UPDATE SET imdb = ?, tmdb = ?, tvdb = ?, title = ?, type = ?, complete = ?
-    # need to update that second set of '?'
-
     connection.close()
 
 def get_diffs(payload):
@@ -157,15 +148,13 @@ PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TMDB_KEY = os.getenv("TMDB_KEY")
+NEW = []
+UPDATED = []
 
 if LIBRARY_NAMES:
     LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
 else:
     LIB_ARRAY = [LIBRARY_NAME]
-
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
 
 logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
@@ -207,7 +196,12 @@ def get_IDs(type, item):
                             
                         if diffs['new'] or diffs['updated']:
                             # record change
-                            action = 'new' if diffs['new'] else 'updated'
+                            if diffs['new']:
+                                action = 'new'
+                                NEW.append(guid)
+                            else:
+                                action = 'updated'
+                                UPDATED.append(guid)
 
                             with open(change_file, "a", encoding="utf-8") as cf:
                                 cf.write(f"{action} - {payload} {os.linesep}")
@@ -221,10 +215,6 @@ def get_IDs(type, item):
         except Exception as ex:
             logging.info(f"No guid: {bits}")
         
-def bar_and_log(the_bar, msg):
-    logging.info(msg)
-    the_bar.text = msg
-
 COMPLETE_ARRAY = []
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
@@ -236,8 +226,6 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"start: {get_count()} records{os.linesep}")
-
-from plexapi import utils
 
 def get_type(type):
     if type == 'movie':
@@ -302,6 +290,12 @@ for lib in LIB_ARRAY:
         logging.info(progress_str)
 
         print(progress_str)
+
+logging.info("================================")
+logging.info(f"NEW: {len(NEW)}")
+logging.info(f"UPDATED: {len(UPDATED)}")
+print(f"NEW: {len(NEW)}")
+print(f"UPDATED: {len(UPDATED)}")
 
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"end: {get_count()} records{os.linesep}")
