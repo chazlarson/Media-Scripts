@@ -24,7 +24,7 @@ from plexapi.server import PlexServer
 from plexapi.utils import download
 from sqlalchemy.dialects.sqlite import insert
 
-from helpers import booler, get_ids, get_plex, validate_filename
+from helpers import booler, get_all, get_ids, get_plex, validate_filename
 
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
