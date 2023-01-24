@@ -732,7 +732,7 @@ for lib in LIB_ARRAY:
                         time.sleep(DELAY)
 
         if not ONLY_COLLECTION_ARTWORK:
-            items = get_all(the_lib)
+            items = get_all(plex, the_lib)
             item_total = len(items)
             logging.info(f"looping over {item_total} items...")
             item_count = 1

@@ -105,7 +105,7 @@ try:
         if plex_section.type != "artist":
             print(f"------------ {plex_section.title} ------------")
             the_lib = plex.library.section(plex_section.title)
-            items = get_all(the_lib)
+            items = get_all(plex, the_lib)
             if items.type == "show":
                 print("Gathering watched episodes...")
                 for video in items.searchEpisodes(unwatched=False):
@@ -154,7 +154,7 @@ for plex_user in all_users:
                 print(f"------------ {plex_section.title} ------------")
                 the_lib = user_plex.library.section(plex_section.title)
 
-                items = get_all(the_lib)
+                items = get_all(plex, the_lib)
                 if items.type == "show":
                     for video in items.searchEpisodes(unwatched=False):
                         file_string = (

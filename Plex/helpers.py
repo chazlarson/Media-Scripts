@@ -188,7 +188,7 @@ def get_type(type):
     if type == 'show':
         return plexapi.video.Show
 
-def get_all(the_lib):
+def get_all(plex, the_lib):
     lib_size = the_lib.totalViewSize()
     lib_type = get_type(the_lib.type)
     key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"

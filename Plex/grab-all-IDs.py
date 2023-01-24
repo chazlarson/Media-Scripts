@@ -237,7 +237,7 @@ for lib in LIB_ARRAY:
         count = plex.library.section(lib).totalSize
         print(f"getting {count} {the_lib.type}s from [{lib}]...")
         logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        items = get_all(the_lib)
+        items = get_all(plex, the_lib)
         # items = the_lib.all()
         item_total = len(items)
         logging.info(f"looping over {item_total} items...")
