@@ -2,6 +2,7 @@ from pathlib import Path
 from pathvalidate import is_valid_filename, sanitize_filename
 import itertools
 import plexapi
+from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
