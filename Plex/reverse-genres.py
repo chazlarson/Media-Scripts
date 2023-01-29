@@ -1,47 +1,29 @@
-import json
 import logging
 import os
-import platform
-import re
-import sys
-import time
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
-from pathlib import Path
 
-import filetype
-import piexif
 import piexif.helper
-import plexapi
-import requests
-import sqlalchemy as db
 from alive_progress import alive_bar
 from dotenv import load_dotenv
-from pathvalidate import ValidationError, validate_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from sqlalchemy.dialects.sqlite import insert
 
-from helpers import booler, get_all, get_ids, get_plex, validate_filename
+from helpers import booler, get_all, get_plex
 
 load_dotenv()
 
 logging.basicConfig(
-    filename="grab-all-IDs.log",
+    filename="reverse-genres.log",
     filemode="w",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logging.info("Starting grab-all-IDs.py")
+logging.info("Starting reverse-genres.py")
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
 
