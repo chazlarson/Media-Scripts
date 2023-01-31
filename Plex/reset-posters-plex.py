@@ -56,7 +56,6 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-print(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 logging.info("connection success")
 
@@ -105,8 +104,12 @@ for lib in LIB_ARRAY:
                         bar.text = f"-> getting posters: {item.title}"
                         posters = item.posters()
                         bar.text = f"-> setting poster: {item.title}"
-                        showPoster = posters[0]
-                        item.setPoster(showPoster)
+ 
+                        if len(posters) > 0:
+                           showPoster = posters[0]
+                           item.setPoster(showPoster)
+                        else:
+                           showPoster = None
 
                         if REMOVE_LABELS:
                             bar.text = f"-> removing label {lbl}: {item.title}"
@@ -131,10 +134,12 @@ for lib in LIB_ARRAY:
                                         seasonPoster = posters[0]
                                     else:
                                         seasonPoster = showPoster
-                                    bar.text = (
-                                        f"-> setting poster: {s.parentTitle}-{s.title}"
-                                    )
-                                    s.setPoster(seasonPoster)
+
+                                    if seasonPoster is not None:
+                                        bar.text = (
+                                            f"-> setting poster: {s.parentTitle}-{s.title}"
+               	                        )
+                       	                s.setPoster(seasonPoster)
 
                                     if RESET_EPISODES:
                                         # get episodes
@@ -149,11 +154,13 @@ for lib in LIB_ARRAY:
                                                 episodePoster = posters[0]
                                             else:
                                                 episodePoster = showPoster
-                                            bar.text = f"-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
-                                            s.setPoster(episodePoster)
+
+                                            if episodePoster is not None:
+                                                bar.text = f"-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
+                                                s.setPoster(episodePoster)
 
                     except Exception as ex:
-                        print(f'Exception processing "{item.title}"')
+                        print(f'Exception processing "{item.title}": {ex}')
 
                     bar()
 
