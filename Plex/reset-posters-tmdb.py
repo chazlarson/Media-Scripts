@@ -100,7 +100,6 @@ print("tmdb config...")
 base_url = tmdb.configuration().secure_base_image_url
 size_str = "original"
 
-print(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
@@ -222,8 +221,6 @@ for lib in LIB_ARRAY:
                                             if ss.season_number == s_id and not s_found:
                                                 s_found = True
 
-                                                tmdb_episodes = ss.episodes
-
                                                 pp = ss.poster_path
                                                 if pp is None:
                                                     posterURL = seriesPosterURL
@@ -267,88 +264,67 @@ for lib in LIB_ARRAY:
 
                                                 if RESET_EPISODES:
                                                     # get episodes
+                                                    tmdb_episodes = ss.episodes
                                                     episodes = s.episodes()
-                                                    p_ep_ct = len(episodes)
-                                                    t_ep_ct = len(tmdb_episodes)
 
-                                                    if p_ep_ct == t_ep_ct:
-                                                        # loop over all
-                                                        e_idx = 0
-                                                        for e in episodes:
-                                                            e_id = e.episodeNumber
-                                                            e_found = False
+                                                    for plex_ep in episodes:
+                                                        e_id = plex_ep.episodeNumber
+                                                        e_found = False
+                                                        for tmdb_ep in tmdb_episodes:
+                                                            if not e_found and tmdb_ep.season_number == s_id and tmdb_ep.episode_number == e_id:
+                                                                #  that's the one
+                                                                e_found = True
+                                                                pp = (
+                                                                    tmdb_ep.still_path
+                                                                )
 
-                                                            if (
-                                                                e.seasonNumber == s_id
-                                                                and not e_found
-                                                            ):
-                                                                tmdb_ep = tmdb_episodes[
-                                                                    e_idx
-                                                                ]
-
-                                                                if (
-                                                                    tmdb_ep.episode_number
-                                                                    == e_id
-                                                                    and tmdb_ep.season_number
-                                                                    == s_id
-                                                                ):
-                                                                    e_found = True
-                                                                    pp = (
-                                                                        tmdb_ep.still_path
+                                                                if pp is not None:
+                                                                    posterURL = f"{base_url}{size_str}{pp}"
+                                                                    local_file = localFilePath(
+                                                                        tgt_dir,
+                                                                        f"{i_rk}-S{s_id}E{e_id}",
                                                                     )
-                                                                    if pp is not None:
-                                                                        posterURL = f"{base_url}{size_str}{pp}"
-                                                                        local_file = localFilePath(
-                                                                            tgt_dir,
-                                                                            f"{i_rk}-S{s_id}E{e_id}",
+
+                                                                    if LOCAL_RESET_ARCHIVE:
+                                                                        if (
+                                                                            local_file
+                                                                            is None
+                                                                            or not os.path.exists(
+                                                                                local_file
+                                                                            )
+                                                                        ):
+                                                                            ext = pathlib.Path(
+                                                                                pp
+                                                                            ).suffix
+                                                                            local_file = os.path.join(
+                                                                                tgt_dir,
+                                                                                f"{i_rk}-S{s_id}E{e_id}.{ext}",
+                                                                            )
+                                                                            bar.text = f"-> downloading poster: {i_t} S{s_id}E{e_id}"
+
+                                                                        if not os.path.exists(
+                                                                            local_file
+                                                                        ):
+                                                                            r = requests.get(
+                                                                                posterURL,
+                                                                                allow_redirects=True,
+                                                                            )
+                                                                            open(
+                                                                                f"{local_file}",
+                                                                                "wb",
+                                                                            ).write(
+                                                                                r.content
+                                                                            )
+
+                                                                        bar.text = f"-> uploading poster: {i_t} S{s_id}E{e_id}"
+                                                                        plex_ep.uploadPoster(
+                                                                            filepath=local_file
                                                                         )
-
-                                                                        if LOCAL_RESET_ARCHIVE:
-                                                                            if (
-                                                                                local_file
-                                                                                is None
-                                                                                or not os.path.exists(
-                                                                                    local_file
-                                                                                )
-                                                                            ):
-                                                                                ext = pathlib.Path(
-                                                                                    pp
-                                                                                ).suffix
-                                                                                local_file = os.path.join(
-                                                                                    tgt_dir,
-                                                                                    f"{i_rk}-S{s_id}E{e_id}.{ext}",
-                                                                                )
-                                                                                bar.text = f"-> downloading poster: {i_t} S{s_id}E{e_id}"
-
-                                                                            if not os.path.exists(
-                                                                                local_file
-                                                                            ):
-                                                                                r = requests.get(
-                                                                                    posterURL,
-                                                                                    allow_redirects=True,
-                                                                                )
-                                                                                open(
-                                                                                    f"{local_file}",
-                                                                                    "wb",
-                                                                                ).write(
-                                                                                    r.content
-                                                                                )
-
-                                                                            bar.text = f"-> uploading poster: {i_t} S{s_id}E{e_id}"
-                                                                            e.uploadPoster(
-                                                                                filepath=local_file
-                                                                            )
-                                                                        else:
-                                                                            bar.text = f"-> setting poster URL: {i_t} S{s_id}E{e_id}"
-                                                                            e.uploadPoster(
-                                                                                url=posterURL
-                                                                            )
-
-                                                                e_idx += 1
-                                                    else:
-                                                        print(
-                                                            f"E count mismatch for {i_t} S{s_id}: Plex: {p_ep_ct} vs TMDB: {t_ep_ct}"
-                                                        )
+                                                                    else:
+                                                                        bar.text = f"-> setting poster URL: {i_t} S{s_id}E{e_id}"
+                                                                        plex_ep.uploadPoster(
+                                                                            url=posterURL
+                                                                        )                                                        
 
                                         s_idx += 1
                         else:
@@ -376,4 +352,4 @@ for lib in LIB_ARRAY:
 
 end = timer()
 elapsed = end - start
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+print(f"{os.linesep}{os.linesep}processing complete in {elapsed:.2f} seconds.")
