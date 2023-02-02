@@ -45,7 +45,11 @@ PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 POSTER_DIR = os.getenv("POSTER_DIR")
-POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
+try:
+    POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
+except:
+    POSTER_DEPTH = 0
+
 POSTER_DOWNLOAD = booler(os.getenv("POSTER_DOWNLOAD"))
 if not POSTER_DOWNLOAD:
     print("================== ATTENTION ==================")
@@ -79,8 +83,6 @@ if not USE_ASSET_NAMING:
 if not DELAY:
     DELAY = 0
 
-if POSTER_DEPTH is None:
-    POSTER_DEPTH = 0
 
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
