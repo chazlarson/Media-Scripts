@@ -115,6 +115,17 @@ if not (USE_ASSET_NAMING and ONLY_CURRENT):
 
     exit()
 
+if not (USE_ASSET_NAMING and USE_ASSET_FOLDERS):
+    str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and USE_ASSET_FOLDERS: {USE_ASSET_FOLDERS}"
+    str02 = f"Asset naming only works with asset folders for now"
+
+    logging.info(str01)
+    print(str01)
+    logging.info(str02)
+    print(str02)
+
+    exit()
+
 logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
@@ -573,19 +584,21 @@ def get_posters(lib, item):
     # for assets we want:
     # assets/One Show
 
-    logging.info("checking dir")
+    logging.info(f"checking tgt_dir: {tgt_dir}")
     if not os.path.exists(tgt_dir):
-        logging.info("creating dir")
+        logging.info(f"creating tgt_dir: {tgt_dir}")
         os.makedirs(tgt_dir)
 
     attempts = 0
 
     logging.info("getting subdir")
     item_path= get_subdir(item)
+    logging.info(f"item_path: {item_path}")
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
     artwork_path = Path(tgt_dir, item_path)
+    logging.info(f"final artwork_path: {artwork_path}")
     # current_posters/all_libraries/collection-Adam-12 Collection'
     # for assets this should be:
     # assets/One Show/Adam-12 Collection
