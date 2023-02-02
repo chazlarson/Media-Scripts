@@ -245,9 +245,13 @@ looping over 754 items...
 [==================================------] 84.7% ... The Sum of All Fears - 41 posters - 20
 ```
 
-he posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
+The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
 
-The image names are: `TMDBID-TVDBID-RATINGKEY-INCREMENT.ext`
+The image names are: `title-source-location-INCREMENT.ext`
+
+`source` is where plex reports it got the image: tmdb, fanarttv, gracenote, etc. This will alaways be "None" for collection images since they are provided by the user or generated [the four-poster ones] by Plex.
+
+`location` will be `local` or `remote` depending whether the URL pointed to the plex server or to some other site like tmdb.
 
 POSTER_CONSOLIDATE=1:
 ```
