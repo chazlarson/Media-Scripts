@@ -52,6 +52,10 @@ GRAB_EPISODES=1                              # should get-all-posters retrieve e
 GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
 ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
 LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
+USE_ASSET_NAMING=1                           # should get-all-posters name images to match PMM's Asset Directory requirements?
+USE_ASSET_FOLDERS=1                          # should those PMM-Asset-Directory names use asset folders?
+ASSETS_BY_LIBRARIES=1                        # should those PMM-Asset-Directory images be sorted into library folders?
+ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
 ```
 
 ## Scripts:
@@ -189,6 +193,8 @@ Maybe you find it easier to look through a bunch of options in CoverFlow or some
 
 This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retireved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
 
+The script can name these files so that they are ready for use with [Plex-Meta-Manager's Asset Directory](https://metamanager.wiki/en/latest/home/guides/assets.html).  Currently this only works with `ONLY_CURRENT` set.
+
 Script-specific variables in .env:
 ```
 POSTER_DIR=extracted_posters                 # put downloaded posters here
@@ -203,6 +209,10 @@ GRAB_EPISODES=1                              # grab episode posters [requires GR
 GRAB_BACKGROUNDS=1                           # If set to 1, backgrounds are retrieved [into a folder `backgrounds`]
 ONLY_CURRENT=0                               # if set to 1, only current artwork is retrieved; also CURRENT_POSTER_DIR is used
 TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
+USE_ASSET_NAMING=1                           # If set to 1, images are stored and named per PMM's Asset Directory rules
+USE_ASSET_FOLDERS=1                          # If set to 1, images are stored and named assuming `asset_folders: true` in PMM
+ASSETS_BY_LIBRARIES=1                        # If set to 1, images are stored in separate asset dirs per library
+ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -275,7 +285,6 @@ extracted_posters/
 POSTER_CONSOLIDATE=0:
 ```
 extracted_posters/
-extracted_posters/
 ├── Movies
 │   ├── 3 12 Hours-847208
 │   │   ├── 3 12 Hours-tmdb-local-001.jpg
@@ -305,6 +314,172 @@ extracted_posters/
     └── collection-ABC
         ├── ABC-None-local-001.jpg
         └── ABC-None-local-002.jpg
+```
+
+USE_ASSET_NAMING=1
+USE_ASSET_FOLDERS=0
+ASSETS_BY_LIBRARIES=0
+```
+assets
+├── Adam-12 (1968) {tvdb-78686}.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E02.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E03.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E04.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E05.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E06.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E07.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E08.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E09.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E10.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E11.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E12.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E13.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E14.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E15.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E16.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E17.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E18.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E19.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E20.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E21.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E22.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E23.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E24.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E25.jpg
+├── Adam-12 (1968) {tvdb-78686}_S01E26.jpg
+├── Adam-12 (1968) {tvdb-78686}_Season01.jpg
+├── Adam-12 (1968) {tvdb-78686}_background.jpg
+├── Adam-12 Collection.jpg
+├── Star Wars (1977) {imdb-tt0076759} {tmdb-11}.jpg
+└── Star Wars (1977) {imdb-tt0076759} {tmdb-11}_background.jpg
+```
+
+USE_ASSET_NAMING=1
+USE_ASSET_FOLDERS=1
+ASSETS_BY_LIBRARIES=0
+```
+assets
+├── Adam-12 (1968) {tvdb-78686}
+│   ├── S01E01.jpg
+│   ├── S01E02.jpg
+│   ├── S01E03.jpg
+│   ├── S01E04.jpg
+│   ├── S01E05.jpg
+│   ├── S01E06.jpg
+│   ├── S01E07.jpg
+│   ├── S01E08.jpg
+│   ├── S01E09.jpg
+│   ├── S01E10.jpg
+│   ├── S01E11.jpg
+│   ├── S01E12.jpg
+│   ├── S01E13.jpg
+│   ├── S01E14.jpg
+│   ├── S01E15.jpg
+│   ├── S01E16.jpg
+│   ├── S01E17.jpg
+│   ├── S01E18.jpg
+│   ├── S01E19.jpg
+│   ├── S01E20.jpg
+│   ├── S01E21.jpg
+│   ├── S01E22.jpg
+│   ├── S01E23.jpg
+│   ├── S01E24.jpg
+│   ├── S01E25.jpg
+│   ├── S01E26.jpg
+│   ├── Season01.jpg
+│   ├── background.jpg
+│   └── poster.jpg
+├── Adam-12 Collection
+│   └── poster.jpg
+└── Star Wars (1977) {imdb-tt0076759} {tmdb-11}
+    ├── background.jpg
+    └── poster.jpg
+```
+
+USE_ASSET_NAMING=1
+USE_ASSET_FOLDERS=0
+ASSETS_BY_LIBRARIES=1
+```
+assets
+├── One Movie
+│   ├── Star Wars (1977) {imdb-tt0076759} {tmdb-11}.jpg
+│   └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}_background.jpg
+└── One Show
+    ├── Adam-12 (1968) {tvdb-78686}.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E02.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E03.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E04.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E05.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E06.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E07.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E08.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E09.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E10.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E11.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E12.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E13.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E14.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E15.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E16.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E17.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E18.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E19.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E20.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E21.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E22.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E23.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E24.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E25.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_S01E26.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_Season01.jpg
+    ├── Adam-12 (1968) {tvdb-78686}_background.jpg
+    └── Adam-12 Collection.jpg
+```
+
+USE_ASSET_NAMING=1
+USE_ASSET_FOLDERS=1
+ASSETS_BY_LIBRARIES=1
+```
+assets
+├── One Movie
+│   └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}
+│       ├── background.jpg
+│       └── poster.jpg
+└── One Show
+    ├── Adam-12 (1968) {tvdb-78686}
+    │   ├── S01E01.jpg
+    │   ├── S01E02.jpg
+    │   ├── S01E03.jpg
+    │   ├── S01E04.jpg
+    │   ├── S01E05.jpg
+    │   ├── S01E06.jpg
+    │   ├── S01E07.jpg
+    │   ├── S01E08.jpg
+    │   ├── S01E09.jpg
+    │   ├── S01E10.jpg
+    │   ├── S01E11.jpg
+    │   ├── S01E12.jpg
+    │   ├── S01E13.jpg
+    │   ├── S01E14.jpg
+    │   ├── S01E15.jpg
+    │   ├── S01E16.jpg
+    │   ├── S01E17.jpg
+    │   ├── S01E18.jpg
+    │   ├── S01E19.jpg
+    │   ├── S01E20.jpg
+    │   ├── S01E21.jpg
+    │   ├── S01E22.jpg
+    │   ├── S01E23.jpg
+    │   ├── S01E24.jpg
+    │   ├── S01E25.jpg
+    │   ├── S01E26.jpg
+    │   ├── Season01.jpg
+    │   ├── background.jpg
+    │   └── poster.jpg
+    └── Adam-12 Collection
+        └── poster.jpg
 ```
 
 ## grab-all-status.py

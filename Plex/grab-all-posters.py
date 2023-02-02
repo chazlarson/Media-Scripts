@@ -122,17 +122,6 @@ if not (USE_ASSET_NAMING and ONLY_CURRENT):
 
     exit()
 
-if not (USE_ASSET_NAMING and USE_ASSET_FOLDERS):
-    str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and USE_ASSET_FOLDERS: {USE_ASSET_FOLDERS}"
-    str02 = f"Asset naming only works with asset folders for now"
-
-    logging.info(str01)
-    print(str01)
-    logging.info(str02)
-    print(str02)
-
-    exit()
-
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
@@ -309,6 +298,9 @@ def get_image_name(params, tgt_ext, background=False):
             else:
                 if USE_ASSET_FOLDERS:
                     ret_val = f"_poster{base_name}"
+                else:
+                    ret_val = f"{base_name}"
+
     else:
         base_name = f"{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
 
@@ -380,7 +372,10 @@ def process_the_thing(params):
             # folder_path: assets/One Show/Adam-12 Collection.ext'
             # I want to take apart the path, append tgt_filename to the last element,
             # and rebuild it.
-            final_file_path = folder_path + tgt_filename
+            final_file_path = str(folder_path) + tgt_filename
+            bits = Path(final_file_path)
+            folder_path = bits.parent
+            tgt_filename = bits.name
         else:
             # folder_path: assets/One Show/Adam-12 Collection
             # tgt_filename '_poster.ext'
