@@ -67,7 +67,14 @@ if ONLY_CURRENT:
     POSTER_DIR = os.getenv("CURRENT_POSTER_DIR")
 
 TRACK_URLS = booler(os.getenv("TRACK_URLS"))
+ASSET_DIR = os.getenv("ASSET_DIR")
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
+USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
+ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
+
+if not USE_ASSET_NAMING:
+    USE_ASSET_FOLDERS = False
+    ASSETS_BY_LIBRARIES = False
 
 if not DELAY:
     DELAY = 0
@@ -97,6 +104,16 @@ imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
+if not (USE_ASSET_NAMING and ONLY_CURRENT):
+    str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and ONLY_CURRENT: {ONLY_CURRENT}"
+    str02 = f"Asset naming only works with only current artwork"
+
+    logging.info(str01)
+    print(str01)
+    logging.info(str02)
+    print(str02)
+
+    exit()
 
 logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
@@ -143,68 +160,43 @@ def download_parallel(args):
 
 def get_asset_names(item):
     ret_val = {}
-# Image Type                          Image Path With Folders
-#                                     asset_folders: true
-# Collection/Movie/Show poster        assets/ASSET_NAME/poster.ext
-# Collection/Movie/Show background    assets/ASSET_NAME/background.ext
-# Season poster                       assets/ASSET_NAME/Season##.ext
-# Season background                   assets/ASSET_NAME/Season##_background.ext
-# Episode poster                      assets/ASSET_NAME/S##E##.ext
-# Episode background                  assets/ASSET_NAME/S##E##_background.ext
+    
+    ret_val['poster'] = f"poster"
+    ret_val['background'] = f"background"
 
-# For Collections replace ASSET_NAME with the mapping name used with the collection unless system_name is specified, which you would then use what’s specified in system_name.
-# For Movies replace ASSET_NAME with the exact name of the folder the video file is stored in.
-# i.e. if you have Movies/Star Wars (1977)/Star Wars (1977) [1080p].mp4 then your asset directory would look at either assets/Star Wars (1977)/poster.png or assets/Star Wars (1977).png for the poster.
-# For Shows, Seasons, and Episodes replace ASSET_NAME with the exact name of the folder for the show as a whole.
-# i.e. if you have Shows/Game of Thrones/Season 1/Game of Thrones - S01E01.mp4 then your asset directory would look at either assets/Game of Thrones/poster.png or assets/Game of Thrones.png for the poster.
-# For Seasons replace ## with the zero padded season number (00 for specials)
-# For Episodes replacing the first ## with the zero padded season number (00 for specials), the second ## with the zero padded episode number
-# Replace .ext with the image extension
+    if item.TYPE == "collection":
+        ASSET_NAME = item.title
 
+        ret_val['asset'] = f"{ASSET_NAME}"
+    elif item.TYPE == "movie":
+        item_file = Path(item.media[0].parts[0].file)
+        ASSET_NAME = item_file.parts[len(item_file.parts)-2]
 
-# item.media[0].parts[0].file
-# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
-# movie
-# '/mnt/local/Media/test-movies/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/3 ½ Stunden (2021) {imdb-tt13475394} - WEBRip-1080p-SAVASTANOS.mkv'
-#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/poster.ext
-#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/background.ext
-# show
-# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
-#  want: assets/Adam-12 (1968) {tvdb-78686}/poster.ext
-#  want: assets/Adam-12 (1968) {tvdb-78686}/background.ext
-    if item.TYPE == "season":
+        ret_val['asset'] = f"{ASSET_NAME}"
+    elif item.TYPE == "show":
+        item_file = Path(item.locations[0])
+        ASSET_NAME = item_file.parts[len(item_file.parts)-1]
+
+        ret_val['asset'] = f"{ASSET_NAME}"
+    elif item.TYPE == "season":
+        item_file = Path(item.show().locations[0])
+        ASSET_NAME = item_file.parts[len(item_file.parts)-1]
+
         ret_val['poster'] = f"Season{str(item.seasonNumber).zfill(2)}"
         ret_val['background'] = f"{ret_val['poster']}_background"
-        ret_val['asset'] = f"{{item.grandparentTitle}}"
-        #  NO PATH INFORMATION
-#  want: assets/Adam-12 (1968) {tvdb-78686}/Season03.ext
-#  want: assets/Adam-12 (1968) {tvdb-78686}/Season03_background.ext
+        ret_val['asset'] = f"{ASSET_NAME}"
     elif item.TYPE == "episode":
-#  want: assets/Adam-12 (1968) {tvdb-78686}/S03E01.ext
-#  want: assets/Adam-12 (1968) {tvdb-78686}/S03E01_background.ext
-        # episode: foo = Path(item.media[0].parts[0].file)
-        # foo.parts[len(foo.parts)-3]
-        # '9-1-1 - Lone Star (2020) {tvdb-364080}'
+        item_file = Path(item.media[0].parts[0].file)
+        ASSET_NAME = item_file.parts[len(item_file.parts)-3]
+
         ret_val['poster'] = f"{get_SE_str(item)}"
         ret_val['background'] = f"{ret_val['poster']}_background"
-        ret_val['asset'] = f"{{item.grandparentTitle}}"
+        ret_val['asset'] = f"{ASSET_NAME}"
     else:
-        # show: item.locations[0]
-        # '/mnt/local/Media/test-shows/9-1-1 - Lone Star (2020) {tvdb-364080}'
-        # movie: foo = Path(item.media[0].parts[0].file)
-        # foo.parts[len(foo.parts)-2]
-        # '3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}'
-        ret_val['poster'] = f"bing"
-        ret_val['background'] = f"bang"
-        ret_val['asset'] = f"boing"
-# movie
-# '/mnt/local/Media/test-movies/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/3 ½ Stunden (2021) {imdb-tt13475394} - WEBRip-1080p-SAVASTANOS.mkv'
-#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/poster.ext
-#  want: assets/3 1 2 Hours (2021) {imdb-tt13475394} {tmdb-847208}/background.ext
-# show
-# '/mnt/local/Media/test-shows/Adam-12 (1968) {tvdb-78686}/Season 03/Adam-12 (1968) - S03E01 - Log 174 - Loan Sharks [ SDTV XviD MP3 1.0 ].avi'
-#  want: assets/Adam-12 (1968) {tvdb-78686}/poster.ext
-#  want: assets/Adam-12 (1968) {tvdb-78686}/background.ext
+        # Don't support it
+        ret_val['poster'] = None
+        ret_val['background'] = None
+        ret_val['asset'] = None
     
     return ret_val
 
@@ -226,7 +218,15 @@ def get_subdir(item):
     ret_val = ""
     se_str = get_SE_str(item)
     s_bit = se_str[:3]
+
+    # collection-Adam-12 Collection
+    # for assets we would want:
+    # Adam-12 Collection
     
+    if USE_ASSET_NAMING:
+        asset_details = get_asset_names(item)
+        return asset_details['asset']
+
     level_01 = None # 9-1-1 Lone Star-89393
     level_02 = None # S01-Season 1
     level_03 = None # S01E01-Pilot
@@ -276,38 +276,64 @@ def get_image_name(params, tgt_ext, background=False):
     source = params['source']
     safe_name, msg = validate_filename(item.title)
 
-    base_name = f"{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
-
-    if background:
-        ret_val = f"background-{base_name}"
-    else:
-        if item.TYPE == "season" or item.TYPE == "episode":
-            ret_val = f"{get_SE_str(item)}-{safe_name}-{base_name}"
+    if USE_ASSET_NAMING:
+        base_name = f"{tgt_ext}"
+        if background:
+            ret_val = f"_background{base_name}"
         else:
-            ret_val = f"{safe_name}-{base_name}"
+            if item.TYPE == "season":
+                # _Season##.ext
+                # _Season##_background.ext
+                ret_val = f"_Season{str(item.seasonNumber).zfill(2)}{base_name}"
+            elif item.TYPE == "episode":
+                # _S##E##.ext
+                # _S##E##_background.ext
+                ret_val = f"_{get_SE_str(item)}{base_name}"
+            else:
+                if USE_ASSET_FOLDERS:
+                    ret_val = f"_poster{base_name}"
+    else:
+        base_name = f"{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
+
+        if background:
+            ret_val = f"background-{base_name}"
+        else:
+            if item.TYPE == "season" or item.TYPE == "episode":
+                ret_val = f"{get_SE_str(item)}-{safe_name}-{base_name}"
+            else:
+                ret_val = f"{safe_name}-{base_name}"
+
     ret_val = ret_val.replace("--", "-")
     return ret_val
 
 def check_for_images(file_path):
-    # PosixPath('extracted_posters/TV Shows/67385-Naked Attraction/S08-Season 8/S08E04-Ian & Kerry')
-    # 'extracted_posters/TV Shows/67385-Naked Attraction/S08-Season 8/S08E04-Ian & Kerry/67385-314821-1185-S08E04-001.dat'
     jpg_path = file_path.replace(".dat", ".jpg")
     png_path = file_path.replace(".dat", ".png")
+    logging.info(f"jpg_path: {jpg_path}")
+    logging.info(f"png_path: {png_path}")
 
-    dat_here = os.path.exists(file_path)
-    jpg_here = os.path.exists(jpg_path)
-    png_here = os.path.exists(png_path)
-
+    dat_file = Path(file_path)
+    jpg_file = Path(jpg_path)
+    png_file = Path(png_path)
+    
+    dat_here = dat_file.is_file()
+    jpg_here = jpg_file.is_file()
+    png_here = png_file.is_file()
+    
     if dat_here:
+        logging.info("Dat file here")
         os.remove(file_path)
 
     if jpg_here and png_here:
+        logging.info ("BOTH jpg and png here")
         os.remove(jpg_path)
         os.remove(png_path)
         
     if jpg_here or png_here:
+        logging.info ("NEITHER jpg and png here")
         return True
 
+    logging.info ("defaulting to False")
     return False
 
 def process_the_thing(params):
@@ -317,6 +343,10 @@ def process_the_thing(params):
     item = params['item']
     idx = params['idx']
     folder_path = params['path']
+    # current_posters/all_libraries/collection-Adam-12 Collection'
+    # for assets this should be:
+    # assets/One Show/Adam-12 Collection
+
     background = params['background']
     src_URL = params['src_URL']
     provider = params['provider']
@@ -325,10 +355,26 @@ def process_the_thing(params):
     if not TRACK_URLS or (TRACK_URLS and URL_ARRAY.count(src_URL) == 0):
         tgt_ext = ".dat" if ID_FILES else ".jpg"
         tgt_filename = get_image_name(params, tgt_ext, background)
+        # in asset case, I have '_poster.ext'
 
-        final_file_path = os.path.join(
-            folder_path, tgt_filename
-        )
+        if USE_ASSET_NAMING and not USE_ASSET_FOLDERS:
+            # folder_path: assets/One Show/Adam-12 Collection
+            # tgt_filename '.ext'
+            # folder_path: assets/One Show/Adam-12 Collection.ext'
+            # I want to take apart the path, append tgt_filename to the last element,
+            # and rebuild it.
+            final_file_path = folder_path + tgt_filename
+        else:
+            # folder_path: assets/One Show/Adam-12 Collection
+            # tgt_filename '_poster.ext'
+            # want: assets/One Show/Adam-12 Collection/poster.ext'
+            # strip leading _ 
+            if tgt_filename[0] == '_':
+                tgt_filename = tgt_filename[1:]
+            # then
+            final_file_path = os.path.join(
+                folder_path, tgt_filename
+            )
 
         if not check_for_images(final_file_path):
             logging.info(
@@ -409,7 +455,10 @@ def get_art(item, artwork_path, tmid, tvid):
     else:
         all_art = item.arts()
 
-    bg_path = Path(artwork_path, "backgrounds")
+    if USE_ASSET_NAMING:
+        bg_path = artwork_path
+    else:
+        bg_path = Path(artwork_path, "backgrounds")
 
     while attempts < 5:
         try:
@@ -502,15 +551,27 @@ def get_posters(lib, item):
     tmid = None
     tvid = None
 
+    if USE_ASSET_NAMING:
+        asset_details = get_asset_names(item)
+        # USE_ASSET_FOLDERS
+
     if item.type != 'collection':
         logging.info("Getting IDs")
         imdbid, tmid, tvid = get_ids(item.guids, None)
     
     logging.info("building dir")
-    if POSTER_CONSOLIDATE:
-        tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
+    if USE_ASSET_NAMING:
+        tgt_dir = ASSET_DIR
+        if ASSETS_BY_LIBRARIES:
+            tgt_dir = os.path.join(tgt_dir, lib)
     else:
-        tgt_dir = os.path.join(POSTER_DIR, lib)
+        if POSTER_CONSOLIDATE:
+            tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
+        else:
+            tgt_dir = os.path.join(POSTER_DIR, lib)
+    # current_posters/all_libraries
+    # for assets we want:
+    # assets/One Show
 
     logging.info("checking dir")
     if not os.path.exists(tgt_dir):
@@ -521,8 +582,13 @@ def get_posters(lib, item):
 
     logging.info("getting subdir")
     item_path= get_subdir(item)
-
+    # collection-Adam-12 Collection
+    # for assets we would want:
+    # Adam-12 Collection
     artwork_path = Path(tgt_dir, item_path)
+    # current_posters/all_libraries/collection-Adam-12 Collection'
+    # for assets this should be:
+    # assets/One Show/Adam-12 Collection
 
     logging.info("retrieving posters")
     attempts = 0
