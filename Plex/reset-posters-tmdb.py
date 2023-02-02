@@ -12,7 +12,7 @@ import platform
 from timeit import default_timer as timer
 import time
 
-from helpers import booler, get_tid, get_plex, get_all
+from helpers import booler, get_ids, get_plex, get_all
 
 # import tvdb_v4_official
 
@@ -139,7 +139,7 @@ for lib in LIB_ARRAY:
                 if id_array.count(f"{i_rk}") == 0:
                     id_array.append(i_rk)
 
-                    imdbid, tmdb_id, tvdb_id = get_tid(item.guids)
+                    imdbid, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
                     try:
                         bar.text = f"-> starting: {i_t}"
                         pp = None
