@@ -9,7 +9,7 @@ from tmdbapis import TMDbAPIs
 import requests
 import pathlib
 from timeit import default_timer as timer
-from helpers import getTID
+from helpers import get_ids
 
 # // TODO: improved error handling
 # // TODO: TV Theme tunes
@@ -20,8 +20,6 @@ from helpers import getTID
 
 start = timer()
 
-load_dotenv()
-
 logging.basicConfig(
     filename="metadata_extractor.log",
     filemode="w",
@@ -30,6 +28,13 @@ logging.basicConfig(
 )
 
 logging.info("Starting metadata_extractor.py")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -97,7 +102,7 @@ print(f"looping over {item_total} items...")
 item_count = 1
 for item in items:
     tmpDict = {}
-    imdb_id, tmdb_id, tvdb_id = getTID(item.guids)
+    imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
     item_count = item_count + 1
     try:
         progress(item_count, item_total, item.title)

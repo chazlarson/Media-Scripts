@@ -1,3 +1,4 @@
+import os
 import ast
 import logging
 from pathlib import Path
@@ -125,8 +126,6 @@ def get_diffs(payload):
     
     return diffs
 
-load_dotenv()
-
 logging.basicConfig(
     filename="grab-all-IDs.log",
     filemode="w",
@@ -135,6 +134,13 @@ logging.basicConfig(
 )
 
 logging.info("Starting import-IDs.py")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 change_records = None
 

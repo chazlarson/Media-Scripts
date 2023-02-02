@@ -6,7 +6,12 @@ import textwrap
 from dotenv import load_dotenv
 from plexapi.server import PlexServer
 from helpers import get_all, get_plex
-load_dotenv()
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("TARGET_PLEX_URL")
 PLEX_TOKEN = os.getenv("TARGET_PLEX_TOKEN")

@@ -6,12 +6,28 @@ import imdb
 from dotenv import load_dotenv
 import sys
 import textwrap
-from helpers import booler, getTID
+from helpers import booler, get_ids
 
-load_dotenv()
+SCRIPT_NAME = "grab-imdb-posters"
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME}.py")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+TMDB_KEY = os.getenv("TMDB_KEY")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 POSTER_DIR = os.getenv("POSTER_DIR")
@@ -35,16 +51,6 @@ else:
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
-
-SCRIPT_NAME = "grab-imdb-posters"
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-logging.info(f"Starting {SCRIPT_NAME}.py")
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -84,7 +90,7 @@ for lib in lib_array:
 
     for item in items:
         item_count = item_count + 1
-        imdb_id, tmdb_id, tvdb_id = getTID(item.guids)
+        imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
 
         tmpDict = {}
         tmpDict["title"] = item.title

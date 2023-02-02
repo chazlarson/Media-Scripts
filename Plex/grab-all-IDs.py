@@ -132,8 +132,6 @@ def get_diffs(payload):
     
     return diffs
 
-load_dotenv()
-
 logging.basicConfig(
     filename="grab-all-IDs.log",
     filemode="w",
@@ -142,6 +140,13 @@ logging.basicConfig(
 )
 
 logging.info("Starting grab-all-IDs.py")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")

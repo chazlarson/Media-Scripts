@@ -13,8 +13,6 @@ from pathlib import Path
 
 start = timer()
 
-load_dotenv()
-
 SCRIPT_NAME = "reset-posters-plex"
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -24,6 +22,13 @@ logging.basicConfig(
 )
 
 logging.info(f"Starting {SCRIPT_NAME}.py")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 
@@ -139,7 +144,7 @@ for lib in LIB_ARRAY:
                                         bar.text = (
                                             f"-> setting poster: {s.parentTitle}-{s.title}"
                	                        )
-                       	                s.setPoster(seasonPoster)
+                                        s.setPoster(seasonPoster)
 
                                     if RESET_EPISODES:
                                         # get episodes

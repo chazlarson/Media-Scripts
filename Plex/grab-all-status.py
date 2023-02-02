@@ -8,7 +8,11 @@ import textwrap
 
 from helpers import get_all, get_plex
 
-load_dotenv()
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
