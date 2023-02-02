@@ -8,6 +8,7 @@ import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
+from helpers import get_plex
 
 logging.basicConfig(
     filename="app.log",
@@ -51,10 +52,8 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
 
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
-print(f"connecting to {PLEX_URL}...")
-logging.info(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
     logging.info(f"getting items from [{lib}]...")

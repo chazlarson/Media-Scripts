@@ -14,7 +14,6 @@ PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
-print(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 PMI = plex.machineIdentifier

@@ -93,7 +93,6 @@ count = 0
 connected_plex_user = PLEX_OWNER
 connected_plex_library = ""
 
-print(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 PMI = plex.machineIdentifier
 

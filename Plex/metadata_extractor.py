@@ -9,7 +9,7 @@ from tmdbapis import TMDbAPIs
 import requests
 import pathlib
 from timeit import default_timer as timer
-from helpers import get_ids
+from helpers import get_ids, get_plex
 
 # // TODO: improved error handling
 # // TODO: TV Theme tunes
@@ -82,16 +82,7 @@ print("tmdb config...")
 base_url = tmdb.configuration().secure_base_image_url
 size_str = "original"
 
-print(f"connecting to {PLEX_URL}...")
-logging.info(f"connecting to {PLEX_URL}...")
-try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-except Unauthorized:
-    print("Plex Error: Plex token is invalid")
-    exit()
-except Exception as ex:
-  print(f"Plex Error: {ex.args}")
-  exit()
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
 

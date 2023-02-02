@@ -133,7 +133,6 @@ if not (USE_ASSET_NAMING and USE_ASSET_FOLDERS):
 
     exit()
 
-logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")

@@ -47,7 +47,6 @@ connected_plex_library = None
 current_show = None
 last_library = None
 
-print(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 PMI = plex.machineIdentifier
 

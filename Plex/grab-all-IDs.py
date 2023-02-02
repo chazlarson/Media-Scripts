@@ -161,7 +161,6 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-logging.info(f"connecting to {PLEX_URL}...")
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")

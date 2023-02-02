@@ -6,7 +6,7 @@ import imdb
 from dotenv import load_dotenv
 import sys
 import textwrap
-from helpers import booler, get_ids
+from helpers import booler, get_ids, get_plex
 
 SCRIPT_NAME = "grab-imdb-posters"
 logging.basicConfig(
@@ -65,16 +65,7 @@ def progress(count, total, status=""):
 
 all_items = []
 
-print(f"connecting to {PLEX_URL}...")
-logging.info(f"connecting to {PLEX_URL}...")
-try:
-    plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-except Unauthorized:
-    print("Plex Error: Plex token is invalid")
-    exit()
-except Exception as ex:
-  print(f"Plex Error: {ex.args}")
-  exit()
+plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
 
