@@ -53,7 +53,7 @@ STATUS_FILE_NAME = "URLS.txt"
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES"S)
 POSTER_DIR = os.getenv("POSTER_DIR")
 try:
     POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
@@ -82,6 +82,10 @@ if ONLY_CURRENT:
 
 TRACK_URLS = booler(os.getenv("TRACK_URLS"))
 ASSET_DIR = os.getenv("ASSET_DIR")
+
+if ASSET_DIR is None:
+    ASSET_DIR = 'assets'
+
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
 ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
