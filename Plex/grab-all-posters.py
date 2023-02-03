@@ -156,16 +156,17 @@ imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
-if not (USE_ASSET_NAMING and ONLY_CURRENT):
-    str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and ONLY_CURRENT: {ONLY_CURRENT}"
-    str02 = f"Asset naming only works with only current artwork"
+if USE_ASSET_NAMING:
+    if not (USE_ASSET_NAMING and ONLY_CURRENT):
+        str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and ONLY_CURRENT: {ONLY_CURRENT}"
+        str02 = f"Asset naming only works with only current artwork"
 
-    logging.info(str01)
-    print(str01)
-    logging.info(str02)
-    print(str02)
+        logging.info(str01)
+        print(str01)
+        logging.info(str02)
+        print(str02)
 
-    exit()
+        exit()
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
@@ -211,7 +212,8 @@ def download_parallel(args):
 
 def get_asset_names(item):
     ret_val = {}
-    
+    item_file = None
+
     ret_val['poster'] = f"poster"
     ret_val['background'] = f"background"
 
@@ -248,7 +250,11 @@ def get_asset_names(item):
         ret_val['poster'] = None
         ret_val['background'] = None
         ret_val['asset'] = None
-    
+
+    if item_file is not None:
+        logging.info(f"item_file: {item_file}")
+        logging.info(f"ASSET_NAME: {ASSET_NAME}")
+
     return ret_val
 
 def get_SE_str(item):
@@ -370,8 +376,6 @@ def get_image_name(params, tgt_ext, background=False):
 def check_for_images(file_path):
     jpg_path = file_path.replace(".dat", ".jpg")
     png_path = file_path.replace(".dat", ".png")
-    logging.info(f"jpg_path: {jpg_path}")
-    logging.info(f"png_path: {png_path}")
 
     dat_file = Path(file_path)
     jpg_file = Path(jpg_path)
@@ -502,7 +506,7 @@ def process_the_thing(params):
                     SCRIPT_STRING + f"{script_line}{os.linesep}"
                 )
         else:
-            logging.info(f"{final_file_path} ALREADY EXISTS")
+            logging.info(f"Image ALREADY EXISTS")
     else:
         logging.info(f"{src_URL} ALREADY DOWNLOADED")
 
@@ -570,35 +574,38 @@ def get_art(item, artwork_path, tmid, tvid):
             if not no_point_in_looking:
                 idx = 1
                 for art in all_art:
-                    if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                        logging.info(
-                            f"Reached max depth of {POSTER_DEPTH}; exiting loop"
-                        )
-                        break
+                    if art.key is not None:
+                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                            logging.info(
+                                f"Reached max depth of {POSTER_DEPTH}; exiting loop"
+                            )
+                            break
 
-                    art_params = {}
-                    art_params['tmid'] = tmid
-                    art_params['tvid'] = tvid
-                    art_params['item'] = item
-                    art_params['idx'] = idx
-                    art_params['path'] = bg_path
-                    art_params['provider'] = art.provider
-                    art_params['source'] = 'remote'
+                        art_params = {}
+                        art_params['tmid'] = tmid
+                        art_params['tvid'] = tvid
+                        art_params['item'] = item
+                        art_params['idx'] = idx
+                        art_params['path'] = bg_path
+                        art_params['provider'] = art.provider
+                        art_params['source'] = 'remote'
 
-                    art_params['background'] = True
+                        art_params['background'] = True
 
-                    src_URL = art.key
-                    if src_URL[0] == "/":
-                        src_URL = f"{PLEX_URL}{art.key}&X-Plex-Token={PLEX_TOKEN}"
-                        art_params['source'] = 'local'
+                        src_URL = art.key
+                        if src_URL[0] == "/":
+                            src_URL = f"{PLEX_URL}{art.key}&X-Plex-Token={PLEX_TOKEN}"
+                            art_params['source'] = 'local'
 
-                    art_params['src_URL'] = src_URL
+                        art_params['src_URL'] = src_URL
 
-                    bar.text = f"{progress_str} - {idx}"
-                    logging.info("--------------------------------")
-                    logging.info(f"processing {progress_str} - {idx}")
+                        bar.text = f"{progress_str} - {idx}"
+                        logging.info("--------------------------------")
+                        logging.info(f"processing {progress_str} - {idx}")
 
-                    process_the_thing(art_params)
+                        process_the_thing(art_params)
+                    else: 
+                        logging.info(f"skipping empty internal art object")
 
                     idx += 1
 
@@ -854,15 +861,26 @@ for lib in LIB_ARRAY:
                 ) as bar:
                     for item in items:
 
-                        logging.info("================================")
-                        logging.info(f"Starting {item.title}")
+                        if id_array.count(f"{item.ratingKey}") == 0:
+                            logging.info("================================")
+                            logging.info(f"Starting {item.title}")
 
-                        get_posters(lib, item)
+                            get_posters(lib, item)
 
-                        bar()
+                            bar()
 
-                        # Wait between items in case hammering the Plex server turns out badly.
-                        time.sleep(DELAY)
+                            id_array.append(item.ratingKey)
+
+                            # write out item_array to file.
+                            with open(status_file, "a", encoding="utf-8") as sf:
+                                sf.write(f"{item.ratingKey}{os.linesep}")
+
+                            # Wait between items in case hammering the Plex server turns out badly.
+                            time.sleep(DELAY)
+                        else:
+                            logging.info("================================")
+                            logging.info(f"SKIPPING {item.title}; it's marked as complete")
+                            bar.text = f"SKIPPING {item.title}; it's marked as complete"
 
         if not ONLY_COLLECTION_ARTWORK:
             items = get_all(plex, the_lib)
@@ -881,7 +899,8 @@ for lib in LIB_ARRAY:
                         logging.info(f"Starting {item.title}")
 
                         get_posters(lib, item)
-                        get_asset_names(item)
+                        # Wait between items in case hammering the Plex server turns out badly.
+                        time.sleep(DELAY)
                         if item.TYPE == "show":
                             lib_ordering = get_lib_setting(the_lib, 'showOrdering')
                             show_ordering = item.showOrdering
@@ -895,7 +914,8 @@ for lib in LIB_ARRAY:
                                 # loop over all:
                                 for s in seasons:
                                     get_posters(lib, s)
-                                    get_asset_names(s)
+                                    # Wait between items in case hammering the Plex server turns out badly.
+                                    time.sleep(DELAY)
                                     if GRAB_EPISODES:
                                         # get episodes
                                         episodes = s.episodes()
@@ -903,12 +923,13 @@ for lib in LIB_ARRAY:
                                         # loop over all
                                         for e in episodes:
                                             get_posters(lib, e)
-                                            get_asset_names(e)
+                                            # Wait between items in case hammering the Plex server turns out badly.
+                                            time.sleep(DELAY)
                         id_array.append(item.ratingKey)
                     else:
                         logging.info("================================")
-                        logging.info(f"SKIPPING {item.title}")
-                        bar.text = f"SKIPPING {item.title}"
+                        logging.info(f"SKIPPING {item.title}; it's marked as complete")
+                        bar.text = f"SKIPPING {item.title}; it's marked as complete"
 
                     # write out item_array to file.
                     with open(status_file, "a", encoding="utf-8") as sf:
