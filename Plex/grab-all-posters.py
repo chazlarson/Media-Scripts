@@ -62,7 +62,7 @@ if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES"S)
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 POSTER_DIR = os.getenv("POSTER_DIR")
 
 if POSTER_DIR is None:
@@ -99,6 +99,7 @@ ASSET_DIR = os.getenv("ASSET_DIR")
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
 ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
+NO_FS_WARNING = booler(os.getenv("NO_FS_WARNING"))
 
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
@@ -106,6 +107,26 @@ if not USE_ASSET_NAMING:
 else:
     if ASSET_DIR is None:
         ASSET_DIR = 'assets'
+    if not NO_FS_WARNING:
+        print("================== ATTENTION ==================")
+        print("You have requested asset naming.")
+        print("This requires and assumes that your media is stored")
+        print("in a hierarchy like this:")
+        print("└── TV Shows")
+        print("  └── 9-1-1 Lone Star")
+        print("      └── Season 01")
+        print("          ├── S01E01.mkv")
+        print("          ├── S01E02.mkv")
+        print("          └── S01E03.mkv")
+        print("Asset directory naming is built around an 'ASSET NAME'")
+        print("which is '9-1-1 Lone Star' in the above hierarchy.")
+        print("Other file hierarchies are incompatible with the")
+        print("Asset Naming setup at this time.")
+        print("================== ATTENTION ==================")
+        print("To skip this in future runs, add 'NO_FS_WARNING=1' to .env")
+        print("pausing for 15 seconds...")
+        time.sleep(15)
+
 
 if not DELAY:
     DELAY = 0
