@@ -52,9 +52,22 @@ STATUS_FILE_NAME = "URLS.txt"
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+
+if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
+    print("You must specify PLEX_URL in the .env file.")
+    exit()
+
+if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
+    print("You must specify PLEX_TOKEN in the .env file.")
+    exit()
+
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES"S)
 POSTER_DIR = os.getenv("POSTER_DIR")
+
+if POSTER_DIR is None:
+    POSTER_DIR = 'extracted_posters'
+
 try:
     POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
 except:
@@ -83,9 +96,6 @@ if ONLY_CURRENT:
 TRACK_URLS = booler(os.getenv("TRACK_URLS"))
 ASSET_DIR = os.getenv("ASSET_DIR")
 
-if ASSET_DIR is None:
-    ASSET_DIR = 'assets'
-
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
 ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
@@ -93,9 +103,14 @@ ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
     ASSETS_BY_LIBRARIES = False
+else:
+    if ASSET_DIR is None:
+        ASSET_DIR = 'assets'
 
 if not DELAY:
     DELAY = 0
+
+KEEP_JUNK = booler(os.getenv("KEEP_JUNK"))
 
 
 SCRIPT_FILE = "get_images.sh"
@@ -428,8 +443,9 @@ def process_the_thing(params):
 
                     local_file = str(rename_by_type(final_file_path))
 
-                    if local_file.find('.del') > 0:
-                        os.remove(local_file)
+                    if not KEEP_JUNK:
+                        if local_file.find('.del') > 0:
+                            os.remove(local_file)
 
                     # Write out exif data
                     # load existing exif data from image
