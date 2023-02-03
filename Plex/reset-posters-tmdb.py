@@ -356,7 +356,7 @@ for lib in LIB_ARRAY:
                             sf.write(f"{i_rk}{os.linesep}")
 
                     except Exception as ex:
-                        print(f'Exception processing "{i_t}": {ex}')
+                        print_and_log(f'Exception processing "{i_t}": {ex}')
 
                     bar()
 
