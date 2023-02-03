@@ -9,14 +9,19 @@ from dotenv import load_dotenv
 
 from helpers import booler, get_all, get_plex
 
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
 logging.basicConfig(
-    filename="reverse-genres.log",
+    filename=f"{SCRIPT_NAME}.log",
     filemode="w",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logging.info("Starting reverse-genres.py")
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()

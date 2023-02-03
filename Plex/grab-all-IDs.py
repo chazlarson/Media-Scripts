@@ -26,6 +26,40 @@ from sqlalchemy.dialects.sqlite import insert
 
 from helpers import booler, get_all, get_ids, get_plex, validate_filename
 
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
+
+if os.path.exists(".env"):
+    load_dotenv()
+else:
+    logging.info(f"No environment [.env] file.  Exiting.")
+    print(f"No environment [.env] file.  Exiting.")
+    exit()
+
+PLEX_URL = os.getenv("PLEX_URL")
+PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+TMDB_KEY = os.getenv("TMDB_KEY")
+NEW = []
+UPDATED = []
+
+if LIBRARY_NAMES:
+    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
+else:
+    LIB_ARRAY = [LIBRARY_NAME]
+
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
 # Delete any existing change file
@@ -131,35 +165,6 @@ def get_diffs(payload):
         diffs['changes']['year']= payload['year']
     
     return diffs
-
-logging.basicConfig(
-    filename="grab-all-IDs.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-logging.info("Starting grab-all-IDs.py")
-
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
-    exit()
-
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
-NEW = []
-UPDATED = []
-
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 

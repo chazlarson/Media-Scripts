@@ -8,6 +8,20 @@ from alive_progress import alive_bar
 from dotenv import load_dotenv
 from sqlalchemy.dialects.sqlite import insert
 
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
+
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
 
@@ -132,8 +146,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
-
-logging.info("Starting import-IDs.py")
 
 if os.path.exists(".env"):
     load_dotenv()

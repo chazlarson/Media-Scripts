@@ -10,14 +10,19 @@ from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
 from helpers import get_plex
 
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
 logging.basicConfig(
-    filename="app.log",
+    filename=f"{SCRIPT_NAME}.log",
     filemode="w",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logging.info("Starting rematch-items.py")
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()

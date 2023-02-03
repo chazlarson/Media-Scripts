@@ -24,19 +24,19 @@ from plexapi.utils import download
 
 from helpers import booler, get_ids, get_plex, get_all, validate_filename
 
-ID_FILES = True
-
-URL_ARRAY = []
-STATUS_FILE_NAME = "URLS.txt"
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
 
 logging.basicConfig(
-    filename="grab-all-posters.log",
+    filename=f"{SCRIPT_NAME}.log",
     filemode="w",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logging.info("Starting grab-all-posters.py")
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()
@@ -44,6 +44,11 @@ else:
     logging.info(f"No environment [.env] file.  Exiting.")
     print(f"No environment [.env] file.  Exiting.")
     exit()
+
+ID_FILES = True
+
+URL_ARRAY = []
+STATUS_FILE_NAME = "URLS.txt"
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -218,6 +223,13 @@ def get_SE_str(item):
 
 TOPLEVEL_TMID = ""
 TOPLEVEL_TVID = ""
+
+def get_lib_setting(the_lib, the_setting):
+    settings = the_lib.settings()
+    for setting in settings:
+        if setting.id == the_setting:
+            return setting.value
+
 
 def get_subdir(item):
     global TOPLEVEL_TMID
@@ -830,6 +842,11 @@ for lib in LIB_ARRAY:
                         get_posters(lib, item)
                         get_asset_names(item)
                         if item.TYPE == "show":
+                            lib_ordering = get_lib_setting(the_lib, 'showOrdering')
+                            show_ordering = item.showOrdering
+                            if show_ordering is None:
+                                show_ordering = lib_ordering
+                            
                             if GRAB_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()

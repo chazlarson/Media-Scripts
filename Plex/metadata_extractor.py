@@ -20,14 +20,19 @@ from helpers import get_ids, get_plex
 
 start = timer()
 
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
 logging.basicConfig(
-    filename="metadata_extractor.log",
+    filename=f"{SCRIPT_NAME}.log",
     filemode="w",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logging.info("Starting metadata_extractor.py")
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()

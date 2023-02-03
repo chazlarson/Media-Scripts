@@ -18,7 +18,10 @@ from helpers import booler, get_ids, get_plex, get_all
 
 start = timer()
 
-SCRIPT_NAME = "reset-posters-tmdb"
+import logging
+from pathlib import Path
+SCRIPT_NAME = Path(__file__).stem
+
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
     filemode="w",
@@ -26,7 +29,8 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}.py")
+logging.info(f"Starting {SCRIPT_NAME}")
+print(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()
