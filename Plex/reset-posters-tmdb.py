@@ -90,6 +90,13 @@ movie_dir = os.path.join(os.getcwd(), "movies")
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
+def bar_and_log(the_bar, msg):
+    logging.info(msg)
+    the_bar.text = msg
+
+def print_and_log(msg):
+    logging.info(msg)
+    print(msg)
 
 def localFilePath(tgt_dir, rating_key):
     for ext in ["jpg", "png"]:
@@ -137,7 +144,7 @@ for lib in LIB_ARRAY:
             )
             items = the_lib.search(label=lbl)
         item_total = len(items)
-        print(f"{item_total} item(s) retrieved...")
+        print_and_log(f"{item_total} item(s) retrieved...")
         item_count = 1
         with alive_bar(item_total, dual_line=True, title="Poster Reset - TMDB") as bar:
             for item in items:
@@ -149,7 +156,7 @@ for lib in LIB_ARRAY:
 
                     imdbid, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
                     try:
-                        bar.text = f"-> starting: {i_t}"
+                        bar_and_log(bar, f"-> starting: {i_t}")
                         pp = None
                         local_file = None
                         tmdb_item = None
@@ -185,14 +192,17 @@ for lib in LIB_ARRAY:
                                 except:
                                     pp = None
 
+                        logging.info(f"poster_path: {pp}")
+
                         if pp is not None:
                             seriesPosterURL = f"{base_url}{size_str}{pp}"
+                            logging.info(f"seriesPosterURL: {seriesPosterURL}")
 
                             if LOCAL_RESET_ARCHIVE:
                                 if local_file is None or not os.path.exists(local_file):
                                     ext = pathlib.Path(pp).suffix
                                     local_file = os.path.join(tgt_dir, f"{i_rk}.{ext}")
-                                    bar.text = f"-> downloading poster: {i_t}"
+                                    bar_and_log(bar, f"-> downloading poster: {i_t}")
 
                                 if not os.path.exists(local_file):
                                     r = requests.get(
@@ -200,10 +210,10 @@ for lib in LIB_ARRAY:
                                     )
                                     open(f"{local_file}", "wb").write(r.content)
 
-                                bar.text = f"-> uploading poster: {i_t}"
+                                bar_and_log(bar, f"-> uploading poster: {i_t}")
                                 item.uploadPoster(filepath=local_file)
                             else:
-                                bar.text = f"-> setting poster URL: {i_t}"
+                                bar_and_log(bar, f"-> setting poster URL: {i_t}")
                                 item.uploadPoster(url=seriesPosterURL)
 
                             if item.TYPE == "show":
@@ -236,6 +246,7 @@ for lib in LIB_ARRAY:
                                                 local_file = localFilePath(
                                                     tgt_dir, f"{i_rk}-S{s_id}"
                                                 )
+                                                logging.info(f"posterURL: {posterURL}")
 
                                                 if LOCAL_RESET_ARCHIVE:
                                                     if (
@@ -249,7 +260,7 @@ for lib in LIB_ARRAY:
                                                             tgt_dir,
                                                             f"{i_rk}-S{s_id}{ext}",
                                                         )
-                                                        bar.text = f"-> downloading poster: {i_t} S{s_id}"
+                                                        bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
 
                                                     if not os.path.exists(local_file):
                                                         r = requests.get(
@@ -260,10 +271,10 @@ for lib in LIB_ARRAY:
                                                             f"{local_file}", "wb"
                                                         ).write(r.content)
 
-                                                    bar.text = f"-> uploading poster: {i_t} S{s_id}"
+                                                    bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
                                                     s.uploadPoster(filepath=local_file)
                                                 else:
-                                                    bar.text = f"-> setting poster URL: {i_t} S{s_id}"
+                                                    bar_and_log(bar, f"-> setting poster URL: {i_t} S{s_id}")
                                                     s.uploadPoster(url=posterURL)
 
                                                 if RESET_EPISODES:
@@ -289,6 +300,8 @@ for lib in LIB_ARRAY:
                                                                         f"{i_rk}-S{s_id}E{e_id}",
                                                                     )
 
+                                                                    logging.info(f"posterURL: {posterURL}")
+
                                                                     if LOCAL_RESET_ARCHIVE:
                                                                         if (
                                                                             local_file
@@ -304,7 +317,7 @@ for lib in LIB_ARRAY:
                                                                                 tgt_dir,
                                                                                 f"{i_rk}-S{s_id}E{e_id}.{ext}",
                                                                             )
-                                                                            bar.text = f"-> downloading poster: {i_t} S{s_id}E{e_id}"
+                                                                            bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}E{e_id}")
 
                                                                         if not os.path.exists(
                                                                             local_file
@@ -320,22 +333,22 @@ for lib in LIB_ARRAY:
                                                                                 r.content
                                                                             )
 
-                                                                        bar.text = f"-> uploading poster: {i_t} S{s_id}E{e_id}"
+                                                                        bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}E{e_id}")
                                                                         plex_ep.uploadPoster(
                                                                             filepath=local_file
                                                                         )
                                                                     else:
-                                                                        bar.text = f"-> setting poster URL: {i_t} S{s_id}E{e_id}"
+                                                                        bar_and_log(bar, f"-> setting poster URL: {i_t} S{s_id}E{e_id}")
                                                                         plex_ep.uploadPoster(
                                                                             url=posterURL
                                                                         )                                                        
 
                                         s_idx += 1
                         else:
-                            bar.text = f"-> unknown type: {i_t}"
+                            bar_and_log(bar, f"-> unknown type: {i_t}")
 
                         if REMOVE_LABELS:
-                            bar.text = f"-> removing label {lbl}: {i_t}"
+                            bar_and_log(bar, f"-> removing label {lbl}: {i_t}")
                             item.removeLabel(lbl, True)
 
                         # write out item_array to file.
