@@ -287,19 +287,27 @@ for lib in LIB_ARRAY:
 
                                                 if RESET_EPISODES:
                                                     # get episodes
+                                                    bar_and_log(bar, f"getting TMDB episodes for season: {ss.season_number}")
                                                     tmdb_episodes = ss.episodes
+                                                    bar_and_log(bar, f"getting Plex episodes for season: {s_id}")
                                                     episodes = s.episodes()
 
+                                                    bar_and_log(bar, f"Looping over Plex episodes:")
                                                     for plex_ep in episodes:
                                                         e_id = plex_ep.episodeNumber
                                                         e_found = False
+                                                        bar_and_log(bar, f"Processing episode {e_id}")
+                                                        bar_and_log(bar, f"Looping over TMDB episodes:")
                                                         for tmdb_ep in tmdb_episodes:
+                                                            bar_and_log(bar, f"Looping over TMDB episodes:")
                                                             if not e_found and tmdb_ep.season_number == s_id and tmdb_ep.episode_number == e_id:
+                                                                bar_and_log(bar, f"Found episode S{s_id} E{e_id}")
                                                                 #  that's the one
                                                                 e_found = True
                                                                 pp = (
                                                                     tmdb_ep.still_path
                                                                 )
+                                                                bar_and_log(bar, f"poster_path: {pp}")
 
                                                                 if pp is not None:
                                                                     posterURL = f"{base_url}{size_str}{pp}"
