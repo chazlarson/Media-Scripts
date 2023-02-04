@@ -395,7 +395,7 @@ for lib in LIB_ARRAY:
                 time.sleep(DELAY)
 
     # delete the status file
-    if not CLEAR_RESET_STATUS:
+    if CLEAR_RESET_STATUS:
         if status_file.is_file():
             os.remove(status_file)
 
