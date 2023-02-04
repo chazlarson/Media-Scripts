@@ -389,10 +389,10 @@ for lib in LIB_ARRAY:
                     except Exception as ex:
                         print_and_log(f'Exception processing "{i_t}": {ex}')
 
-                    bar()
+                bar()
 
-                    # Wait between items in case hammering the Plex server turns out badly.
-                    time.sleep(DELAY)
+                # Wait between items in case hammering the Plex server turns out badly.
+                time.sleep(DELAY)
 
     # delete the status file
     if not CLEAR_RESET_STATUS:
