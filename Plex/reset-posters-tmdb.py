@@ -300,6 +300,7 @@ for lib in LIB_ARRAY:
                                                         bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
                                                         logging.info(f"{tmdb_episodes}")
                                                         for tmdb_ep in tmdb_episodes:
+                                                            logging.info(f"{tmdb_ep}")
                                                             if not e_found and tmdb_ep.season_number == s_id and tmdb_ep.episode_number == e_id:
                                                                 bar_and_log(bar, f"Found episode S{s_id} E{e_id}")
                                                                 #  that's the one
