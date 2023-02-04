@@ -205,6 +205,7 @@ for lib in LIB_ARRAY:
                                     bar_and_log(bar, f"-> downloading poster: {i_t}")
 
                                 if not os.path.exists(local_file):
+                                    bar_and_log(bar, f"-> requesting series: {seriesPosterURL}")
                                     r = requests.get(
                                         seriesPosterURL, allow_redirects=True
                                     )
@@ -213,7 +214,7 @@ for lib in LIB_ARRAY:
                                 bar_and_log(bar, f"-> uploading poster: {i_t}")
                                 item.uploadPoster(filepath=local_file)
                             else:
-                                bar_and_log(bar, f"-> setting poster URL: {i_t}")
+                                bar_and_log(bar, f"-> setting series poster URL: {i_t}")
                                 item.uploadPoster(url=seriesPosterURL)
 
                             if item.TYPE == "show":
@@ -246,7 +247,7 @@ for lib in LIB_ARRAY:
                                                 local_file = localFilePath(
                                                     tgt_dir, f"{i_rk}-S{s_id}"
                                                 )
-                                                logging.info(f"posterURL: {posterURL}")
+                                                logging.info(f"season posterURL: {posterURL}")
 
                                                 if LOCAL_RESET_ARCHIVE:
                                                     if (
@@ -263,6 +264,7 @@ for lib in LIB_ARRAY:
                                                         bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
 
                                                     if not os.path.exists(local_file):
+                                                        bar_and_log(bar, f"-> requesting season: {posterURL}")
                                                         r = requests.get(
                                                             posterURL,
                                                             allow_redirects=True,
@@ -322,6 +324,7 @@ for lib in LIB_ARRAY:
                                                                         if not os.path.exists(
                                                                             local_file
                                                                         ):
+                                                                            bar_and_log(bar, f"-> requesting episode: {posterURL}")
                                                                             r = requests.get(
                                                                                 posterURL,
                                                                                 allow_redirects=True,
