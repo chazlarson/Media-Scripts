@@ -300,7 +300,6 @@ for lib in LIB_ARRAY:
                                                         bar_and_log(bar, f"Processing episode {e_id}")
                                                         bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
                                                         for tmdb_ep in tmdb_episodes:
-                                                            logging.info(f"{tmdb_ep}: {tmdb_ep.season_number} E{tmdb_ep.episode_number}")
                                                             t_s_id = None
                                                             t_e_id = None
                                                             try:
