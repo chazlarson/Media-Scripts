@@ -52,6 +52,7 @@ TMDB_KEY = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
 TRACK_RESET_STATUS = os.getenv("TRACK_RESET_STATUS")
+CLEAR_RESET_STATUS = os.getenv("CLEAR_RESET_STATUS")
 REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
 RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
 RESET_EPISODES = booler(os.getenv("RESET_EPISODES"))
@@ -395,8 +396,9 @@ for lib in LIB_ARRAY:
                     time.sleep(DELAY)
 
     # delete the status file
-    if status_file.is_file():
-        os.remove(status_file)
+    if not CLEAR_RESET_STATUS:
+        if status_file.is_file():
+            os.remove(status_file)
 
 end = timer()
 elapsed = end - start
