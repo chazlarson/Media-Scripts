@@ -225,7 +225,6 @@ for lib in LIB_ARRAY:
                                     tmdb_seasons = tmdb_item.seasons
 
                                     # loop over all:
-                                    s_idx = 0
                                     for s in seasons:
                                         s_id = s.seasonNumber
                                         s_found = False
@@ -276,8 +275,12 @@ for lib in LIB_ARRAY:
                                                     bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
                                                     s.uploadPoster(filepath=local_file)
                                                 else:
-                                                    bar_and_log(bar, f"-> setting poster URL: {i_t} S{s_id}")
-                                                    s.uploadPoster(url=posterURL)
+                                                    bar_and_log(bar, f"-> setting season poster URL: {i_t} S{s_id}")
+                                                    try:
+                                                        s.uploadPoster(url=posterURL)
+                                                    except Exception as ex:
+                                                        bar_and_log(bar, f"-> EXCEPTION setting season poster URL: {ex}")
+
 
                                                 if RESET_EPISODES:
                                                     # get episodes
@@ -341,12 +344,14 @@ for lib in LIB_ARRAY:
                                                                             filepath=local_file
                                                                         )
                                                                     else:
-                                                                        bar_and_log(bar, f"-> setting poster URL: {i_t} S{s_id}E{e_id}")
-                                                                        plex_ep.uploadPoster(
-                                                                            url=posterURL
-                                                                        )                                                        
+                                                                        bar_and_log(bar, f"-> setting episode poster URL: {i_t} S{s_id}E{e_id}")
+                                                                        try:
+                                                                            plex_ep.uploadPoster(
+                                                                                url=posterURL
+                                                                            )
+                                                                        except Exception as ex:
+                                                                            bar_and_log(bar, f"-> EXCEPTION setting episode poster URL: {ex}")
 
-                                        s_idx += 1
                         else:
                             bar_and_log(bar, f"-> unknown type: {i_t}")
 
