@@ -297,9 +297,8 @@ for lib in LIB_ARRAY:
                                                         e_id = plex_ep.episodeNumber
                                                         e_found = False
                                                         bar_and_log(bar, f"Processing episode {e_id}")
-                                                        bar_and_log(bar, f"Looping over TMDB episodes:")
+                                                        bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
                                                         for tmdb_ep in tmdb_episodes:
-                                                            bar_and_log(bar, f"Looping over TMDB episodes:")
                                                             if not e_found and tmdb_ep.season_number == s_id and tmdb_ep.episode_number == e_id:
                                                                 bar_and_log(bar, f"Found episode S{s_id} E{e_id}")
                                                                 #  that's the one
