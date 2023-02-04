@@ -215,7 +215,10 @@ for lib in LIB_ARRAY:
                                 item.uploadPoster(filepath=local_file)
                             else:
                                 bar_and_log(bar, f"-> setting series poster URL: {i_t}")
-                                item.uploadPoster(url=seriesPosterURL)
+                                try:
+                                    item.uploadPoster(url=seriesPosterURL)
+                                except Exception as ex:
+                                    bar_and_log(bar, f"-> EXCEPTION setting series poster URL: {ex}")
 
                             if item.TYPE == "show":
 
