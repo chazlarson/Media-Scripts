@@ -117,11 +117,22 @@ plex = get_plex(PLEX_URL, PLEX_TOKEN)
 logging.info("connection success")
 
 def plex_knows_this_image(item, source, path):
-    list_of_posters = item.posters()
-    for poster in list_of_posters:
-        if poster.provider == source:
-            if poster.key == path:
-                return poster
+    logging.info(f"Retrieving posters for {item}")
+    item.reload()
+    attempts = 0
+    while attempts < 5:
+        try:
+            list_of_posters = item.posters()
+            logging.info(f"Checking {len(list_of_posters)} posters")
+            for poster in list_of_posters:
+                if poster.provider == source:
+                    if poster.key == path:
+                        return poster
+            attempts = 6
+        except Exception as ex:
+            logging.info(f'Exception processing "{item}": {ex}')
+            attempts += 1
+
     return None
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
@@ -342,8 +353,6 @@ for lib in LIB_ARRAY:
                                                 e_id = plex_ep.episodeNumber
                                                 e_rk = plex_ep.ratingKey
                                                 e_found = False
-                                                bar_and_log(bar, f"Processing episode {e_id}")
-                                                bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
                                                 if id_array.count(f"{e_rk}") == 0:
                                                     for tmdb_ep in tmdb_episodes:
                                                         t_s_id = None
@@ -363,7 +372,7 @@ for lib in LIB_ARRAY:
                                                                 #  that's the one
                                                                 e_found = True
                                                                 pp = tmdb_ep.still_path
-                                                                bar_and_log(bar, f"poster_path: {pp}")
+                                                                bar_and_log(bar, f"-> poster_path: {pp}")
 
                                                                 if pp is not None:
                                                                     posterURL = f"{base_url}{size_str}{pp}"
@@ -372,12 +381,10 @@ for lib in LIB_ARRAY:
                                                                         f"{i_rk}-S{s_id}E{e_id}",
                                                                     )
 
-                                                                    logging.info(f"posterURL: {posterURL}")
-
-                                                                    bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
+                                                                    bar_and_log(bar, f"-> checking if Plex knows about that image")
                                                                     pp_o = plex_knows_this_image(plex_ep, 'tmdb', posterURL)
                                                                     if pp_o is not None:
-                                                                        print_and_log(f"One of Plex' posters for {i_t}: {posterURL}")
+                                                                        logging.info(f"One of Plex' posters for {i_t}: {posterURL}")
 
                                                                     if LOCAL_RESET_ARCHIVE:
                                                                         if (
@@ -410,10 +417,10 @@ for lib in LIB_ARRAY:
                                                                             open(f"{local_file}", "wb").write(r.content)
 
                                                                         if pp_o is not None:
-                                                                            bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> SETTING episode poster: {i_t} S{s_id}E{e_id}")
                                                                             s.setPoster(pp_o)
                                                                         else:
-                                                                            bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> uploading episode poster: {i_t} S{s_id}E{e_id}")
                                                                             s.uploadPoster(filepath=local_file)
                                                                     else:
                                                                         if pp_o is not None:
@@ -430,9 +437,8 @@ for lib in LIB_ARRAY:
 
                                                         else:
                                                             bar_and_log(bar, f"-> Couldn't get some episode details")
-
-                    else:
-                        bar_and_log(bar, f"-> unknown type: {i_t}")
+                                                else:
+                                                    bar_and_log(bar, f"Skipping {i_t}-{i_rk} Season {s_id}-{s_rk} Episode {e_id}-{e_rk}: already reset")
 
                     if REMOVE_LABELS:
                         bar_and_log(bar, f"-> removing label {lbl}: {i_t}")
@@ -440,7 +446,6 @@ for lib in LIB_ARRAY:
 
                 except Exception as ex:
                     print_and_log(f'Exception processing "{i_t}": {ex}')
-                    # there's a 500 in the image check 2
                     # there's a 500 in the season poster upload
 
                 bar()
