@@ -116,6 +116,14 @@ plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
 logging.info("connection success")
 
+def plex_knows_this_image(item, source, path):
+    list_of_posters = item.posters()
+    for poster in list_of_posters:
+        if poster.provider == source:
+            if poster.key == path:
+                return poster
+    return None
+
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
@@ -152,52 +160,48 @@ for lib in LIB_ARRAY:
                 item_count = item_count + 1
                 i_rk = item.ratingKey
                 i_t = item.title
-                if id_array.count(f"{i_rk}") == 0:
-                    id_array.append(i_rk)
+                imdbid, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
+                try:
+                    bar_and_log(bar, f"-> starting: {i_t}")
+                    pp = None
+                    local_file = None
+                    tmdb_item = None
+                    if tmdb_id:
+                        tmdb_item = tmdb.tv_show(tmdb_id)
+                    else:
+                        tmdb_search = (
+                            tmdb.find_by_id(tvdb_id=tvdb_id)
+                        )
+                        if len(tmdb_search.tv_results) > 0:
+                            tmdb_item = tmdb_search.tv_results[0]
+                    
+                    if item.TYPE == "show":
+                        tgt_dir = show_dir
+                    else:
+                        tgt_dir = movie_dir
+                        tmdb_item = tmdb.movie(tmdb_id)
 
-                    imdbid, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
-                    try:
-                        bar_and_log(bar, f"-> starting: {i_t}")
-                        pp = None
-                        local_file = None
-                        tmdb_item = None
+                    if LOCAL_RESET_ARCHIVE:
+                        local_file = localFilePath(tgt_dir, i_rk)
+                        pp = local_file
+                    if local_file is None:
+                        try:
+                            tmdb_item.reload()
+                            pp = tmdb_item.poster_path
+                        except:
+                            pp = None
 
-                        if item.TYPE == "show":
-                            tgt_dir = show_dir
-                            if LOCAL_RESET_ARCHIVE:
-                                local_file = localFilePath(tgt_dir, i_rk)
-                                pp = local_file
-                            if local_file is None:
-                                try:
-                                    if tmdb_id:
-                                        tmdb_item = tmdb.tv_show(tmdb_id)
-                                    else:
-                                        tmdb_item = (
-                                            tmdb.find_by_id(tvdb_id=tvdb_id)
-                                            .tv_results[0]
-                                            .poster_path
-                                        )
-                                    tmdb_item.reload()
-                                    pp = tmdb_item.poster_path
-                                except:
-                                    pp = None
-                        else:
-                            tgt_dir = movie_dir
-                            if LOCAL_RESET_ARCHIVE:
-                                local_file = localFilePath(tgt_dir, i_rk)
-                                pp = local_file
-                            if local_file is None:
-                                try:
-                                    tmdb_item = tmdb.movie(tmdb_id)
-                                    pp = tmdb_item.poster_path
-                                except:
-                                    pp = None
+                    if pp is not None:
+                        seriesPosterURL = f"{base_url}{size_str}{pp}"
+                        logging.info(f"seriesPosterURL: {seriesPosterURL}")
 
-                        logging.info(f"poster_path: {pp}")
-
+                    if id_array.count(f"{i_rk}-top") == 0:
+                        
                         if pp is not None:
-                            seriesPosterURL = f"{base_url}{size_str}{pp}"
-                            logging.info(f"seriesPosterURL: {seriesPosterURL}")
+                            bar_and_log(bar, f"-> checking if Plex knows about this image: {seriesPosterURL}")
+                            pp_o = plex_knows_this_image(item, 'tmdb', seriesPosterURL)
+                            if pp_o is not None:
+                                print_and_log(f"One of Plex' posters for {i_t}: {seriesPosterURL}")
 
                             if LOCAL_RESET_ARCHIVE:
                                 if local_file is None or not os.path.exists(local_file):
@@ -206,193 +210,240 @@ for lib in LIB_ARRAY:
                                     bar_and_log(bar, f"-> downloading poster: {i_t}")
 
                                 if not os.path.exists(local_file):
-                                    bar_and_log(bar, f"-> requesting series: {seriesPosterURL}")
+                                    dl_URL = seriesPosterURL
+                                    if pp_o is not None:
+                                        dl_URL = pp_o.key
+
+                                    bar_and_log(bar, f"-> requesting series: {dl_URL}")
                                     r = requests.get(
-                                        seriesPosterURL, allow_redirects=True
+                                        dl_URL, allow_redirects=True
                                     )
                                     open(f"{local_file}", "wb").write(r.content)
 
-                                bar_and_log(bar, f"-> uploading poster: {i_t}")
-                                item.uploadPoster(filepath=local_file)
+
+                                if pp_o is not None:
+                                    bar_and_log(bar, f"-> SETTING poster: {i_t}")
+                                    item.setPoster(pp_o)
+                                else:
+                                    bar_and_log(bar, f"-> uploading poster: {i_t}")
+                                    item.uploadPoster(filepath=local_file)
                             else:
                                 bar_and_log(bar, f"-> setting series poster URL: {i_t}")
-                                try:
+                                if pp_o is not None:
+                                    bar_and_log(bar, f"-> SETTING poster: {i_t}")
+                                    item.setPoster(pp_o)
+                                else:
+                                    bar_and_log(bar, f"-> uploading poster: {i_t}")
                                     item.uploadPoster(url=seriesPosterURL)
-                                except Exception as ex:
-                                    bar_and_log(bar, f"-> EXCEPTION setting series poster URL: {ex}")
 
-                            if item.TYPE == "show":
+                            id_array.append(f"{i_rk}-top")
 
-                                if RESET_SEASONS:
-                                    # get seasons
-                                    seasons = item.seasons()
-                                    tmdb_seasons = tmdb_item.seasons
+                            with open(status_file, "a", encoding="utf-8") as sf:
+                                sf.write(f"{i_rk}-top{os.linesep}")
 
-                                    # loop over all:
-                                    for s in seasons:
-                                        s_id = s.seasonNumber
-                                        s_found = False
+                    else:
+                        bar_and_log(bar, f"Skipping {i_t}-{i_rk}: already reset")
 
-                                        for ss in tmdb_seasons:
-                                            ss.reload()
+                    if item.TYPE == "show" and tmdb_item is not None:
 
-                                            if ss.season_number == s_id and not s_found:
-                                                s_found = True
+                        if RESET_SEASONS:
+                            # get seasons
+                            seasons = item.seasons()
+                            tmdb_seasons = tmdb_item.seasons
 
-                                                pp = ss.poster_path
-                                                if pp is None:
-                                                    posterURL = seriesPosterURL
-                                                    pp = posterURL.rsplit("/", 1)[-1]
-                                                else:
-                                                    posterURL = (
-                                                        f"{base_url}{size_str}{pp}"
-                                                    )
-                                                local_file = localFilePath(
-                                                    tgt_dir, f"{i_rk}-S{s_id}"
+                            # loop over all:
+                            for s in seasons:
+                                s_id = s.seasonNumber
+                                s_rk = s.ratingKey
+                                s_found = False
+
+                                for ss in tmdb_seasons:
+                                    ss.reload()
+
+                                    if ss.season_number == s_id and not s_found:
+                                        s_found = True
+
+                                        if id_array.count(f"{s_rk}") == 0:
+                                            pp = ss.poster_path
+                                            if pp is None:
+                                                posterURL = seriesPosterURL
+                                                pp = posterURL.rsplit("/", 1)[-1]
+                                            else:
+                                                posterURL = (
+                                                    f"{base_url}{size_str}{pp}"
                                                 )
-                                                logging.info(f"season posterURL: {posterURL}")
+                                            local_file = localFilePath(
+                                                tgt_dir, f"{i_rk}-S{s_id}"
+                                            )
+                                            logging.info(f"season posterURL: {posterURL}")
 
-                                                if LOCAL_RESET_ARCHIVE:
-                                                    if (
-                                                        local_file is None
-                                                        or not os.path.exists(
-                                                            local_file
-                                                        )
-                                                    ):
-                                                        ext = pathlib.Path(pp).suffix
-                                                        local_file = os.path.join(
-                                                            tgt_dir,
-                                                            f"{i_rk}-S{s_id}{ext}",
-                                                        )
-                                                        bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
+                                            bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
+                                            pp_o = plex_knows_this_image(s, 'tmdb', posterURL)
+                                            if pp_o is not None:
+                                                print_and_log(f"One of Plex' posters for {i_t}: {posterURL}")
 
-                                                    if not os.path.exists(local_file):
-                                                        bar_and_log(bar, f"-> requesting season: {posterURL}")
-                                                        r = requests.get(
-                                                            posterURL,
-                                                            allow_redirects=True,
-                                                        )
-                                                        open(
-                                                            f"{local_file}", "wb"
-                                                        ).write(r.content)
+                                            if LOCAL_RESET_ARCHIVE:
+                                                if (
+                                                    local_file is None
+                                                    or not os.path.exists(
+                                                        local_file
+                                                    )
+                                                ):
+                                                    ext = pathlib.Path(pp).suffix
+                                                    local_file = os.path.join(
+                                                        tgt_dir,
+                                                        f"{i_rk}-S{s_id}{ext}",
+                                                    )
+                                                    bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
 
+                                                if not os.path.exists(local_file):
+                                                    dl_URL = posterURL
+                                                    if pp_o is not None:
+                                                        dl_URL = pp_o.key
+
+                                                    bar_and_log(bar, f"-> requesting season: {dl_URL}")
+                                                    r = requests.get(
+                                                        dl_URL, allow_redirects=True
+                                                    )
+                                                    open(f"{local_file}", "wb").write(r.content)
+
+                                                if pp_o is not None:
+                                                    bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}")
+                                                    s.setPoster(pp_o)
+                                                else:
                                                     bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
                                                     s.uploadPoster(filepath=local_file)
+                                            else:
+                                                if pp_o is not None:
+                                                    bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}")
+                                                    s.setPoster(pp_o)
                                                 else:
-                                                    bar_and_log(bar, f"-> setting season poster URL: {i_t} S{s_id}")
-                                                    try:
-                                                        s.uploadPoster(url=posterURL)
-                                                    except Exception as ex:
-                                                        bar_and_log(bar, f"-> EXCEPTION setting season poster URL: {ex}")
+                                                    bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
+                                                    s.uploadPoster(url=posterURL)
+                                            
+                                            id_array.append(f"{s_rk}")
+
+                                            with open(status_file, "a", encoding="utf-8") as sf:
+                                                sf.write(f"{s_rk}{os.linesep}")
+
+                                        else:
+                                            bar_and_log(bar, f"Skipping {i_t}-{i_rk} Season {s_id}-{s_rk}: already reset")
 
 
-                                                if RESET_EPISODES:
-                                                    # get episodes
-                                                    bar_and_log(bar, f"getting TMDB episodes for season: {ss.season_number}")
-                                                    tmdb_episodes = ss.episodes
-                                                    bar_and_log(bar, f"getting Plex episodes for season: {s_id}")
-                                                    episodes = s.episodes()
+                                        if RESET_EPISODES:
+                                            # get episodes
+                                            bar_and_log(bar, f"getting TMDB episodes for season: {ss.season_number}")
+                                            tmdb_episodes = ss.episodes
+                                            bar_and_log(bar, f"getting Plex episodes for season: {s_id}")
+                                            episodes = s.episodes()
 
-                                                    bar_and_log(bar, f"Looping over Plex episodes:")
-                                                    for plex_ep in episodes:
-                                                        e_id = plex_ep.episodeNumber
-                                                        e_found = False
-                                                        bar_and_log(bar, f"Processing episode {e_id}")
-                                                        bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
-                                                        for tmdb_ep in tmdb_episodes:
-                                                            t_s_id = None
-                                                            t_e_id = None
-                                                            try:
-                                                                t_s_id = tmdb_ep.season_number
-                                                            except Exception as ex:
-                                                                bar_and_log(bar, f"-> EXCEPTION getting episode season ID: {ex}")
-                                                            try:
-                                                                t_e_id = tmdb_ep.episode_number
-                                                            except Exception as ex:
-                                                                bar_and_log(bar, f"-> EXCEPTION getting episode ID: {ex}")
+                                            bar_and_log(bar, f"Looping over Plex episodes:")
+                                            for plex_ep in episodes:
+                                                e_id = plex_ep.episodeNumber
+                                                e_rk = plex_ep.ratingKey
+                                                e_found = False
+                                                bar_and_log(bar, f"Processing episode {e_id}")
+                                                bar_and_log(bar, f"Looping over {len(tmdb_episodes)} TMDB episodes:")
+                                                if id_array.count(f"{e_rk}") == 0:
+                                                    for tmdb_ep in tmdb_episodes:
+                                                        t_s_id = None
+                                                        t_e_id = None
+                                                        try:
+                                                            t_s_id = tmdb_ep.season_number
+                                                        except Exception as ex:
+                                                            bar_and_log(bar, f"-> EXCEPTION getting episode season ID: {ex}")
+                                                        try:
+                                                            t_e_id = tmdb_ep.episode_number
+                                                        except Exception as ex:
+                                                            bar_and_log(bar, f"-> EXCEPTION getting episode ID: {ex}")
 
-                                                            if t_s_id is not None and t_e_id is not None:
-                                                                if not e_found and t_s_id == s_id and t_e_id == e_id:
-                                                                    bar_and_log(bar, f"Found episode S{s_id} E{e_id}")
-                                                                    #  that's the one
-                                                                    e_found = True
-                                                                    pp = tmdb_ep.still_path
-                                                                    bar_and_log(bar, f"poster_path: {pp}")
+                                                        if t_s_id is not None and t_e_id is not None:
+                                                            if not e_found and t_s_id == s_id and t_e_id == e_id:
+                                                                bar_and_log(bar, f"Found episode S{s_id} E{e_id}")
+                                                                #  that's the one
+                                                                e_found = True
+                                                                pp = tmdb_ep.still_path
+                                                                bar_and_log(bar, f"poster_path: {pp}")
 
-                                                                    if pp is not None:
-                                                                        posterURL = f"{base_url}{size_str}{pp}"
-                                                                        local_file = localFilePath(
-                                                                            tgt_dir,
-                                                                            f"{i_rk}-S{s_id}E{e_id}",
-                                                                        )
+                                                                if pp is not None:
+                                                                    posterURL = f"{base_url}{size_str}{pp}"
+                                                                    local_file = localFilePath(
+                                                                        tgt_dir,
+                                                                        f"{i_rk}-S{s_id}E{e_id}",
+                                                                    )
 
-                                                                        logging.info(f"posterURL: {posterURL}")
+                                                                    logging.info(f"posterURL: {posterURL}")
 
-                                                                        if LOCAL_RESET_ARCHIVE:
-                                                                            if (
+                                                                    bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
+                                                                    pp_o = plex_knows_this_image(plex_ep, 'tmdb', posterURL)
+                                                                    if pp_o is not None:
+                                                                        print_and_log(f"One of Plex' posters for {i_t}: {posterURL}")
+
+                                                                    if LOCAL_RESET_ARCHIVE:
+                                                                        if (
+                                                                            local_file
+                                                                            is None
+                                                                            or not os.path.exists(
                                                                                 local_file
-                                                                                is None
-                                                                                or not os.path.exists(
-                                                                                    local_file
-                                                                                )
-                                                                            ):
-                                                                                ext = pathlib.Path(
-                                                                                    pp
-                                                                                ).suffix
-                                                                                local_file = os.path.join(
-                                                                                    tgt_dir,
-                                                                                    f"{i_rk}-S{s_id}E{e_id}.{ext}",
-                                                                                )
-                                                                                bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}E{e_id}")
-
-                                                                            if not os.path.exists(
-                                                                                local_file
-                                                                            ):
-                                                                                bar_and_log(bar, f"-> requesting episode: {posterURL}")
-                                                                                r = requests.get(
-                                                                                    posterURL,
-                                                                                    allow_redirects=True,
-                                                                                )
-                                                                                open(
-                                                                                    f"{local_file}",
-                                                                                    "wb",
-                                                                                ).write(
-                                                                                    r.content
-                                                                                )
-
-                                                                            bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}E{e_id}")
-                                                                            plex_ep.uploadPoster(
-                                                                                filepath=local_file
                                                                             )
+                                                                        ):
+                                                                            ext = pathlib.Path(
+                                                                                pp
+                                                                            ).suffix
+                                                                            local_file = os.path.join(
+                                                                                tgt_dir,
+                                                                                f"{i_rk}-S{s_id}E{e_id}.{ext}",
+                                                                            )
+                                                                            bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}E{e_id}")
+
+                                                                        if not os.path.exists(
+                                                                            local_file
+                                                                        ):
+                                                                            dl_URL = posterURL
+                                                                            if pp_o is not None:
+                                                                                dl_URL = pp_o.key
+
+                                                                            bar_and_log(bar, f"-> requesting episode: {dl_URL}")
+                                                                            r = requests.get(
+                                                                                dl_URL, allow_redirects=True
+                                                                            )
+                                                                            open(f"{local_file}", "wb").write(r.content)
+
+                                                                        if pp_o is not None:
+                                                                            bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}E{e_id}")
+                                                                            s.setPoster(pp_o)
+                                                                        else:
+                                                                            bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}E{e_id}")
+                                                                            s.uploadPoster(filepath=local_file)
+                                                                    else:
+                                                                        if pp_o is not None:
+                                                                            bar_and_log(bar, f"-> setting episode poster URL: {i_t} S{s_id}E{e_id}")
+                                                                            plex_ep.setPoster(pp_o)
                                                                         else:
                                                                             bar_and_log(bar, f"-> setting episode poster URL: {i_t} S{s_id}E{e_id}")
-                                                                            try:
-                                                                                plex_ep.uploadPoster(
-                                                                                    url=posterURL
-                                                                                )
-                                                                            except Exception as ex:
-                                                                                bar_and_log(bar, f"-> EXCEPTION setting episode poster URL: {ex}")
-                                                            else:
-                                                                bar_and_log(bar, f"-> COuldn't get some episode details")
+                                                                            plex_ep.uploadPoster(url=posterURL)
 
-                        else:
-                            bar_and_log(bar, f"-> unknown type: {i_t}")
+                                                                    id_array.append(f"{e_rk}")
 
-                        if REMOVE_LABELS:
-                            bar_and_log(bar, f"-> removing label {lbl}: {i_t}")
-                            item.removeLabel(lbl, True)
+                                                                    with open(status_file, "a", encoding="utf-8") as sf:
+                                                                        sf.write(f"{e_rk}{os.linesep}")
 
-                        # write out item_array to file.
-                        with open(status_file, "a", encoding="utf-8") as sf:
-                            sf.write(f"{i_rk}{os.linesep}")
+                                                        else:
+                                                            bar_and_log(bar, f"-> Couldn't get some episode details")
 
-                    except Exception as ex:
-                        print_and_log(f'Exception processing "{i_t}": {ex}')
+                    else:
+                        bar_and_log(bar, f"-> unknown type: {i_t}")
+
+                    if REMOVE_LABELS:
+                        bar_and_log(bar, f"-> removing label {lbl}: {i_t}")
+                        item.removeLabel(lbl, True)
+
+                except Exception as ex:
+                    print_and_log(f'Exception processing "{i_t}": {ex}')
+                    # there's a 500 in the image check 2
+                    # there's a 500 in the season poster upload
 
                 bar()
-
-                # Wait between items in case hammering the Plex server turns out badly.
-                time.sleep(DELAY)
 
     # delete the status file
     if CLEAR_RESET_STATUS:
