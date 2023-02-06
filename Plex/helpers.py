@@ -204,5 +204,5 @@ def get_all(plex, the_lib):
         results.extend(plex.fetchItems(key, lib_type, container_start, container_size))
         print(f"Loaded: {container_start}/{lib_size}", end='\r')
         container_start += container_size
-    print(f"Completed loading {lib_size} {the_lib.type.capitalize()}s")
+    print(f"Completed loading {lib_size} {the_lib.type.capitalize()}s from {the_lib.title}")
     return results
