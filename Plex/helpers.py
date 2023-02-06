@@ -18,7 +18,12 @@ def booler(thing):
 def redact(thing, badthing):
     return thing.replace(badthing, "(REDACTED)")
 
-
+def redact(the_url, str_list):
+    ret_val = the_url
+    for thing in str_list:
+        ret_val = ret_val.replace(thing, '[REDACTED]')
+    return ret_val
+    
 def get_plex(PLEX_URL, PLEX_TOKEN):
     print(f"connecting to {PLEX_URL}...")
     try:

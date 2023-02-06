@@ -22,7 +22,7 @@ from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-from helpers import booler, get_ids, get_plex, get_all, validate_filename
+from helpers import booler, get_all, get_ids, get_plex, redact, validate_filename
 
 import logging
 from pathlib import Path
@@ -167,6 +167,10 @@ if USE_ASSET_NAMING:
         print(str02)
 
         exit()
+
+redaction_list = []
+redaction_list.append(PLEX_URL)
+redaction_list.append(PLEX_TOKEN)
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
@@ -386,19 +390,15 @@ def check_for_images(file_path):
     png_here = png_file.is_file()
 
     if dat_here:
-        logging.info("Dat file here")
         os.remove(file_path)
 
     if jpg_here and png_here:
-        logging.info ("BOTH jpg and png here")
         os.remove(jpg_path)
         os.remove(png_path)
 
     if jpg_here or png_here:
-        logging.info ("EITHER jpg OR png here")
         return True
 
-    logging.info ("defaulting to False")
     return False
 
 def process_the_thing(params):
@@ -454,7 +454,7 @@ def process_the_thing(params):
 
 
                 logging.info(f"provider: {provider} - source: {source}")
-                logging.info(f"downloading {src_URL}")
+                logging.info(f"downloading {redact(src_URL, redaction_list)}")
                 logging.info(f"to {tgt_filename}")
                 try:
                     thumbPath = download(
@@ -508,10 +508,6 @@ def process_the_thing(params):
                 SCRIPT_STRING = (
                     SCRIPT_STRING + f"{script_line}{os.linesep}"
                 )
-        else:
-            logging.info(f"Image ALREADY EXISTS")
-    else:
-        logging.info(f"{src_URL} ALREADY DOWNLOADED")
 
 class poster_placeholder:
     def __init__(self, provider, key):
@@ -626,14 +622,9 @@ def get_posters(lib, item):
     tmid = None
     tvid = None
 
-    if USE_ASSET_NAMING:
-        asset_details = get_asset_names(item)
-
     if item.type != 'collection':
-        logging.info("Getting IDs")
         imdbid, tmid, tvid = get_ids(item.guids, None)
 
-    logging.info("building dir")
     if USE_ASSET_NAMING:
         tgt_dir = ASSET_DIR
         if ASSETS_BY_LIBRARIES:
@@ -647,16 +638,12 @@ def get_posters(lib, item):
     # for assets we want:
     # assets/One Show
 
-    logging.info(f"checking tgt_dir: {tgt_dir}")
     if not os.path.exists(tgt_dir):
-        logging.info(f"creating tgt_dir: {tgt_dir}")
         os.makedirs(tgt_dir)
 
     attempts = 0
 
-    logging.info("getting subdir")
     item_path= get_subdir(item)
-    logging.info(f"item_path: {item_path}")
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
@@ -666,7 +653,6 @@ def get_posters(lib, item):
     # for assets this should be:
     # assets/One Show/Adam-12 Collection
 
-    logging.info("retrieving posters")
     attempts = 0
     if ONLY_CURRENT:
         all_posters = []
