@@ -1,5 +1,5 @@
 #!/bin/bash
-# Original code written by the crew at ZenDRIVE and good to share because `This is the way` https://www.youtube.com/watch?v=1iSz5cuCXdY
+# Original code written by the crew at zd and good to share because `This is the way` https://www.youtube.com/watch?v=1iSz5cuCXdY
 
 echo "Beginning Plex DB pump and dump"
 echo "================================================"
