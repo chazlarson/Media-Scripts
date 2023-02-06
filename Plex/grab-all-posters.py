@@ -264,7 +264,7 @@ def get_SE_str(item):
         ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
     else:
         ret_val = f""
-    
+
     return ret_val
 
 TOPLEVEL_TMID = ""
@@ -286,7 +286,7 @@ def get_subdir(item):
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
-    
+
     if USE_ASSET_NAMING:
         asset_details = get_asset_names(item)
         return asset_details['asset']
@@ -380,11 +380,11 @@ def check_for_images(file_path):
     dat_file = Path(file_path)
     jpg_file = Path(jpg_path)
     png_file = Path(png_path)
-    
+
     dat_here = dat_file.is_file()
     jpg_here = jpg_file.is_file()
     png_here = png_file.is_file()
-    
+
     if dat_here:
         logging.info("Dat file here")
         os.remove(file_path)
@@ -393,7 +393,7 @@ def check_for_images(file_path):
         logging.info ("BOTH jpg and png here")
         os.remove(jpg_path)
         os.remove(png_path)
-        
+
     if jpg_here or png_here:
         logging.info ("EITHER jpg OR png here")
         return True
@@ -464,7 +464,10 @@ def process_the_thing(params):
                         savepath=folder_path,
                     )
                     logging.info(f"Downloaded {thumbPath}")
-                
+
+                    # Wait between items in case hammering the Plex server turns out badly.
+                    time.sleep(DELAY)
+
 
                     local_file = str(rename_by_type(final_file_path))
 
@@ -625,12 +628,11 @@ def get_posters(lib, item):
 
     if USE_ASSET_NAMING:
         asset_details = get_asset_names(item)
-        # USE_ASSET_FOLDERS
 
     if item.type != 'collection':
         logging.info("Getting IDs")
         imdbid, tmid, tvid = get_ids(item.guids, None)
-    
+
     logging.info("building dir")
     if USE_ASSET_NAMING:
         tgt_dir = ASSET_DIR
@@ -739,7 +741,7 @@ def get_posters(lib, item):
                     if src_URL[0] == "/":
                         src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
                         art_params['source'] = 'local'
-                        
+
 
                     art_params['src_URL'] = src_URL
 
@@ -786,7 +788,7 @@ def rename_by_type(target):
     else:
         logging.info(f"changing file extension to {extension}")
         p.rename(new_name)
-    
+
     return new_name
 
 def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
@@ -875,8 +877,6 @@ for lib in LIB_ARRAY:
                             with open(status_file, "a", encoding="utf-8") as sf:
                                 sf.write(f"{item.ratingKey}{os.linesep}")
 
-                            # Wait between items in case hammering the Plex server turns out badly.
-                            time.sleep(DELAY)
                         else:
                             logging.info("================================")
                             logging.info(f"SKIPPING {item.title}; it's marked as complete")
@@ -891,7 +891,7 @@ for lib in LIB_ARRAY:
             plex_links = []
             external_links = []
 
-            with alive_bar(item_total, dual_line=True, title="Grab all posters") as bar:
+            with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                 for item in items:
 
                     if id_array.count(f"{item.ratingKey}") == 0:
@@ -899,23 +899,21 @@ for lib in LIB_ARRAY:
                         logging.info(f"Starting {item.title}")
 
                         get_posters(lib, item)
-                        # Wait between items in case hammering the Plex server turns out badly.
-                        time.sleep(DELAY)
+
                         if item.TYPE == "show":
                             lib_ordering = get_lib_setting(the_lib, 'showOrdering')
                             show_ordering = item.showOrdering
                             if show_ordering is None:
                                 show_ordering = lib_ordering
-                            
+
                             if GRAB_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()
-    
+
                                 # loop over all:
                                 for s in seasons:
                                     get_posters(lib, s)
-                                    # Wait between items in case hammering the Plex server turns out badly.
-                                    time.sleep(DELAY)
+
                                     if GRAB_EPISODES:
                                         # get episodes
                                         episodes = s.episodes()
@@ -923,8 +921,7 @@ for lib in LIB_ARRAY:
                                         # loop over all
                                         for e in episodes:
                                             get_posters(lib, e)
-                                            # Wait between items in case hammering the Plex server turns out badly.
-                                            time.sleep(DELAY)
+
                         id_array.append(item.ratingKey)
                     else:
                         logging.info("================================")
