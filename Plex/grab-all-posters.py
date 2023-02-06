@@ -395,7 +395,7 @@ def check_for_images(file_path):
         os.remove(png_path)
         
     if jpg_here or png_here:
-        logging.info ("NEITHER jpg and png here")
+        logging.info ("EITHER jpg OR png here")
         return True
 
     logging.info ("defaulting to False")
