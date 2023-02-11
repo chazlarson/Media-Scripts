@@ -100,6 +100,9 @@ USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
 ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
 NO_FS_WARNING = booler(os.getenv("NO_FS_WARNING"))
+ADD_SOURCE_EXIF_COMMENT = booler(os.getenv("ADD_SOURCE_EXIF_COMMENT"))
+SRC_ARRAY = []
+TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
 
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
@@ -155,18 +158,6 @@ else:
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
-
-if USE_ASSET_NAMING:
-    if not (USE_ASSET_NAMING and ONLY_CURRENT):
-        str01 = f"USE_ASSET_NAMING: {USE_ASSET_NAMING} and ONLY_CURRENT: {ONLY_CURRENT}"
-        str02 = f"Asset naming only works with only current artwork"
-
-        logging.info(str01)
-        print(str01)
-        logging.info(str02)
-        print(str02)
-
-        exit()
 
 redaction_list = []
 redaction_list.append(PLEX_URL)
@@ -345,7 +336,11 @@ def get_image_name(params, tgt_ext, background=False):
     safe_name, msg = validate_filename(item.title)
 
     if USE_ASSET_NAMING:
-        base_name = f"{tgt_ext}"
+        if ONLY_CURRENT:
+            base_name = f"{tgt_ext}"
+        else:
+            base_name = f"-{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
+
         if background:
             ret_val = f"_background{base_name}"
         else:
@@ -475,24 +470,34 @@ def process_the_thing(params):
                         if local_file.find('.del') > 0:
                             os.remove(local_file)
 
-                    # Write out exif data
-                    # load existing exif data from image
-                    # exif_dict = piexif.load(local_file)
-                    # # insert custom data in usercomment field
-                    # exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-                    #     src_URL,
-                    #     encoding="unicode"
-                    # )
-                    # # insert mutated data (serialised into JSON) into image
-                    # piexif.insert(
-                    #     piexif.dump(exif_dict),
-                    #     local_file
-                    # )
+                    if ADD_SOURCE_EXIF_COMMENT:
+                        exif_tag = 'plex internal'
+
+                        if source == 'remote':
+                            exif_tag = src_URL
+
+                        # Write out exif data
+                        # load existing exif data from image
+                        exif_dict = piexif.load(local_file)
+                        # insert custom data in usercomment field
+                        exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                            exif_tag,
+                            encoding="unicode"
+                        )
+                        # insert mutated data (serialised into JSON) into image
+                        piexif.insert(
+                            piexif.dump(exif_dict),
+                            local_file
+                        )
 
                     URL_ARRAY.append(src_URL)
 
                     with open(URL_FILE_NAME, "a", encoding="utf-8") as sf:
                         sf.write(f"{src_URL}{os.linesep}")
+
+                    if TRACK_IMAGE_SOURCES:
+                        with open(SOURCE_FILE_NAME, "a", encoding="utf-8") as sf:
+                            sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
 
                 except Exception as ex:
                     logging.info(f"error on {src_URL}")
@@ -544,7 +549,11 @@ def get_art(item, artwork_path, tmid, tvid):
                 posters_to_go = 0
 
                 if os.path.exists(bg_path):
-                    count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
+                    # if I'm using asset naming, the names all start with `background``
+                    if USE_ASSET_NAMING:
+                        count = len(fnmatch.filter(os.listdir(bg_path), "background*.*"))
+                    else:
+                        count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
                     logging.info(f"{count} files in {bg_path}")
 
                 posters_to_go = count - POSTER_DEPTH
@@ -815,14 +824,14 @@ for lib in LIB_ARRAY:
     try:
         the_lib = plex.library.section(lib)
 
-        id_array = []
-        status_file_name = f"{the_lib.uuid}-{POSTER_DEPTH}.txt"
+        ID_ARRAY = []
+        status_file_name = f"status-{the_lib.uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
 
         if status_file.is_file():
             with open(f"{status_file_name}") as fp:
                 for line in fp:
-                    id_array.append(line.strip())
+                    ID_ARRAY.append(line.strip())
 
         URL_ARRAY = []
         title, msg = validate_filename(f"{the_lib.title}")
@@ -833,6 +842,8 @@ for lib in LIB_ARRAY:
             with open(f"{URL_FILE_NAME}") as fp:
                 for line in fp:
                     URL_ARRAY.append(line.strip())
+
+        SOURCE_FILE_NAME = f"sources-{title}-{the_lib.uuid}.txt"
 
         if INCLUDE_COLLECTION_ARTWORK:
             print(f"getting collections from [{lib}]...")
@@ -849,7 +860,7 @@ for lib in LIB_ARRAY:
                 ) as bar:
                     for item in items:
 
-                        if id_array.count(f"{item.ratingKey}") == 0:
+                        if ID_ARRAY.count(f"{item.ratingKey}") == 0:
                             logging.info("================================")
                             logging.info(f"Starting {item.title}")
 
@@ -857,7 +868,7 @@ for lib in LIB_ARRAY:
 
                             bar()
 
-                            id_array.append(item.ratingKey)
+                            ID_ARRAY.append(item.ratingKey)
 
                             # write out item_array to file.
                             with open(status_file, "a", encoding="utf-8") as sf:
@@ -880,7 +891,7 @@ for lib in LIB_ARRAY:
             with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                 for item in items:
 
-                    if id_array.count(f"{item.ratingKey}") == 0:
+                    if ID_ARRAY.count(f"{item.ratingKey}") == 0:
                         logging.info("================================")
                         logging.info(f"Starting {item.title}")
 
@@ -908,7 +919,7 @@ for lib in LIB_ARRAY:
                                         for e in episodes:
                                             get_posters(lib, e)
 
-                        id_array.append(item.ratingKey)
+                        ID_ARRAY.append(item.ratingKey)
                     else:
                         logging.info("================================")
                         logging.info(f"SKIPPING {item.title}; it's marked as complete")
