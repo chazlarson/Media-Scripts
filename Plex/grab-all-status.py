@@ -151,8 +151,8 @@ try:
             file_line = f"Skipping {plex_section.title}"
             print(file_line)
             file_string = file_string + f"{file_line}{os.linesep}"
-except:
-    file_line = f"Exception processing {account.username}"
+except Exception as ex:
+    file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
     file_string = file_string + f"{file_line}{os.linesep}"
 
@@ -204,8 +204,8 @@ for plex_user in all_users:
                 file_line = f"Skipping {plex_section.title}"
                 file_string = file_string + f"{file_line}{os.linesep}"
                 print(file_line)
-    except:
-        file_line = f"Exception processing {plex_user.title}"
+    except Exception as ex:
+        file_line = f"Exception processing {plex_user.title} - {ex}"
         file_string = file_string + f"{file_line}{os.linesep}"
         print(file_line)
 
