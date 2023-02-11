@@ -56,6 +56,10 @@ USE_ASSET_NAMING=1                           # should grab-all-posters name imag
 USE_ASSET_FOLDERS=1                          # should those PMM-Asset-Directory names use asset folders?
 ASSETS_BY_LIBRARIES=1                        # should those PMM-Asset-Directory images be sorted into library folders?
 ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
+
+KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
+ADD_SOURCE_EXIF_COMMENT=1                    # add the source URL to the image EXIF tags
+TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
 ```
 
 ## Scripts:
@@ -213,6 +217,10 @@ USE_ASSET_NAMING=1                           # If set to 1, images are stored an
 USE_ASSET_FOLDERS=1                          # If set to 1, images are stored and named assuming `asset_folders: true` in PMM
 ASSETS_BY_LIBRARIES=1                        # If set to 1, images are stored in separate asset dirs per library
 ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
+KEEP_JUNK=0                                  # If set to 1, keep files that script would normally delete [incorrect filetypes, mainly]
+ADD_SOURCE_EXIF_COMMENT=1                    # If set to 1, add the source URL to the image EXIF tags
+TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containing file names and source URLs
+
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -323,6 +331,7 @@ extracted_posters/
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=0
+ONLY_CURRENT=0
 ```
 assets
 ├── Adam-12 (1968) {tvdb-78686}.jpg
@@ -362,6 +371,7 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=0
+ONLY_CURRENT=0
 ```
 assets
 ├── Adam-12 (1968) {tvdb-78686}
@@ -404,6 +414,7 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=1
+ONLY_CURRENT=0
 ```
 assets
 ├── One Movie
@@ -445,6 +456,7 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
+ONLY_CURRENT=0
 ```
 assets
 ├── One Movie

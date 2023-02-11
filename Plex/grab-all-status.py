@@ -2,11 +2,12 @@ from plexapi.server import PlexServer
 import os
 import json
 from dotenv import load_dotenv
+from alive_progress import alive_bar
 
 import sys
 import textwrap
 
-from helpers import get_all, get_plex
+from helpers import get_all, get_plex, get_all_watched
 
 import logging
 from pathlib import Path
@@ -61,45 +62,12 @@ def get_data_line(username, type, section, video):
         file_line = f"{username}\t{type}\t{section}\t{video.grandparentTitle}\t{video.seasonEpisode}\t{video.title}"
     elif type == "movie":
         file_line = f"{username}\t{type}\t{section}\t{video.title}\t{video.year}\t{video.contentRating}"
-    print(file_line)
     return file_line
 
 
-def process_section(ps, user):
-    plex_sections = ps.library.sections()
-    for plex_section in plex_sections:
-        if plex_section.type != "artist":
-            print(f"------------ {plex_section.title} ------------")
-            items = plex.library.section(plex_section.title)
-            if items.type == "show":
-                print("Gathering watched episodes...")
-                for video in items.searchEpisodes(unwatched=False):
-                    file_string = (
-                        file_string
-                        + get_data_line(
-                            account.username, items.type, plex_section.title, video
-                        )
-                        + f"{os.linesep}"
-                    )
-            elif items.type == "movie":
-                print("Gathering watched movies...")
-                for video in items.search(unwatched=False):
-                    file_string = (
-                        file_string
-                        + get_data_line(
-                            account.username, items.type, plex_section.title, video
-                        )
-                        + f"{os.linesep}"
-                    )
-            else:
-                file_line = f"Unknown type: {items.type}"
-                print(file_line)
-                file_string = file_string + f"{file_line}{os.linesep}"
-        else:
-            file_line = f"Skipping {plex_section.title}"
-            print(file_line)
-            file_string = file_string + f"{file_line}{os.linesep}"
-    return False
+def filter_for_unwatched(list):
+    watched = [x for x in list if x.isPlayed]
+    return watched
 
 
 padwidth = 95
@@ -122,31 +90,21 @@ try:
         if plex_section.type != "artist":
             print(f"------------ {plex_section.title} ------------")
             the_lib = plex.library.section(plex_section.title)
-            items = get_all(plex, the_lib)
-            if items.type == "show":
-                print("Gathering watched episodes...")
-                for video in items.searchEpisodes(unwatched=False):
-                    file_string = (
-                        file_string
-                        + get_data_line(
-                            account.username, items.type, plex_section.title, video
-                        )
-                        + f"{os.linesep}"
-                    )
-            elif items.type == "movie":
-                print("Gathering watched movies...")
-                for video in items.search(unwatched=False):
-                    file_string = (
-                        file_string
-                        + get_data_line(
-                            account.username, items.type, plex_section.title, video
-                        )
-                        + f"{os.linesep}"
-                    )
+            if plex_section.type == 'show':
+                items = get_all(plex, the_lib, "episode", {'unwatched': False})
             else:
-                file_line = f"Unknown type: {items.type}"
-                print(file_line)
-                file_string = file_string + f"{file_line}{os.linesep}"
+                items = get_all(plex, the_lib, None, {'unwatched': False})
+            # watched_items = filter_for_unwatched(items)
+            if len(items) > 0:
+                with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+                    for video in items:
+                        status_text = get_data_line(account.username, plex_section.type, plex_section.title, video)
+                        file_string = (
+                            file_string
+                            + status_text
+                            + f"{os.linesep}"
+                        )
+                        bar()
         else:
             file_line = f"Skipping {plex_section.title}"
             print(file_line)
@@ -170,36 +128,20 @@ for plex_user in all_users:
             if plex_section.type != "artist":
                 print(f"------------ {plex_section.title} ------------")
                 the_lib = user_plex.library.section(plex_section.title)
-
-                items = get_all(plex, the_lib)
-                if items.type == "show":
-                    for video in items.searchEpisodes(unwatched=False):
-                        file_string = (
-                            file_string
-                            + get_data_line(
-                                plex_user.title,
-                                items.type,
-                                plex_section.title,
-                                video,
-                            )
-                            + f"{os.linesep}"
-                        )
-                elif items.type == "movie":
-                    for video in items.search(unwatched=False):
-                        file_string = (
-                            file_string
-                            + get_data_line(
-                                plex_user.title,
-                                items.type,
-                                plex_section.title,
-                                video,
-                            )
-                            + f"{os.linesep}"
-                        )
+                if plex_section.type == 'show':
+                    items = get_all(plex, the_lib, "episode", {'unwatched': False})
                 else:
-                    file_line = f"Unknown type: {items.type}"
-                    file_string = file_string + f"{file_line}{os.linesep}"
-                    print(file_line)
+                    items = get_all(plex, the_lib, None, {'unwatched': False})
+                # watched_items = filter_for_unwatched(items)
+                with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+                    for video in items:
+                        status_text = get_data_line(account.username, plex_section.type, plex_section.title, video)
+                        file_string = (
+                            file_string
+                            + status_text
+                            + f"{os.linesep}"
+                        )
+                        bar()
             else:
                 file_line = f"Skipping {plex_section.title}"
                 file_string = file_string + f"{file_line}{os.linesep}"
