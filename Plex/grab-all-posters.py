@@ -103,11 +103,17 @@ NO_FS_WARNING = booler(os.getenv("NO_FS_WARNING"))
 ADD_SOURCE_EXIF_COMMENT = booler(os.getenv("ADD_SOURCE_EXIF_COMMENT"))
 SRC_ARRAY = []
 TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
-
+    
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
     ASSETS_BY_LIBRARIES = False
+    USE_ASSET_SUBFOLDERS = False
+    FOLDERS_ONLY = False
 else:
+    USE_ASSET_SUBFOLDERS = booler(os.getenv("USE_ASSET_SUBFOLDERS"))
+    FOLDERS_ONLY = booler(os.getenv("FOLDERS_ONLY"))
+    if FOLDERS_ONLY:
+        ONLY_CURRENT = FOLDERS_ONLY
     if ASSET_DIR is None:
         ASSET_DIR = 'assets'
     if not NO_FS_WARNING:
@@ -448,60 +454,61 @@ def process_the_thing(params):
                 p.mkdir(parents=True, exist_ok=True)
 
 
-                logging.info(f"provider: {provider} - source: {source}")
-                logging.info(f"downloading {redact(src_URL, redaction_list)}")
-                logging.info(f"to {tgt_filename}")
-                try:
-                    thumbPath = download(
-                        f"{src_URL}",
-                        PLEX_TOKEN,
-                        filename=tgt_filename,
-                        savepath=folder_path,
-                    )
-                    logging.info(f"Downloaded {thumbPath}")
-
-                    # Wait between items in case hammering the Plex server turns out badly.
-                    time.sleep(DELAY)
-
-
-                    local_file = str(rename_by_type(final_file_path))
-
-                    if not KEEP_JUNK:
-                        if local_file.find('.del') > 0:
-                            os.remove(local_file)
-
-                    if ADD_SOURCE_EXIF_COMMENT:
-                        exif_tag = 'plex internal'
-
-                        if source == 'remote':
-                            exif_tag = src_URL
-
-                        # Write out exif data
-                        # load existing exif data from image
-                        exif_dict = piexif.load(local_file)
-                        # insert custom data in usercomment field
-                        exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-                            exif_tag,
-                            encoding="unicode"
+                if not FOLDERS_ONLY:
+                    logging.info(f"provider: {provider} - source: {source}")
+                    logging.info(f"downloading {redact(src_URL, redaction_list)}")
+                    logging.info(f"to {tgt_filename}")
+                    try:
+                        thumbPath = download(
+                            f"{src_URL}",
+                            PLEX_TOKEN,
+                            filename=tgt_filename,
+                            savepath=folder_path,
                         )
-                        # insert mutated data (serialised into JSON) into image
-                        piexif.insert(
-                            piexif.dump(exif_dict),
-                            local_file
-                        )
+                        logging.info(f"Downloaded {thumbPath}")
 
-                    URL_ARRAY.append(src_URL)
+                        # Wait between items in case hammering the Plex server turns out badly.
+                        time.sleep(DELAY)
 
-                    with open(URL_FILE_NAME, "a", encoding="utf-8") as sf:
-                        sf.write(f"{src_URL}{os.linesep}")
 
-                    if TRACK_IMAGE_SOURCES:
-                        with open(SOURCE_FILE_NAME, "a", encoding="utf-8") as sf:
-                            sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
+                        local_file = str(rename_by_type(final_file_path))
 
-                except Exception as ex:
-                    logging.info(f"error on {src_URL}")
-                    logging.info(f"{ex}")
+                        if not KEEP_JUNK:
+                            if local_file.find('.del') > 0:
+                                os.remove(local_file)
+
+                        if ADD_SOURCE_EXIF_COMMENT:
+                            exif_tag = 'plex internal'
+
+                            if source == 'remote':
+                                exif_tag = src_URL
+
+                            # Write out exif data
+                            # load existing exif data from image
+                            exif_dict = piexif.load(local_file)
+                            # insert custom data in usercomment field
+                            exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+                                exif_tag,
+                                encoding="unicode"
+                            )
+                            # insert mutated data (serialised into JSON) into image
+                            piexif.insert(
+                                piexif.dump(exif_dict),
+                                local_file
+                            )
+
+                        URL_ARRAY.append(src_URL)
+
+                        with open(URL_FILE_NAME, "a", encoding="utf-8") as sf:
+                            sf.write(f"{src_URL}{os.linesep}")
+
+                        if TRACK_IMAGE_SOURCES:
+                            with open(SOURCE_FILE_NAME, "a", encoding="utf-8") as sf:
+                                sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
+
+                    except Exception as ex:
+                        logging.info(f"error on {src_URL}")
+                        logging.info(f"{ex}")
             else:
                 mkdir_flag = "" if IS_WINDOWS else "-p "
                 script_line_start = ""
@@ -624,6 +631,33 @@ def get_art(item, artwork_path, tmid, tvid):
 
             attempts  += 1
 
+def char_range(c1, c2):
+    """Generates the characters from `c1` to `c2`, inclusive."""
+    for c in range(ord(c1), ord(c2)+1):
+        yield chr(c)
+
+ALPHABET = []
+NUMBERS = []
+
+for c in char_range('a', 'z'):
+    ALPHABET.append(c)
+
+for c in char_range('0', '9'):
+    NUMBERS.append(c)
+
+def get_letter_dir(thing):
+    ret_val = "Other"
+    # thing will be  - titleSort: 'Calls (US)'
+    first_char = thing[0]
+
+    if first_char.lower() in ALPHABET:
+        ret_val = first_char.upper()
+    else:
+        if first_char in NUMBERS:
+            ret_val = first_char
+
+    return ret_val
+
 def get_posters(lib, item):
     global SCRIPT_STRING
 
@@ -646,6 +680,13 @@ def get_posters(lib, item):
     # current_posters/all_libraries
     # for assets we want:
     # assets/One Show
+    
+    # add a letter level here.
+    if USE_ASSET_SUBFOLDERS:
+        if item.type == 'collection':
+            tgt_dir = os.path.join(tgt_dir, "Collections")
+        else:
+            tgt_dir = os.path.join(tgt_dir, get_letter_dir(item.titleSort))
 
     if not os.path.exists(tgt_dir):
         os.makedirs(tgt_dir)
@@ -897,27 +938,28 @@ for lib in LIB_ARRAY:
 
                         get_posters(lib, item)
 
-                        if item.TYPE == "show":
-                            lib_ordering = get_lib_setting(the_lib, 'showOrdering')
-                            show_ordering = item.showOrdering
-                            if show_ordering is None:
-                                show_ordering = lib_ordering
+                        if not FOLDERS_ONLY:
+                            if item.TYPE == "show":
+                                lib_ordering = get_lib_setting(the_lib, 'showOrdering')
+                                show_ordering = item.showOrdering
+                                if show_ordering is None:
+                                    show_ordering = lib_ordering
 
-                            if GRAB_SEASONS:
-                                # get seasons
-                                seasons = item.seasons()
+                                if GRAB_SEASONS:
+                                    # get seasons
+                                    seasons = item.seasons()
 
-                                # loop over all:
-                                for s in seasons:
-                                    get_posters(lib, s)
+                                    # loop over all:
+                                    for s in seasons:
+                                        get_posters(lib, s)
 
-                                    if GRAB_EPISODES:
-                                        # get episodes
-                                        episodes = s.episodes()
+                                        if GRAB_EPISODES:
+                                            # get episodes
+                                            episodes = s.episodes()
 
-                                        # loop over all
-                                        for e in episodes:
-                                            get_posters(lib, e)
+                                            # loop over all
+                                            for e in episodes:
+                                                get_posters(lib, e)
 
                         ID_ARRAY.append(item.ratingKey)
                     else:

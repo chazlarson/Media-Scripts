@@ -60,6 +60,9 @@ ASSET_DIR=assets                             # top-level directory for those PMM
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 ADD_SOURCE_EXIF_COMMENT=1                    # add the source URL to the image EXIF tags
 TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
+USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
+FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
+
 ```
 
 ## Scripts:
@@ -220,6 +223,8 @@ ASSET_DIR=assets                             # top-level directory for those PMM
 KEEP_JUNK=0                                  # If set to 1, keep files that script would normally delete [incorrect filetypes, mainly]
 ADD_SOURCE_EXIF_COMMENT=1                    # If set to 1, add the source URL to the image EXIF tags
 TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containing file names and source URLs
+USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
+FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
 
 ```
 
@@ -331,36 +336,13 @@ extracted_posters/
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=0
-ONLY_CURRENT=0
+ONLY_CURRENT=1
 ```
 assets
 ├── Adam-12 (1968) {tvdb-78686}.jpg
 ├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
 ├── Adam-12 (1968) {tvdb-78686}_S01E02.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E03.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E04.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E05.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E06.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E07.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E08.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E09.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E10.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E11.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E12.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E13.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E14.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E15.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E16.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E17.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E18.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E19.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E20.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E21.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E22.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E23.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E24.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E25.jpg
-├── Adam-12 (1968) {tvdb-78686}_S01E26.jpg
+...
 ├── Adam-12 (1968) {tvdb-78686}_Season01.jpg
 ├── Adam-12 (1968) {tvdb-78686}_background.jpg
 ├── Adam-12 Collection.jpg
@@ -371,36 +353,13 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=0
-ONLY_CURRENT=0
+ONLY_CURRENT=1
 ```
 assets
 ├── Adam-12 (1968) {tvdb-78686}
 │   ├── S01E01.jpg
 │   ├── S01E02.jpg
-│   ├── S01E03.jpg
-│   ├── S01E04.jpg
-│   ├── S01E05.jpg
-│   ├── S01E06.jpg
-│   ├── S01E07.jpg
-│   ├── S01E08.jpg
-│   ├── S01E09.jpg
-│   ├── S01E10.jpg
-│   ├── S01E11.jpg
-│   ├── S01E12.jpg
-│   ├── S01E13.jpg
-│   ├── S01E14.jpg
-│   ├── S01E15.jpg
-│   ├── S01E16.jpg
-│   ├── S01E17.jpg
-│   ├── S01E18.jpg
-│   ├── S01E19.jpg
-│   ├── S01E20.jpg
-│   ├── S01E21.jpg
-│   ├── S01E22.jpg
-│   ├── S01E23.jpg
-│   ├── S01E24.jpg
-│   ├── S01E25.jpg
-│   ├── S01E26.jpg
+...
 │   ├── Season01.jpg
 │   ├── background.jpg
 │   └── poster.jpg
@@ -414,7 +373,7 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=0
+ONLY_CURRENT=1
 ```
 assets
 ├── One Movie
@@ -424,30 +383,7 @@ assets
     ├── Adam-12 (1968) {tvdb-78686}.jpg
     ├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
     ├── Adam-12 (1968) {tvdb-78686}_S01E02.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E03.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E04.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E05.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E06.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E07.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E08.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E09.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E10.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E11.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E12.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E13.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E14.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E15.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E16.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E17.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E18.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E19.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E20.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E21.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E22.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E23.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E24.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E25.jpg
-    ├── Adam-12 (1968) {tvdb-78686}_S01E26.jpg
+...
     ├── Adam-12 (1968) {tvdb-78686}_Season01.jpg
     ├── Adam-12 (1968) {tvdb-78686}_background.jpg
     └── Adam-12 Collection.jpg
@@ -456,7 +392,7 @@ assets
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=0
+ONLY_CURRENT=1
 ```
 assets
 ├── One Movie
@@ -467,35 +403,39 @@ assets
     ├── Adam-12 (1968) {tvdb-78686}
     │   ├── S01E01.jpg
     │   ├── S01E02.jpg
-    │   ├── S01E03.jpg
-    │   ├── S01E04.jpg
-    │   ├── S01E05.jpg
-    │   ├── S01E06.jpg
-    │   ├── S01E07.jpg
-    │   ├── S01E08.jpg
-    │   ├── S01E09.jpg
-    │   ├── S01E10.jpg
-    │   ├── S01E11.jpg
-    │   ├── S01E12.jpg
-    │   ├── S01E13.jpg
-    │   ├── S01E14.jpg
-    │   ├── S01E15.jpg
-    │   ├── S01E16.jpg
-    │   ├── S01E17.jpg
-    │   ├── S01E18.jpg
-    │   ├── S01E19.jpg
-    │   ├── S01E20.jpg
-    │   ├── S01E21.jpg
-    │   ├── S01E22.jpg
-    │   ├── S01E23.jpg
-    │   ├── S01E24.jpg
-    │   ├── S01E25.jpg
-    │   ├── S01E26.jpg
+...
     │   ├── Season01.jpg
     │   ├── background.jpg
     │   └── poster.jpg
     └── Adam-12 Collection
         └── poster.jpg
+```
+
+USE_ASSET_NAMING=1
+USE_ASSET_FOLDERS=1
+ASSETS_BY_LIBRARIES=1
+ONLY_CURRENT=1
+USE_ASSET_SUBFOLDERS=1
+
+```
+assets
+├── One Movie
+│   └── S
+│       └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}
+│           ├── background.jpg
+│           └── poster.jpg
+└── One Show
+    ├── A
+    │   ├── Adam-12 (1968) {tvdb-78686}
+    │   │   ├── S01E01.jpg
+    │   │   ├── S01E02.jpg
+...
+    │   │   ├── Season01.jpg
+    │   │   ├── background.jpg
+    │   │   └── poster.jpg
+    └── Collections
+        └── Adam-12 Collection
+            └── poster.jpg
 ```
 
 ## grab-all-status.py
