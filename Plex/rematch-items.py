@@ -7,7 +7,8 @@ import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
-from helpers import get_plex
+from helpers import get_plex, get_all
+from alive_progress import alive_bar
 
 import logging
 from pathlib import Path
@@ -70,10 +71,12 @@ for lib in LIB_ARRAY:
     the_lib = plex.library.section(lib)
     print(f"getting items from [{lib}]...")
     logging.info(f"getting items from [{lib}]...")
+
     if UNMATCHED_ONLY:
-        items = the_lib.search(unmatched=True)
+        items = get_all(plex, the_lib, None, {'unmatched': True})
     else:
-        items = the_lib.all()
+        items = get_all(plex, the_lib)
+
     item_total = len(items)
     print(f"looping over {item_total} items...")
     logging.info(f"looping over {item_total} items...")
@@ -82,41 +85,69 @@ for lib in LIB_ARRAY:
     plex_links = []
     external_links = []
 
-    for item in items:
-        tmpDict = {}
-        item_count = item_count + 1
-        attempts = 0
+    if the_lib.type == 'movie':
+        agents = [
+            "com.plexapp.agents.imdb",
+            "tv.plex.agents.movie",
+            "com.plexapp.agents.themoviedb"
+        ]
+    elif the_lib.type == 'show':
+        agents = [
+            "com.plexapp.agents.thetvdb",
+            "tv.plex.agents.series"
+        ]
+    else:
+        agents = [
+            "com.plexapp.agents.fanarttv",
+            "com.plexapp.agents.none",
+            "tv.plex.agents.music",
+            "com.plexapp.agents.opensubtitles",
+            "com.plexapp.agents.imdb",
+            "com.plexapp.agents.lyricfind",
+            "com.plexapp.agents.thetvdb",
+            "tv.plex.agents.movie",
+            "tv.plex.agents.series",
+            "com.plexapp.agents.plexthememusic",
+            "org.musicbrainz.agents.music",
+            "com.plexapp.agents.themoviedb",
+            "com.plexapp.agents.htbackdrops",
+            "com.plexapp.agents.movieposterdb",
+            "com.plexapp.agents.localmedia",
+            "com.plexapp.agents.lastfm"
+        ]
 
-        progress_str = f"{item.title}"
 
-        progress(item_count, item_total, progress_str)
+    with alive_bar(len(items), dual_line=True, title=f"Rematching") as bar:
+        for item in items:
+            tmpDict = {}
+            item_count = item_count + 1
+            matched_it = False
 
-        while attempts < 5:
-            try:
+            for agt in agents:
+                if not matched_it:
+                    try:
+                        progress_str = f"{item.title} - agent {agt}"
+                        bar.text(progress_str)
 
-                progress_str = f"{item.title} - attempt {attempts + 1}"
-                logging.info(progress_str)
+                        progress(item_count, item_total, progress_str)
 
-                progress(item_count, item_total, progress_str)
+                        item.fixMatch(auto=True, agent=agt)
 
-                item.fixMatch(auto=True)
+                        matched_it = True
 
-                progress_str = f"{item.title} - DONE"
-                progress(item_count, item_total, progress_str)
+                        progress_str = f"{item.title} - DONE"
+                        progress(item_count, item_total, progress_str)
 
-                attempts = 6
-            except urllib3.exceptions.ReadTimeoutError:
-                progress(item_count, item_total, "ReadTimeoutError: " + item.title)
-            except urllib3.exceptions.HTTPError:
-                progress(item_count, item_total, "HTTPError: " + item.title)
-            except ReadTimeoutError:
-                progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
-            except ReadTimeout:
-                progress(item_count, item_total, "ReadTimeout: " + item.title)
-            except Exception as ex:
-                progress(item_count, item_total, "EX: " + item.title)
-                logging.error(ex)
+                    except urllib3.exceptions.ReadTimeoutError:
+                        progress(item_count, item_total, "ReadTimeoutError: " + item.title)
+                    except urllib3.exceptions.HTTPError:
+                        progress(item_count, item_total, "HTTPError: " + item.title)
+                    except ReadTimeoutError:
+                        progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
+                    except ReadTimeout:
+                        progress(item_count, item_total, "ReadTimeout: " + item.title)
+                    except Exception as ex:
+                        progress(item_count, item_total, "EX: " + item.title)
+                        logging.error(ex)
+            bar()
 
-            attempts += 1
-
-    print(os.linesep)
