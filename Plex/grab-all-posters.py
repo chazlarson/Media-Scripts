@@ -641,16 +641,23 @@ for c in char_range('a', 'z'):
 for c in char_range('0', '9'):
     NUMBERS.append(c)
 
-def get_letter_dir(thing):
-    ret_val = "Other"
-    
+def remove_articles(thing):
     if thing.startswith('The '):
         thing = thing.replace('The ','')
     if thing.startswith('A '):
         thing = thing.replace('A ','')
     if thing.startswith('An '):
         thing = thing.replace('An ','')
+    if thing.startswith('El '):
+        thing = thing.replace('El ','')
+
+    return thing
+
+def get_letter_dir(thing):
+    ret_val = "Other"
     
+    thing = remove_articles(thing)
+                            
     first_char = thing[0]
 
     if first_char.lower() in ALPHABET:
