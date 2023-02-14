@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import logging
 import os
@@ -180,23 +181,6 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
 
-def download_url(args):
-    t0 = time.time()
-    url, fn = args[0], args[1]
-    try:
-        r = requests.get(url)
-        with open(fn, 'wb') as f:
-            f.write(r.content)
-        return(url, time.time() - t0)
-    except Exception as e:
-        print('Exception in download_url():', e)
-
-def download_parallel(args):
-    cpus = cpu_count()
-    results = ThreadPool(cpus - 1).imap_unordered(download_url, args)
-    for result in results:
-        print('url:', result[0], 'time (s):', result[1])
-
 # urls = ['https://www.northwestknowledge.net/metdata/data/pr_1979.nc',
 # 'https://www.northwestknowledge.net/metdata/data/pr_1980.nc',
 # 'https://www.northwestknowledge.net/metdata/data/pr_1981.nc',
@@ -251,10 +235,6 @@ def get_asset_names(item):
         ret_val['poster'] = None
         ret_val['background'] = None
         ret_val['asset'] = None
-
-    if item_file is not None:
-        logging.info(f"item_file: {item_file}")
-        logging.info(f"ASSET_NAME: {ASSET_NAME}")
 
     return ret_val
 
@@ -402,6 +382,20 @@ def check_for_images(file_path):
 
     return False
 
+# parallelizing downloads
+# put these "params" onto a queue
+# threadpool pulls them off and runs process_the_thing()
+# 
+# --------
+
+# 1. Create: Create the thread pool by calling the constructor ThreadPoolExecutor().
+executor = ThreadPoolExecutor()
+my_futures = []
+
+# 2. Submit: Submit tasks and get futures by calling submit() or map().
+# 3. Wait: Wait and get results as tasks complete (optional).
+# 4. Shut down: Shut down the thread pool by calling shutdown().
+
 def process_the_thing(params):
 
     tmid = params['tmid']
@@ -484,7 +478,7 @@ def process_the_thing(params):
                                 exif_tag = src_URL
 
                             # Write out exif data
-                            # load existing exif data from image
+                            # load existing exif data from ima7ge
                             exif_dict = piexif.load(local_file)
                             # insert custom data in usercomment field
                             exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
@@ -618,7 +612,9 @@ def get_art(item, artwork_path, tmid, tvid):
                         logging.info("--------------------------------")
                         logging.info(f"processing {progress_str} - {idx}")
 
-                        process_the_thing(art_params)
+                        future = executor.submit(process_the_thing, art_params) # does not block
+                        my_futures.append(future)
+                        # process_the_thing(art_params)
                     else: 
                         logging.info(f"skipping empty internal art object")
 
@@ -647,7 +643,14 @@ for c in char_range('0', '9'):
 
 def get_letter_dir(thing):
     ret_val = "Other"
-    # thing will be  - titleSort: 'Calls (US)'
+    
+    if thing.startswith('The '):
+        thing = thing.replace('The ','')
+    if thing.startswith('A '):
+        thing = thing.replace('A ','')
+    if thing.startswith('An '):
+        thing = thing.replace('An ','')
+    
     first_char = thing[0]
 
     if first_char.lower() in ALPHABET:
@@ -686,7 +689,12 @@ def get_posters(lib, item):
         if item.type == 'collection':
             tgt_dir = os.path.join(tgt_dir, "Collections")
         else:
-            tgt_dir = os.path.join(tgt_dir, get_letter_dir(item.titleSort))
+            asset_subdir_target = item.titleSort
+            if item.type == "season":
+                asset_subdir_target = item.parentTitle
+            if item.type == "episode":
+                asset_subdir_target = item.grandparentTitle
+            tgt_dir = os.path.join(tgt_dir, get_letter_dir(asset_subdir_target))
 
     if not os.path.exists(tgt_dir):
         os.makedirs(tgt_dir)
@@ -725,8 +733,14 @@ def get_posters(lib, item):
                 count = 0
                 posters_to_go = 0
 
+                search_filter = "*.*"
+                if item.type == "season":
+                    search_filter = f"Season{str(item.seasonNumber).zfill(2)}*.*"
+                if item.type == "episode":
+                    search_filter = f"{get_SE_str(item)}*.*"
+
                 if os.path.exists(artwork_path):
-                    count = len(fnmatch.filter(os.listdir(artwork_path), "*.*"))
+                    count = len(fnmatch.filter(os.listdir(artwork_path), search_filter))
                     logging.info(f"{count} files in {artwork_path}")
 
                 posters_to_go = count - POSTER_DEPTH
@@ -785,7 +799,9 @@ def get_posters(lib, item):
                     logging.info("--------------------------------")
                     logging.info(f"processing {progress_str} - {idx}")
 
-                    process_the_thing(art_params)
+                    future = executor.submit(process_the_thing, art_params) # does not block
+                    my_futures.append(future)
+                    # process_the_thing(art_params)
 
                     idx += 1
 
@@ -917,8 +933,8 @@ for lib in LIB_ARRAY:
 
                         else:
                             logging.info("================================")
-                            logging.info(f"SKIPPING {item.title}; it's marked as complete")
-                            bar.text = f"SKIPPING {item.title}; it's marked as complete"
+                            logging.info(f"SKIPPING {item.title}; status complete")
+                            bar.text = f"SKIPPING {item.title}; status complete"
 
         if not ONLY_COLLECTION_ARTWORK:
             items = get_all(plex, the_lib)
@@ -964,8 +980,8 @@ for lib in LIB_ARRAY:
                         ID_ARRAY.append(item.ratingKey)
                     else:
                         logging.info("================================")
-                        logging.info(f"SKIPPING {item.title}; it's marked as complete")
-                        bar.text = f"SKIPPING {item.title}; it's marked as complete"
+                        logging.info(f"SKIPPING {item.title}; status complete")
+                        bar.text = f"SKIPPING {item.title}; status complete"
 
                     # write out item_array to file.
                     with open(status_file, "a", encoding="utf-8") as sf:
@@ -980,9 +996,8 @@ for lib in LIB_ARRAY:
 
         print(os.linesep)
         if not POSTER_DOWNLOAD:
-            scr_path = os.path.join(tgt_dir, SCRIPT_FILE)
             if len(SCRIPT_STRING) > 0:
-                with open(scr_path, "w", encoding="utf-8") as myfile:
+                with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
     except Exception as ex:
@@ -990,3 +1005,18 @@ for lib in LIB_ARRAY:
         logging.info(progress_str)
 
         print(progress_str)
+
+idx = 1
+max = len(my_futures)
+print(f"waiting on {max} downloads")
+# iterate over all submitted tasks and get results as they are available
+for future in as_completed(my_futures):
+	# get the result for the next completed task
+    result = future.result() # blocks
+    sys.stdout.write(f"\r{idx}/{max}       ")
+    sys.stdout.flush()
+    idx += 1
+
+print(f"Complete!")
+# shutdown the thread pool
+executor.shutdown() # blocks
