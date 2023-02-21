@@ -62,7 +62,7 @@ ADD_SOURCE_EXIF_COMMENT=1                    # add the source URL to the image E
 TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
-
+ONLY_THESE_COLLECTIONS="Bing, Bang, Boing"   # only grab artwork for these collections and items in them
 ```
 
 ## Scripts:
@@ -225,7 +225,7 @@ ADD_SOURCE_EXIF_COMMENT=1                    # If set to 1, add the source URL t
 TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containing file names and source URLs
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
-
+ONLY_THESE_COLLECTIONS="Bing, Bang, Boing"   # only grab artwork for these collections and items in them; if empty, no filter
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -237,6 +237,8 @@ If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one dire
 If "INCLUDE_COLLECTION_ARTWORK" is `1`, the script will grab artwork for all the collections in the target library.
 
 If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
+
+If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.
 
 If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if hte same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
 
