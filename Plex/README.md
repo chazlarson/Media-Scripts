@@ -225,7 +225,7 @@ ADD_SOURCE_EXIF_COMMENT=1                    # If set to 1, add the source URL t
 TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containing file names and source URLs
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
-ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
+ONLY_THESE_COLLECTIONS="Bing, Bang, Boing"   # only grab artwork for these collections and items in them; if empty, no filter
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
