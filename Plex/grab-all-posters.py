@@ -162,6 +162,14 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
+ONLY_THESE_COLLECTIONS = os.getenv("ONLY_THESE_COLLECTIONS")
+
+if ONLY_THESE_COLLECTIONS:
+    COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split(",")]
+else:
+    COLLECTION_ARRAY = []
+
+
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
@@ -180,20 +188,6 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in all_libs:
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
-
-# urls = ['https://www.northwestknowledge.net/metdata/data/pr_1979.nc',
-# 'https://www.northwestknowledge.net/metdata/data/pr_1980.nc',
-# 'https://www.northwestknowledge.net/metdata/data/pr_1981.nc',
-# 'https://www.northwestknowledge.net/metdata/data/pr_1982.nc']
-
-# fns = [r'C:\Users\konrad\Downloads\pr_1979.nc',
-# r'C:\Users\konrad\Downloads\pr_1980.nc',
-# r'C:\Users\konrad\Downloads\pr_1981.nc',
-# r'C:\Users\konrad\Downloads\pr_1982.nc']
-
-# inputs = zip(urls, fns)
-
-# download_parallel(inputs)
 
 def get_asset_names(item):
     ret_val = {}
@@ -256,7 +250,6 @@ def get_lib_setting(the_lib, the_setting):
     for setting in settings:
         if setting.id == the_setting:
             return setting.value
-
 
 def get_subdir(item):
     global TOPLEVEL_TMID
@@ -923,6 +916,51 @@ for lib in LIB_ARRAY:
                     item_total, dual_line=True, title="Grab Collection Posters"
                 ) as bar:
                     for item in items:
+                        if len(COLLECTION_ARRAY) == 0 or item.title in COLLECTION_ARRAY:
+
+                            if ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                                logging.info("================================")
+                                logging.info(f"Starting {item.title}")
+
+                                get_posters(lib, item)
+
+                                bar()
+
+                                ID_ARRAY.append(item.ratingKey)
+
+                                # write out item_array to file.
+                                with open(status_file, "a", encoding="utf-8") as sf:
+                                    sf.write(f"{item.ratingKey}{os.linesep}")
+
+                            else:
+                                logging.info("================================")
+                                logging.info(f"SKIPPING {item.title}; status complete")
+                                bar.text = f"SKIPPING {item.title}; status complete"
+                        else:
+                            logging.info("================================")
+                            logging.info(f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS")
+                            bar.text = f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS"
+
+        if not ONLY_COLLECTION_ARTWORK:
+
+            if len(COLLECTION_ARRAY) == 0:
+                COLLECTION_ARRAY = ['nzffnqipxg']
+
+            for coll in COLLECTION_ARRAY:
+                if coll == 'nzffnqipxg':
+                    items = get_all(plex, the_lib)
+                else:
+                    items = get_all(plex, the_lib, None, {'collection': coll})
+
+                item_total = len(items)
+                logging.info(f"looping over {item_total} items...")
+                item_count = 1
+
+                plex_links = []
+                external_links = []
+
+                with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
+                    for item in items:
 
                         if ID_ARRAY.count(f"{item.ratingKey}") == 0:
                             logging.info("================================")
@@ -930,71 +968,40 @@ for lib in LIB_ARRAY:
 
                             get_posters(lib, item)
 
-                            bar()
+                            if not FOLDERS_ONLY:
+                                if item.TYPE == "show":
+                                    lib_ordering = get_lib_setting(the_lib, 'showOrdering')
+                                    show_ordering = item.showOrdering
+                                    if show_ordering is None:
+                                        show_ordering = lib_ordering
+
+                                    if GRAB_SEASONS:
+                                        # get seasons
+                                        seasons = item.seasons()
+
+                                        # loop over all:
+                                        for s in seasons:
+                                            get_posters(lib, s)
+
+                                            if GRAB_EPISODES:
+                                                # get episodes
+                                                episodes = s.episodes()
+
+                                                # loop over all
+                                                for e in episodes:
+                                                    get_posters(lib, e)
 
                             ID_ARRAY.append(item.ratingKey)
-
-                            # write out item_array to file.
-                            with open(status_file, "a", encoding="utf-8") as sf:
-                                sf.write(f"{item.ratingKey}{os.linesep}")
-
                         else:
                             logging.info("================================")
                             logging.info(f"SKIPPING {item.title}; status complete")
                             bar.text = f"SKIPPING {item.title}; status complete"
 
-        if not ONLY_COLLECTION_ARTWORK:
-            items = get_all(plex, the_lib)
-            item_total = len(items)
-            logging.info(f"looping over {item_total} items...")
-            item_count = 1
+                        # write out item_array to file.
+                        with open(status_file, "a", encoding="utf-8") as sf:
+                            sf.write(f"{item.ratingKey}{os.linesep}")
 
-            plex_links = []
-            external_links = []
-
-            with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
-                for item in items:
-
-                    if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                        logging.info("================================")
-                        logging.info(f"Starting {item.title}")
-
-                        get_posters(lib, item)
-
-                        if not FOLDERS_ONLY:
-                            if item.TYPE == "show":
-                                lib_ordering = get_lib_setting(the_lib, 'showOrdering')
-                                show_ordering = item.showOrdering
-                                if show_ordering is None:
-                                    show_ordering = lib_ordering
-
-                                if GRAB_SEASONS:
-                                    # get seasons
-                                    seasons = item.seasons()
-
-                                    # loop over all:
-                                    for s in seasons:
-                                        get_posters(lib, s)
-
-                                        if GRAB_EPISODES:
-                                            # get episodes
-                                            episodes = s.episodes()
-
-                                            # loop over all
-                                            for e in episodes:
-                                                get_posters(lib, e)
-
-                        ID_ARRAY.append(item.ratingKey)
-                    else:
-                        logging.info("================================")
-                        logging.info(f"SKIPPING {item.title}; status complete")
-                        bar.text = f"SKIPPING {item.title}; status complete"
-
-                    # write out item_array to file.
-                    with open(status_file, "a", encoding="utf-8") as sf:
-                        sf.write(f"{item.ratingKey}{os.linesep}")
-
-                    bar()
+                        bar()
 
         progress_str = "COMPLETE"
         logging.info(progress_str)
