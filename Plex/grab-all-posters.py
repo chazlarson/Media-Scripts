@@ -165,7 +165,7 @@ else:
 ONLY_THESE_COLLECTIONS = os.getenv("ONLY_THESE_COLLECTIONS")
 
 if ONLY_THESE_COLLECTIONS:
-    COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split(",")]
+    COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
 else:
     COLLECTION_ARRAY = []
 
