@@ -268,8 +268,9 @@ The image names are: `title-source-location-INCREMENT.ext`
 
 `location` will be `local` or `remote` depending whether the URL pointed to the plex server or to some other site like tmdb.
 
-POSTER_CONSOLIDATE=1:
 ```
+POSTER_CONSOLIDATE=1:
+
 extracted_posters/
 └── all_libraries
     ├── 3 12 Hours-847208
@@ -301,8 +302,9 @@ extracted_posters/
         └── IMDb Top 250-None-local-002.png
 ```
 
-POSTER_CONSOLIDATE=0:
 ```
+POSTER_CONSOLIDATE=0:
+
 extracted_posters/
 ├── Movies
 │   ├── 3 12 Hours-847208
@@ -335,11 +337,12 @@ extracted_posters/
         └── ABC-None-local-002.jpg
 ```
 
+```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=0
 ONLY_CURRENT=1
-```
+
 assets
 ├── Adam-12 (1968) {tvdb-78686}.jpg
 ├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
@@ -352,11 +355,12 @@ assets
 └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}_background.jpg
 ```
 
+```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=0
 ONLY_CURRENT=1
-```
+
 assets
 ├── Adam-12 (1968) {tvdb-78686}
 │   ├── S01E01.jpg
@@ -372,11 +376,12 @@ assets
     └── poster.jpg
 ```
 
+```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
 ASSETS_BY_LIBRARIES=1
 ONLY_CURRENT=1
-```
+
 assets
 ├── One Movie
 │   ├── Star Wars (1977) {imdb-tt0076759} {tmdb-11}.jpg
@@ -391,11 +396,12 @@ assets
     └── Adam-12 Collection.jpg
 ```
 
+```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
 ONLY_CURRENT=1
-```
+
 assets
 ├── One Movie
 │   └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}
@@ -413,13 +419,13 @@ assets
         └── poster.jpg
 ```
 
+```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
 ONLY_CURRENT=1
 USE_ASSET_SUBFOLDERS=1
 
-```
 assets
 ├── One Movie
 │   └── S
