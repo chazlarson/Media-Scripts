@@ -62,7 +62,7 @@ ADD_SOURCE_EXIF_COMMENT=1                    # add the source URL to the image E
 TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
-ONLY_THESE_COLLECTIONS="Bing, Bang, Boing"   # only grab artwork for these collections and items in them
+ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 ```
 
 ## Scripts:
@@ -112,8 +112,8 @@ Script-specific variables in .env:
 TRACK_RESET_STATUS=True                         # pick up where the script left off
 TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
 REMOVE_LABELS=True                              # remove labels when done [NOT RECOMMENDED]
-RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
-RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+RESET_SEASONS=True                              # reset-posters-plex resets season artwork as well in TV libraries
+RESET_EPISODES=True                             # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 LOCAL_RESET_ARCHIVE=True                        # keep a local archive of posters
 ```
 
@@ -225,7 +225,7 @@ ADD_SOURCE_EXIF_COMMENT=1                    # If set to 1, add the source URL t
 TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containing file names and source URLs
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
-ONLY_THESE_COLLECTIONS="Bing, Bang, Boing"   # only grab artwork for these collections and items in them; if empty, no filter
+ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
