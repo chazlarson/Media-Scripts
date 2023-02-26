@@ -7,7 +7,7 @@ from alive_progress import alive_bar
 import sys
 import textwrap
 
-from helpers import get_all, get_plex, get_all_watched
+from helpers import get_all, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries
 
 import logging
 from pathlib import Path
@@ -58,10 +58,12 @@ def get_user_acct(acct_list, username):
 
 def get_data_line(username, type, section, video):
     file_line = ""
+    contentRating = video['contentRating'] if 'contentRating' in video.keys() else 'NONE'
+    episodeNum = video['index'] if 'index' in video.keys() else video['duration']
     if type == "show":
-        file_line = f"{username}\t{type}\t{section}\t{video.grandparentTitle}\t{video.seasonEpisode}\t{video.title}"
+        file_line = f"{username}\t{type}\t{section}\t{video['grandparentTitle']}\ts{video['parentIndex']:02}e{episodeNum:02}\t{video['title']}"
     elif type == "movie":
-        file_line = f"{username}\t{type}\t{section}\t{video.title}\t{video.year}\t{video.contentRating}"
+        file_line = f"{username}\t{type}\t{section}\t{video['title']}\t{video['year']}\t{contentRating}"
     return file_line
 
 
@@ -69,6 +71,19 @@ def filter_for_unwatched(list):
     watched = [x for x in list if x.isPlayed]
     return watched
 
+def process_section(username, section):
+    items = []
+    file_string = ""
+
+    print(f"------------ {section['title']} ------------")
+    items = get_xml_watched(PLEX_URL, PLEX_TOKEN, section['key'], section['type'])
+    if len(items) > 0:
+        with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+            for video in items:
+                status_text = get_data_line(username, section['type'], section['title'], video)
+                file_string = (f"{file_string}{status_text}{os.linesep}")
+                bar()
+    return file_string
 
 padwidth = 95
 count = 0
@@ -82,33 +97,22 @@ account = plex.myPlexAccount()
 all_users = account.users()
 item = None
 file_string = ""
+DO_NOTHING = False
 
 print(f"------------ {account.username} ------------")
 try:
-    plex_sections = plex.library.sections()
-    for plex_section in plex_sections:
-        if plex_section.type != "artist":
-            print(f"------------ {plex_section.title} ------------")
-            the_lib = plex.library.section(plex_section.title)
-            if plex_section.type == 'show':
-                items = get_all(plex, the_lib, "episode", {'unwatched': False})
+    # plex_sections = plex.library.sections()
+    plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+
+    for plex_section in plex_sections['MediaContainer']['Directory']:
+        if not DO_NOTHING:
+            if plex_section['type'] != "artist":
+                status_text = process_section(account.username, plex_section)
+                file_string = (f"{file_string}{status_text}{os.linesep}")
             else:
-                items = get_all(plex, the_lib, None, {'unwatched': False})
-            # watched_items = filter_for_unwatched(items)
-            if len(items) > 0:
-                with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
-                    for video in items:
-                        status_text = get_data_line(account.username, plex_section.type, plex_section.title, video)
-                        file_string = (
-                            file_string
-                            + status_text
-                            + f"{os.linesep}"
-                        )
-                        bar()
-        else:
-            file_line = f"Skipping {plex_section.title}"
-            print(file_line)
-            file_string = file_string + f"{file_line}{os.linesep}"
+                file_line = f"Skipping {plex_section['title']}"
+                print(file_line)
+                file_string = file_string + f"{file_line}{os.linesep}"
 except Exception as ex:
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
@@ -121,31 +125,21 @@ for plex_user in all_users:
     user_idx += 1
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
-        user_plex = get_plex(PLEX_URL, user_acct.get_token(plex.machineIdentifier))
+        PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
+        plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+        if plex_sections is not None:
+            for plex_section in plex_sections['MediaContainer']['Directory']:
+                if not DO_NOTHING:
+                    if plex_section['type'] != "artist":
+                        status_text = process_section(plex_user.title, plex_section)
+                        file_string = (f"{file_string}{status_text}{os.linesep}")
+                    else:
+                        file_line = f"Skipping {plex_section['title']}"
+                        file_string = file_string + f"{file_line}{os.linesep}"
+                        print(file_line)
+        else:
+            print(f"Could not retrieve libraries for {plex_user.title}")
 
-        plex_sections = user_plex.library.sections()
-        for plex_section in plex_sections:
-            if plex_section.type != "artist":
-                print(f"------------ {plex_section.title} ------------")
-                the_lib = user_plex.library.section(plex_section.title)
-                if plex_section.type == 'show':
-                    items = get_all(plex, the_lib, "episode", {'unwatched': False})
-                else:
-                    items = get_all(plex, the_lib, None, {'unwatched': False})
-                # watched_items = filter_for_unwatched(items)
-                with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
-                    for video in items:
-                        status_text = get_data_line(account.username, plex_section.type, plex_section.title, video)
-                        file_string = (
-                            file_string
-                            + status_text
-                            + f"{os.linesep}"
-                        )
-                        bar()
-            else:
-                file_line = f"Skipping {plex_section.title}"
-                file_string = file_string + f"{file_line}{os.linesep}"
-                print(file_line)
     except Exception as ex:
         file_line = f"Exception processing {plex_user.title} - {ex}"
         file_string = file_string + f"{file_line}{os.linesep}"

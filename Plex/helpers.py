@@ -6,8 +6,8 @@ from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
-
-
+import requests
+import json
 
 def booler(thing):
     if type(thing) == str:
@@ -26,14 +26,16 @@ def redact(the_url, str_list):
     
 def get_plex(PLEX_URL, PLEX_TOKEN):
     print(f"connecting to {PLEX_URL}...")
+    plex = None
     try:
         plex = PlexServer(PLEX_URL, PLEX_TOKEN, timeout=360)
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
-        exit()
+        raise Unauthorized
     except Exception as ex:
         print(f"Plex Error: {ex.args}")
-        exit()
+        raise ex
+
     return plex
 
 imdb_str = "imdb://"
@@ -211,14 +213,84 @@ def get_all(plex, the_lib, tgt_class=None, filter=None):
     results = []
     while lib_size is None or c_start <= lib_size:
         if filter is not None:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=c_size, filters=filter))
+            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
         else:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=c_size))
+            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
         
         print(f"Loaded: {len(results)}/{lib_size}", end='\r')
         c_start += c_size
+        if len(results) < c_start:
+            c_start = lib_size + 1
     print(f"Completed loading {len(results)} items from {the_lib.title}")
     return results
+
+def get_xml(plex_url, plex_token, lib_index):
+    ssn = requests.Session()
+    ssn.headers.update({'Accept': 'application/json'})
+    ssn.params.update({'X-Plex-Token': plex_token})
+    media_output = ssn.get(f'{plex_url}/library/sections/{lib_index}/all').json()
+    return media_output
+
+def get_xml_libraries(plex_url, plex_token):
+    ssn = requests.Session()
+    media_output = None
+    ssn.headers.update({'Accept': 'application/json'})
+    ssn.params.update({'X-Plex-Token': plex_token})
+    raw_output = ssn.get(f'{plex_url}/library/sections/')
+    if raw_output.status_code == 200:
+        media_output = raw_output.json()
+    return media_output
+
+def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
+    output_array =[]
+
+    ssn = requests.Session()
+    ssn.headers.update({'Accept': 'application/json'})
+    ssn.params.update({'X-Plex-Token': plex_token})
+    media_output = ssn.get(f'{plex_url}/library/sections/{lib_index}/all?viewCount>=1').json()
+
+    if 'Metadata' in media_output['MediaContainer'].keys():
+        if lib_type == 'movie':
+            #library is a movie lib; loop through every movie
+            movie_count = len(media_output['MediaContainer']['Metadata'])
+            movie_idx = 1
+            for movie in media_output['MediaContainer']['Metadata']:
+                print(f"> {movie_idx:05}/{movie_count:05}", end='\r')
+                if 'viewCount' in movie.keys():
+                    output_array.append(movie)
+                movie_idx += 1
+        elif lib_type == 'show':
+            #library is show lib; loop through every show
+            show_count = len(media_output['MediaContainer']['Metadata'])
+            show_idx = 1
+            for show in media_output['MediaContainer']['Metadata']:
+                print(f"> {show_idx:05}/{show_count:05}            ", end='\r')
+                if 'viewedLeafCount' in show.keys() and show['viewedLeafCount'] > 0:
+                    show_output = ssn.get(f'{plex_url}/library/metadata/{show["ratingKey"]}/allLeaves?viewCount>=1').json()
+                    #loop through episodes of show to check if targeted season exists
+                    #loop through episodes of show
+                    if 'Metadata' in show_output['MediaContainer'].keys():
+                        episode_list = show_output['MediaContainer']['Metadata']
+                        episode_count = len(episode_list)
+                        episode_idx = 1
+                        for episode in episode_list:
+                            print(f"> {show_idx:05}/{show_count:05} {episode_idx:05}/{episode_count:05}", end='\r')
+                            if 'viewCount' in episode.keys():
+                                output_array.append(episode)
+                            episode_idx += 1
+                show_idx += 1
+
+    return output_array
+
+def get_media_details(plex_url, plex_token, rating_key):
+    output_array =[]
+
+    ssn = requests.Session()
+    ssn.headers.update({'Accept': 'application/json'})
+    ssn.params.update({'X-Plex-Token': plex_token})
+    media_output = ssn.get(f'{plex_url}/library/metadata/{rating_key}').json()
+    
+    return media_output
 
 def get_all_watched(plex, the_lib):
     lib_size = the_lib.totalViewSize()
