@@ -36,6 +36,7 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 POSTER_DOWNLOAD=False                        # generate a script rather than downloading
 POSTER_CONSOLIDATE=True                      # posters are separated into folders by library
 TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
+TRACK_COMPLETION=1                           # If set to 1, movies/shows are tracked as complete by rating id
 TRACK_RESET_STATUS=True                      # reset-posters-* keeps track of status and picks up where it left off
 ARTWORK=True                                 # current background is downloaded with current poster
 PLEX_PATHS=False
@@ -216,6 +217,7 @@ GRAB_EPISODES=1                              # grab episode posters [requires GR
 GRAB_BACKGROUNDS=1                           # If set to 1, backgrounds are retrieved [into a folder `backgrounds`]
 ONLY_CURRENT=0                               # if set to 1, only current artwork is retrieved; also CURRENT_POSTER_DIR is used
 TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
+TRACK_COMPLETION=1                           # If set to 1, movies/shows are tracked as complete by rating id
 USE_ASSET_NAMING=1                           # If set to 1, images are stored and named per PMM's Asset Directory rules
 USE_ASSET_FOLDERS=1                          # If set to 1, images are stored and named assuming `asset_folders: true` in PMM
 ASSETS_BY_LIBRARIES=1                        # If set to 1, images are stored in separate asset dirs per library
@@ -240,9 +242,13 @@ If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the c
 
 If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.
 
-If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if hte same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
+If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
+
+If "TRACK_COMPLETION" is `1`, the script will create a file named for the library and record movies/shows by rating key in the file.  On future runs, if a given rating key is found in that file the show/movier is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all 2000 episodes of some show only to determine that it's already downlaoded all the images.  HOWEVER, this also means that future episodes won't be picked up when you run the script again.  This file will be named including the uuid and the depth setting: `status-9ecacbf7-ad70-4ae2-bef4-3d183be4798b-12.txt`
 
 If you delete the directory of extracted posters intending to download them again, be sure to delete these files, or nothing will be downloaded on that second pass.
+
+You can delete individual rating keys or the entire file to fill in gaps.
 
 Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with missing parts absent as seen in the lists below.  The ID in 
 

@@ -95,6 +95,8 @@ if ONLY_CURRENT:
     POSTER_DIR = os.getenv("CURRENT_POSTER_DIR")
 
 TRACK_URLS = booler(os.getenv("TRACK_URLS"))
+TRACK_COMPLETION = booler(os.getenv("TRACK_COMPLETION"))
+
 ASSET_DIR = os.getenv("ASSET_DIR")
 
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
@@ -885,10 +887,11 @@ for lib in LIB_ARRAY:
         status_file_name = f"status-{the_lib.uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
 
-        if status_file.is_file():
-            with open(f"{status_file_name}") as fp:
-                for line in fp:
-                    ID_ARRAY.append(line.strip())
+        if TRACK_COMPLETION:
+            if status_file.is_file():
+                with open(f"{status_file_name}") as fp:
+                    for line in fp:
+                        ID_ARRAY.append(line.strip())
 
         URL_ARRAY = []
         title, msg = validate_filename(f"{the_lib.title}")
@@ -926,11 +929,12 @@ for lib in LIB_ARRAY:
 
                                 bar()
 
-                                ID_ARRAY.append(item.ratingKey)
+                                if TRACK_COMPLETION:
+                                    ID_ARRAY.append(item.ratingKey)
 
-                                # write out item_array to file.
-                                with open(status_file, "a", encoding="utf-8") as sf:
-                                    sf.write(f"{item.ratingKey}{os.linesep}")
+                                    # write out item_array to file.
+                                    with open(status_file, "a", encoding="utf-8") as sf:
+                                        sf.write(f"{item.ratingKey}{os.linesep}")
 
                             else:
                                 logging.info("================================")
@@ -991,15 +995,17 @@ for lib in LIB_ARRAY:
                                                 for e in episodes:
                                                     get_posters(lib, e)
 
-                            ID_ARRAY.append(item.ratingKey)
+                            if TRACK_COMPLETION:
+                                ID_ARRAY.append(item.ratingKey)
                         else:
                             logging.info("================================")
                             logging.info(f"SKIPPING {item.title}; status complete")
                             bar.text = f"SKIPPING {item.title}; status complete"
 
-                        # write out item_array to file.
-                        with open(status_file, "a", encoding="utf-8") as sf:
-                            sf.write(f"{item.ratingKey}{os.linesep}")
+                        if TRACK_COMPLETION:
+                            # write out item_array to file.
+                            with open(status_file, "a", encoding="utf-8") as sf:
+                                sf.write(f"{item.ratingKey}{os.linesep}")
 
                         bar()
 
