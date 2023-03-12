@@ -172,34 +172,46 @@ for lib in LIB_ARRAY:
                 i_rk = item.ratingKey
                 i_t = item.title
                 imdbid, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
+                logging.info(f"{i_t}: ratingKey: {i_rk} imdbid: {imdbid} tmdb_id: {tmdb_id} tvdb_id: {tvdb_id}")
                 try:
                     bar_and_log(bar, f"-> starting: {i_t}")
                     pp = None
                     local_file = None
                     tmdb_item = None
-                    if tmdb_id:
-                        tmdb_item = tmdb.tv_show(tmdb_id)
-                    else:
-                        tmdb_search = (
-                            tmdb.find_by_id(tvdb_id=tvdb_id)
-                        )
-                        if len(tmdb_search.tv_results) > 0:
-                            tmdb_item = tmdb_search.tv_results[0]
                     
                     if item.TYPE == "show":
                         tgt_dir = show_dir
+                        if tmdb_id:
+                            logging.info(f"{i_t}: tmdb_id: {tmdb_id} - getting tv_show")
+                            tmdb_item = tmdb.tv_show(tmdb_id)
+                            logging.info(f"{i_t}: tmdb_id: {tmdb_id} - FOUND {tmdb_item.title}")
+                        else:
+                            logging.info(f"{i_t}: tvdb_id: {tvdb_id} - SEARCHING FOR tv_show")
+                            tmdb_search = (
+                                tmdb.find_by_id(tvdb_id=tvdb_id)
+                            )
+                            if len(tmdb_search.tv_results) > 0:
+                                tmdb_item = tmdb_search.tv_results[0]
+                                logging.info(f"{i_t}: tvdb_id: {tvdb_id} - FOUND {tmdb_item.title}")
+                                
                     else:
                         tgt_dir = movie_dir
+                        logging.info(f"{i_t}: tmdb_id: {tmdb_id} - getting movie")
                         tmdb_item = tmdb.movie(tmdb_id)
+                        logging.info(f"{i_t}: tmdb_id: {tmdb_id} - FOUND {tmdb_item.title}")
 
                     if LOCAL_RESET_ARCHIVE:
                         local_file = localFilePath(tgt_dir, i_rk)
                         pp = local_file
+    
                     if local_file is None:
+                        logging.info(f"{i_t}: tmdb_id: {tmdb_id} - NO LOCAL FILE")
                         try:
+                            logging.info(f"{i_t}: tmdb_id: {tmdb_id} - RELOADING ITEM")
                             tmdb_item.reload()
                             pp = tmdb_item.poster_path
-                        except:
+                        except Exception as ex:
+                            logging.info(f"{i_t}: tmdb_id: {tmdb_id} - EXCEPTION {ex}")
                             pp = None
 
                     if pp is not None:
@@ -207,14 +219,17 @@ for lib in LIB_ARRAY:
                         logging.info(f"seriesPosterURL: {seriesPosterURL}")
 
                     if id_array.count(f"{i_rk}-top") == 0:
+                        logging.info(f"{i_t}: haven't reset this yet")
                         
                         if pp is not None:
                             bar_and_log(bar, f"-> checking if Plex knows about this image: {seriesPosterURL}")
                             pp_o = plex_knows_this_image(item, 'tmdb', seriesPosterURL)
                             if pp_o is not None:
-                                print_and_log(f"One of Plex' posters for {i_t}: {seriesPosterURL}")
+                                print_and_log(f"This is one of Plex' posters for {i_t}: {seriesPosterURL}")
 
                             if LOCAL_RESET_ARCHIVE:
+                                bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk}")
+
                                 if local_file is None or not os.path.exists(local_file):
                                     ext = pathlib.Path(pp).suffix
                                     local_file = os.path.join(tgt_dir, f"{i_rk}.{ext}")
@@ -258,6 +273,7 @@ for lib in LIB_ARRAY:
                     if item.TYPE == "show" and tmdb_item is not None:
 
                         if RESET_SEASONS:
+                            bar_and_log(bar, f"Resetting seasons for {i_t}-{i_rk}")
                             # get seasons
                             seasons = item.seasons()
                             tmdb_seasons = tmdb_item.seasons
@@ -268,10 +284,13 @@ for lib in LIB_ARRAY:
                                 s_rk = s.ratingKey
                                 s_found = False
 
+                                bar_and_log(bar, f"Processing {i_t}-{i_rk} Season {s_id}")
+
                                 for ss in tmdb_seasons:
                                     ss.reload()
 
                                     if ss.season_number == s_id and not s_found:
+                                        bar_and_log(bar, f"{i_t}-{i_rk} Season {s_id} found matching season at TMDB")
                                         s_found = True
 
                                         if id_array.count(f"{s_rk}") == 0:
@@ -291,9 +310,10 @@ for lib in LIB_ARRAY:
                                             bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
                                             pp_o = plex_knows_this_image(s, 'tmdb', posterURL)
                                             if pp_o is not None:
-                                                print_and_log(f"One of Plex' posters for {i_t}: {posterURL}")
+                                                print_and_log(f"This is one of Plex' posters for {i_t}: {posterURL}")
 
                                             if LOCAL_RESET_ARCHIVE:
+                                                bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk} Season {s_id}")
                                                 if (
                                                     local_file is None
                                                     or not os.path.exists(
@@ -305,9 +325,9 @@ for lib in LIB_ARRAY:
                                                         tgt_dir,
                                                         f"{i_rk}-S{s_id}{ext}",
                                                     )
-                                                    bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
 
                                                 if not os.path.exists(local_file):
+                                                    bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}")
                                                     dl_URL = posterURL
                                                     if pp_o is not None:
                                                         dl_URL = pp_o.key
@@ -384,9 +404,10 @@ for lib in LIB_ARRAY:
                                                                     bar_and_log(bar, f"-> checking if Plex knows about that image")
                                                                     pp_o = plex_knows_this_image(plex_ep, 'tmdb', posterURL)
                                                                     if pp_o is not None:
-                                                                        logging.info(f"One of Plex' posters for {i_t}: {posterURL}")
+                                                                        logging.info(f"This is one of Plex' posters for {i_t}: {posterURL}")
 
                                                                     if LOCAL_RESET_ARCHIVE:
+                                                                        bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk} S{s_id} E{e_id}")
                                                                         if (
                                                                             local_file
                                                                             is None
@@ -401,11 +422,11 @@ for lib in LIB_ARRAY:
                                                                                 tgt_dir,
                                                                                 f"{i_rk}-S{s_id}E{e_id}.{ext}",
                                                                             )
-                                                                            bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}E{e_id}")
 
                                                                         if not os.path.exists(
                                                                             local_file
                                                                         ):
+                                                                            bar_and_log(bar, f"-> downloading poster: {i_t} S{s_id}E{e_id}")
                                                                             dl_URL = posterURL
                                                                             if pp_o is not None:
                                                                                 dl_URL = pp_o.key
