@@ -28,6 +28,48 @@ from helpers import booler, get_all, get_ids, get_plex, redact, validate_filenam
 import logging
 from pathlib import Path
 SCRIPT_NAME = Path(__file__).stem
+VERSION = "0.5"
+
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
+LIBRARY_STATS = f"{SCRIPT_NAME}-libs.dat"
+
+def setup_logger(logger_name, log_file, level=logging.INFO):
+    log_setup = logging.getLogger(logger_name)
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    fileHandler = logging.FileHandler(log_file, mode='a')
+    fileHandler.setFormatter(formatter)
+    log_setup.setLevel(level)
+    log_setup.addHandler(fileHandler)
+
+def setup_dual_logger(logger_name, log_file, level=logging.INFO):
+    log_setup = logging.getLogger(logger_name)
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    fileHandler = logging.FileHandler(log_file, mode='a')
+    fileHandler.setFormatter(formatter)
+    streamHandler = logging.StreamHandler()
+    streamHandler.setFormatter(formatter)
+    log_setup.setLevel(level)
+    log_setup.addHandler(fileHandler)
+    log_setup.addHandler(streamHandler)
+
+def logger(msg, level, logfile):
+    if logfile == 'a'   : log = logging.getLogger('activity_log')
+    if logfile == 'd'   : log = logging.getLogger('download_log') 
+    if level == 'info'    : log.info(msg) 
+    if level == 'warning' : log.warning(msg)
+    if level == 'error'   : log.error(msg)
+
+def plogger(msg, level, logfile):
+    if logfile == 'a'   : log = logging.getLogger('activity_log')
+    if logfile == 'd'   : log = logging.getLogger('download_log') 
+    if level == 'info'    : log.info(msg) 
+    if level == 'warning' : log.warning(msg)
+    if level == 'error'   : log.error(msg)
+    print(msg)
+
+setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger('download_log', DOWNLOAD_LOG)
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -36,8 +78,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+plogger(f"Starting {SCRIPT_NAME} {VERSION}", 'info', 'a')
 
 if os.path.exists(".env"):
     load_dotenv()
@@ -55,11 +96,11 @@ PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 
 if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    print("You must specify PLEX_URL in the .env file.")
+    plogger("You must specify PLEX_URL in the .env file.", 'info', 'a')
     exit()
 
 if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    print("You must specify PLEX_TOKEN in the .env file.")
+    plogger("You must specify PLEX_TOKEN in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -879,6 +920,8 @@ def get_file(src_URL, bar, item, target_path, target_file):
 
 for lib in LIB_ARRAY:
     try:
+        plogger(f"queue length: {len(my_futures)}", 'info', 'a')
+
         the_lib = plex.library.section(lib)
 
         ID_ARRAY = []
