@@ -11,6 +11,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import filetype
+import pickle
 import piexif
 import piexif.helper
 import plexapi
@@ -23,7 +24,7 @@ from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-from helpers import booler, get_all, get_ids, get_plex, redact, validate_filename
+from helpers import booler, get_size, get_all, get_ids, get_plex, redact, validate_filename
 
 import logging
 from pathlib import Path
@@ -32,7 +33,7 @@ VERSION = "0.5"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
-LIBRARY_STATS = f"{SCRIPT_NAME}-libs.dat"
+LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     log_setup = logging.getLogger(logger_name)
@@ -94,6 +95,14 @@ else:
     logging.info(f"No environment [.env] file.  Exiting.")
     print(f"No environment [.env] file.  Exiting.")
     exit()
+
+lib_stats = {}
+
+stat_file = Path(LIBRARY_STATS)
+
+if stat_file.is_file():
+    file = open(stat_file, 'rb')
+    lib_stats = pickle.load(file)
 
 ID_FILES = True
 
@@ -928,11 +937,13 @@ def get_file(src_URL, bar, item, target_path, target_file):
 
 for lib in LIB_ARRAY:
     try:
-        plogger(f"queue length: {len(my_futures)}", 'info', 'a')
+        if len(my_futures) > 0:
+            plogger(f"queue length: {len(my_futures)}", 'info', 'a')
 
+        plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
         lib_size = the_lib.totalViewSize()
-
+        
         ID_ARRAY = []
         status_file_name = f"status-{the_lib.uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
@@ -999,72 +1010,100 @@ for lib in LIB_ARRAY:
                 COLLECTION_ARRAY = ['nzffnqipxg']
 
             for coll in COLLECTION_ARRAY:
+                lib_key = f"{the_lib.uuid}-{coll}"
+
+                count_last_time = 0
+
+                if lib_key in lib_stats.keys():
+                    count_last_time = lib_stats[lib_key]
+                
                 if coll == 'nzffnqipxg':
-                    items = get_all(plex, the_lib)
+                    plogger(f"Checking size of {the_lib.title} ...", 'info', 'a')
+                    count_this_time = get_size(the_lib)
+                    if count_this_time != count_last_time:
+                        plogger(f"{count_this_time - count_last_time} new items in {the_lib.title}", 'info', 'a')
+                        items = get_all(plex, the_lib)
+                    else:
+                        plogger(f"nothing new in {the_lib.title}", 'info', 'a')
+                        items = []
                 else:
-                    items = get_all(plex, the_lib, None, {'collection': coll})
+                    plogger(f"Checking size of {the_lib.title} collection {coll} ...", 'info', 'a')
+                    count_this_time = get_size(the_lib, None, {'collection': coll})
+                    if count_this_time != count_last_time:
+                        plogger(f"{count_this_time - count_last_time} new items in {the_lib.title}", 'info', 'a')
+                        items = get_all(plex, the_lib, None, {'collection': coll})
+                    else:
+                        plogger(f"nothing new in {the_lib.title}", 'info', 'a')
+                        items = []
 
                 item_total = len(items)
-                logging.info(f"looping over {item_total} items...")
-                item_count = 1
+                if item_total > 0:
+                    logger(f"looping over {item_total} items...", 'info', 'a')
+                    item_count = 1
 
-                plex_links = []
-                external_links = []
+                    plex_links = []
+                    external_links = []
 
-                with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
-                    for item in items:
+                    with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
+                        for item in items:
 
-                        if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                            logging.info("================================")
-                            logging.info(f"Starting {item.title}")
+                            if ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                                logging.info("================================")
+                                logging.info(f"Starting {item.title}")
 
-                            get_posters(lib, item)
+                                get_posters(lib, item)
 
-                            if not FOLDERS_ONLY:
-                                if item.TYPE == "show":
-                                    lib_ordering = get_lib_setting(the_lib, 'showOrdering')
-                                    show_ordering = item.showOrdering
-                                    if show_ordering is None:
-                                        show_ordering = lib_ordering
+                                if not FOLDERS_ONLY:
+                                    if item.TYPE == "show":
+                                        lib_ordering = get_lib_setting(the_lib, 'showOrdering')
+                                        show_ordering = item.showOrdering
+                                        if show_ordering is None:
+                                            show_ordering = lib_ordering
 
-                                    if GRAB_SEASONS:
-                                        # get seasons
-                                        seasons = item.seasons()
+                                        if GRAB_SEASONS:
+                                            # get seasons
+                                            seasons = item.seasons()
 
-                                        # loop over all:
-                                        for s in seasons:
-                                            get_posters(lib, s)
+                                            # loop over all:
+                                            for s in seasons:
+                                                get_posters(lib, s)
 
-                                            if GRAB_EPISODES:
-                                                # get episodes
-                                                episodes = s.episodes()
+                                                if GRAB_EPISODES:
+                                                    # get episodes
+                                                    episodes = s.episodes()
 
-                                                # loop over all
-                                                for e in episodes:
-                                                    get_posters(lib, e)
+                                                    # loop over all
+                                                    for e in episodes:
+                                                        get_posters(lib, e)
 
-                            ID_ARRAY.append(item.ratingKey)
-                        else:
-                            logging.info("================================")
-                            logging.info(f"SKIPPING {item.title}; status complete")
-                            bar.text = f"SKIPPING {item.title}; status complete"
+                                ID_ARRAY.append(item.ratingKey)
+                            else:
+                                logging.info("================================")
+                                logging.info(f"SKIPPING {item.title}; status complete")
+                                bar.text = f"SKIPPING {item.title}; status complete"
 
-                        # write out item_array to file.
-                        with open(status_file, "a", encoding="utf-8") as sf:
-                            sf.write(f"{item.ratingKey}{os.linesep}")
+                            # write out item_array to file.
+                            with open(status_file, "a", encoding="utf-8") as sf:
+                                sf.write(f"{item.ratingKey}{os.linesep}")
 
-                        bar()
+                            bar()
+
+                    lib_stats[lib_key] = item_total
 
         progress_str = "COMPLETE"
         logging.info(progress_str)
 
         bar.text = progress_str
 
-        print(os.linesep)
+        # print(os.linesep)
         if not POSTER_DOWNLOAD:
             if len(SCRIPT_STRING) > 0:
                 with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
+
+        file = open(stat_file, 'wb')
+        pickle.dump(lib_stats, file)
+        file.close()
 
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
