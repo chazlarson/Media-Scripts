@@ -68,6 +68,14 @@ def plogger(msg, level, logfile):
     if level == 'error'   : log.error(msg)
     print(msg)
 
+def blogger(msg, level, logfile, bar):
+    if logfile == 'a'   : log = logging.getLogger('activity_log')
+    if logfile == 'd'   : log = logging.getLogger('download_log') 
+    if level == 'info'    : log.info(msg) 
+    if level == 'warning' : log.warning(msg)
+    if level == 'error'   : log.error(msg)
+    bar.text(msg)
+
 setup_logger('activity_log', ACTIVITY_LOG)
 setup_logger('download_log', DOWNLOAD_LOG)
 
@@ -923,6 +931,7 @@ for lib in LIB_ARRAY:
         plogger(f"queue length: {len(my_futures)}", 'info', 'a')
 
         the_lib = plex.library.section(lib)
+        lib_size = the_lib.totalViewSize()
 
         ID_ARRAY = []
         status_file_name = f"status-{the_lib.uuid}-{POSTER_DEPTH}.txt"
@@ -1065,14 +1074,23 @@ for lib in LIB_ARRAY:
 
 idx = 1
 max = len(my_futures)
-print(f"waiting on {max} downloads")
+plogger(f"waiting on {max} downloads", 'info', 'a')
 # iterate over all submitted tasks and get results as they are available
-for future in as_completed(my_futures):
-	# get the result for the next completed task
+
+from alive_progress import alive_it
+
+for future in alive_it(as_completed(my_futures)):   # <<-- wrapped items
     result = future.result() # blocks
-    sys.stdout.write(f"\r{idx}/{max}       ")
-    sys.stdout.flush()
+    # sys.stdout.write(f"\r{idx}/{max}       ")
+    # sys.stdout.flush()
     idx += 1
+
+# for future in as_completed(my_futures):
+# 	# get the result for the next completed task
+#     result = future.result() # blocks
+#     sys.stdout.write(f"\r{idx}/{max}       ")
+#     sys.stdout.flush()
+#     idx += 1
 
 print(f"Complete!")
 # shutdown the thread pool
