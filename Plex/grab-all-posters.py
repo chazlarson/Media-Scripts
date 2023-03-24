@@ -318,7 +318,7 @@ def get_image_name(params, tgt_ext, background=False):
         if ONLY_CURRENT:
             base_name = f"{tgt_ext}"
         else:
-            base_name = f"-{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
+            base_name = f"-{str(idx).zfill(3)}{tgt_ext}-{provider}-{source}"
 
         if background:
             ret_val = f"_background{base_name}"
@@ -338,7 +338,7 @@ def get_image_name(params, tgt_ext, background=False):
                     ret_val = f"{base_name}"
 
     else:
-        base_name = f"{provider}-{source}-{str(idx).zfill(3)}{tgt_ext}"
+        base_name = f"{str(idx).zfill(3)}{tgt_ext}-{provider}-{source}"
 
         if background:
             ret_val = f"background-{base_name}"

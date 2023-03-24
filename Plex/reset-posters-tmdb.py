@@ -118,7 +118,7 @@ logging.info("connection success")
 
 def plex_knows_this_image(item, source, path):
     logging.info(f"Retrieving posters for {item}")
-    item.reload()
+    # item.reload()
     attempts = 0
     while attempts < 5:
         try:
@@ -177,17 +177,16 @@ for lib in LIB_ARRAY:
                     pp = None
                     local_file = None
                     tmdb_item = None
-                    if tmdb_id:
-                        tmdb_item = tmdb.tv_show(tmdb_id)
-                    else:
-                        tmdb_search = (
-                            tmdb.find_by_id(tvdb_id=tvdb_id)
-                        )
-                        if len(tmdb_search.tv_results) > 0:
-                            tmdb_item = tmdb_search.tv_results[0]
-                    
                     if item.TYPE == "show":
                         tgt_dir = show_dir
+                        if tmdb_id:
+                            tmdb_item = tmdb.tv_show(tmdb_id)
+                        else:
+                            tmdb_search = (
+                                tmdb.find_by_id(tvdb_id=tvdb_id)
+                            )
+                            if len(tmdb_search.tv_results) > 0:
+                                tmdb_item = tmdb_search.tv_results[0]
                     else:
                         tgt_dir = movie_dir
                         tmdb_item = tmdb.movie(tmdb_id)
@@ -236,7 +235,7 @@ for lib in LIB_ARRAY:
                                     bar_and_log(bar, f"-> SETTING poster: {i_t}")
                                     item.setPoster(pp_o)
                                 else:
-                                    bar_and_log(bar, f"-> uploading poster: {i_t}")
+                                    bar_and_log(bar, f"-> uploading poster from local file: {i_t}")
                                     item.uploadPoster(filepath=local_file)
                             else:
                                 bar_and_log(bar, f"-> setting series poster URL: {i_t}")
@@ -244,7 +243,7 @@ for lib in LIB_ARRAY:
                                     bar_and_log(bar, f"-> SETTING poster: {i_t}")
                                     item.setPoster(pp_o)
                                 else:
-                                    bar_and_log(bar, f"-> uploading poster: {i_t}")
+                                    bar_and_log(bar, f"-> uploading poster from URL: {i_t}")
                                     item.uploadPoster(url=seriesPosterURL)
 
                             id_array.append(f"{i_rk}-top")
