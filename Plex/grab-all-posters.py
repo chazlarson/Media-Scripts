@@ -92,8 +92,7 @@ plogger(f"Starting {SCRIPT_NAME} {VERSION}", 'info', 'a')
 if os.path.exists(".env"):
     load_dotenv()
 else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
+    plogger(f"No environment [.env] file.  Exiting.", 'info', 'a')
     exit()
 
 lib_stats = {}
@@ -201,7 +200,6 @@ if not DELAY:
 
 KEEP_JUNK = booler(os.getenv("KEEP_JUNK"))
 
-
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
 IS_WINDOWS = platform.system() == "Windows"
@@ -215,6 +213,21 @@ SCRIPT_STRING = ""
 if POSTER_DOWNLOAD:
     SCRIPT_STRING = SCRIPT_SEED
 
+RESET_LIBRARIES = os.getenv("RESET_LIBRARIES")
+
+if RESET_LIBRARIES:
+    RESET_ARRAY = [s.strip() for s in RESET_LIBRARIES.split(",")]
+else:
+    RESET_ARRAY = []
+
+RESET_COLLECTIONS = os.getenv("RESET_COLLECTIONS")
+
+if RESET_COLLECTIONS:
+    RESET_COLL_ARRAY = [s.strip() for s in RESET_COLLECTIONS.split(",")]
+else:
+    RESET_COLL_ARRAY = []
+
+
 if LIBRARY_NAMES:
     LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
 else:
@@ -227,7 +240,6 @@ if ONLY_THESE_COLLECTIONS:
 else:
     COLLECTION_ARRAY = []
 
-
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
@@ -238,7 +250,7 @@ redaction_list.append(PLEX_TOKEN)
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
-logging.info("connection success")
+logger("connection success", 'info', 'a')
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
@@ -491,18 +503,14 @@ def process_the_thing(params):
             )
 
         if not check_for_images(final_file_path):
-            logging.info(
-                f"{final_file_path} does not yet exist"
-            )
+            logger(f"{final_file_path} does not yet exist", 'info', 'd')
             if POSTER_DOWNLOAD:
                 p = Path(folder_path)
                 p.mkdir(parents=True, exist_ok=True)
 
 
                 if not FOLDERS_ONLY:
-                    logging.info(f"provider: {provider} - source: {source}")
-                    logging.info(f"downloading {redact(src_URL, redaction_list)}")
-                    logging.info(f"to {tgt_filename}")
+                    logger(f"provider: {provider} - source: {source} - downloading {redact(src_URL, redaction_list)} to {tgt_filename}", 'info', 'd')
                     try:
                         thumbPath = download(
                             f"{src_URL}",
@@ -510,7 +518,7 @@ def process_the_thing(params):
                             filename=tgt_filename,
                             savepath=folder_path,
                         )
-                        logging.info(f"Downloaded {thumbPath}")
+                        logger(f"Downloaded {thumbPath}", 'info', 'd')
 
                         # Wait between items in case hammering the Plex server turns out badly.
                         time.sleep(DELAY)
@@ -552,8 +560,7 @@ def process_the_thing(params):
                                 sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
 
                     except Exception as ex:
-                        logging.info(f"error on {src_URL}")
-                        logging.info(f"{ex}")
+                        logger(f"error on {src_URL} - {ex}", 'info', 'd')
             else:
                 mkdir_flag = "" if IS_WINDOWS else "-p "
                 script_line_start = ""
@@ -589,8 +596,7 @@ def get_art(item, artwork_path, tmid, tvid):
         try:
             progress_str = f"{get_progress_string(item)} - {len(all_art)} backgrounds"
 
-            logging.info(progress_str)
-            bar.text = progress_str
+            blogger(progress_str, 'info', 'a', bar)
 
             import fnmatch
 
@@ -606,7 +612,7 @@ def get_art(item, artwork_path, tmid, tvid):
                         count = len(fnmatch.filter(os.listdir(bg_path), "background*.*"))
                     else:
                         count = len(fnmatch.filter(os.listdir(bg_path), "*.*"))
-                    logging.info(f"{count} files in {bg_path}")
+                    logger(f"{count} files in {bg_path}", 'info', 'a')
 
                 posters_to_go = count - POSTER_DEPTH
 
@@ -615,30 +621,22 @@ def get_art(item, artwork_path, tmid, tvid):
                 else:
                     poster_to_go = 0
 
-                logging.info(
-                    f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
-                )
+                logger(f"{poster_to_go} needed to reach depth {POSTER_DEPTH}", 'info', 'a')
 
                 no_more_to_get = count >= len(all_art)
                 full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
                 no_point_in_looking = full_for_now or no_more_to_get
                 if no_more_to_get:
-                    logging.info(
-                        f"Grabbed all available posters: {no_more_to_get}"
-                    )
+                    logger(f"Grabbed all available posters: {no_more_to_get}", 'info', 'a')
                 if full_for_now:
-                    logging.info(
-                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
-                    )
+                    logger(f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already", 'info', 'a')
 
             if not no_point_in_looking:
                 idx = 1
                 for art in all_art:
                     if art.key is not None:
                         if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                            logging.info(
-                                f"Reached max depth of {POSTER_DEPTH}; exiting loop"
-                            )
+                            logger(f"Reached max depth of {POSTER_DEPTH}; exiting loop", 'info', 'a')
                             break
 
                         art_params = {}
@@ -660,22 +658,20 @@ def get_art(item, artwork_path, tmid, tvid):
                         art_params['src_URL'] = src_URL
 
                         bar.text = f"{progress_str} - {idx}"
-                        logging.info("--------------------------------")
-                        logging.info(f"processing {progress_str} - {idx}")
+                        logger(f"processing {progress_str} - {idx}", 'info', 'a')
 
                         future = executor.submit(process_the_thing, art_params) # does not block
                         my_futures.append(future)
                         # process_the_thing(art_params)
                     else: 
-                        logging.info(f"skipping empty internal art object")
+                        logger(f"skipping empty internal art object", 'info', 'a')
 
                     idx += 1
 
             attempts = 6
         except Exception as ex:
             progress_str = f"EX: {ex} {item.title}"
-            logging.info(progress_str)
-
+            logger(progress_str, 'info', 'a')
             attempts  += 1
 
 def char_range(c1, c2):
@@ -764,7 +760,7 @@ def get_posters(lib, item):
     # for assets we would want:
     # Adam-12 Collection
     artwork_path = Path(tgt_dir, item_path)
-    logging.info(f"final artwork_path: {artwork_path}")
+    logger(f"final artwork_path: {artwork_path}", 'info', 'a')
     # current_posters/all_libraries/collection-Adam-12 Collection'
     # for assets this should be:
     # assets/One Show/Adam-12 Collection
@@ -780,8 +776,7 @@ def get_posters(lib, item):
         try:
             progress_str = f"{get_progress_string(item)} - {len(all_posters)} posters"
 
-            logging.info(progress_str)
-            bar.text = progress_str
+            blogger(progress_str, 'info', 'a', bar)
 
             import fnmatch
 
@@ -799,7 +794,7 @@ def get_posters(lib, item):
 
                 if os.path.exists(artwork_path):
                     count = len(fnmatch.filter(os.listdir(artwork_path), search_filter))
-                    logging.info(f"{count} files in {artwork_path}")
+                    logger(f"{count} files in {artwork_path}", 'info', 'a')
 
                 posters_to_go = count - POSTER_DEPTH
 
@@ -808,29 +803,21 @@ def get_posters(lib, item):
                 else:
                     poster_to_go = 0
 
-                logging.info(
-                    f"{poster_to_go} needed to reach depth {POSTER_DEPTH}"
-                )
+                logger(f"{poster_to_go} needed to reach depth {POSTER_DEPTH}", 'info', 'a')
 
                 no_more_to_get = count >= len(all_posters)
                 full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
                 no_point_in_looking = full_for_now or no_more_to_get
                 if no_more_to_get:
-                    logging.info(
-                        f"Grabbed all available posters: {no_more_to_get}"
-                    )
+                    logger(f"Grabbed all available posters: {no_more_to_get}", 'info', 'a')
                 if full_for_now:
-                    logging.info(
-                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already"
-                    )
+                    logger(f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already", 'info', 'a')
 
             if not no_point_in_looking:
                 idx = 1
                 for poster in all_posters:
                     if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
-                        logging.info(
-                            f"Reached max depth of {POSTER_DEPTH}; exiting loop"
-                        )
+                        logger(f"Reached max depth of {POSTER_DEPTH}; exiting loop", 'info', 'a')
                         break
 
                     art_params = {}
@@ -854,8 +841,7 @@ def get_posters(lib, item):
                     art_params['src_URL'] = src_URL
 
                     bar.text = f"{progress_str} - {idx}"
-                    logging.info("--------------------------------")
-                    logging.info(f"processing {progress_str} - {idx}")
+                    logger(f"processing {progress_str} - {idx}", 'info', 'a')
 
                     future = executor.submit(process_the_thing, art_params) # does not block
                     my_futures.append(future)
@@ -866,7 +852,7 @@ def get_posters(lib, item):
             attempts = 6
         except Exception as ex:
             progress_str = f"EX: {ex} {item.title}"
-            logging.info(progress_str)
+            logger(progress_str, 'info', 'a')
 
             attempts  += 1
 
@@ -882,10 +868,10 @@ def rename_by_type(target):
             content = file.read()
 	    	# check if string present or not
             if '404 Not Found' in content:
-                logging.info('Contains 404, deleting')
+                logger('Contains 404, deleting', 'info', 'a')
                 extension = ".del"
             else:
-                logging.info('Cannot guess file type; using txt')
+                logger('Cannot guess file type; using txt', 'info', 'a')
                 extension = ".txt"
     else:
         extension = f".{kind.extension}"
@@ -937,6 +923,8 @@ def get_file(src_URL, bar, item, target_path, target_file):
 
 for lib in LIB_ARRAY:
     try:
+        highwater = 0
+
         if len(my_futures) > 0:
             plogger(f"queue length: {len(my_futures)}", 'info', 'a')
 
@@ -966,11 +954,11 @@ for lib in LIB_ARRAY:
         SOURCE_FILE_NAME = f"sources-{title}-{the_lib.uuid}.txt"
 
         if INCLUDE_COLLECTION_ARTWORK:
-            print(f"getting collections from [{lib}]...")
+            plogger(f"getting collections from [{lib}]...", 'info', 'a')
 
             items = the_lib.collections()
             item_total = len(items)
-            print(f"{item_total} collection(s) retrieved...")
+            plogger(f"{item_total} collection(s) retrieved...", 'info', 'a')
 
             tgt_ext = ".dat"
 
@@ -982,8 +970,7 @@ for lib in LIB_ARRAY:
                         if len(COLLECTION_ARRAY) == 0 or item.title in COLLECTION_ARRAY:
 
                             if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                                logging.info("================================")
-                                logging.info(f"Starting {item.title}")
+                                logger(f"Starting {item.title}", 'info', 'a')
 
                                 get_posters(lib, item)
 
@@ -996,13 +983,9 @@ for lib in LIB_ARRAY:
                                     sf.write(f"{item.ratingKey}{os.linesep}")
 
                             else:
-                                logging.info("================================")
-                                logging.info(f"SKIPPING {item.title}; status complete")
-                                bar.text = f"SKIPPING {item.title}; status complete"
+                                blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
                         else:
-                            logging.info("================================")
-                            logging.info(f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS")
-                            bar.text = f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS"
+                            blogger(f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS", 'info', 'a', bar)
 
         if not ONLY_COLLECTION_ARTWORK:
 
@@ -1016,7 +999,15 @@ for lib in LIB_ARRAY:
 
                 if lib_key in lib_stats.keys():
                     count_last_time = lib_stats[lib_key]
+
+                if the_lib.title in RESET_ARRAY and (coll == 'nzffnqipxg'):
+                    plogger(f"Resetting count for {the_lib.title} ...", 'info', 'a')
+                    count_last_time = 0
                 
+                if coll in RESET_COLL_ARRAY:
+                    plogger(f"Resetting count for {the_lib.title} ...", 'info', 'a')
+                    count_last_time = 0
+
                 if coll == 'nzffnqipxg':
                     plogger(f"Checking size of {the_lib.title} ...", 'info', 'a')
                     count_this_time = get_size(the_lib)
@@ -1046,54 +1037,54 @@ for lib in LIB_ARRAY:
 
                     with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                         for item in items:
+                            try:
+                                if ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                                    logger(f"Starting {item.title}", 'info', 'a')
 
-                            if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                                logging.info("================================")
-                                logging.info(f"Starting {item.title}")
+                                    get_posters(lib, item)
 
-                                get_posters(lib, item)
+                                    if not FOLDERS_ONLY:
+                                        if item.TYPE == "show":
+                                            lib_ordering = get_lib_setting(the_lib, 'showOrdering')
+                                            show_ordering = item.showOrdering
+                                            if show_ordering is None:
+                                                show_ordering = lib_ordering
 
-                                if not FOLDERS_ONLY:
-                                    if item.TYPE == "show":
-                                        lib_ordering = get_lib_setting(the_lib, 'showOrdering')
-                                        show_ordering = item.showOrdering
-                                        if show_ordering is None:
-                                            show_ordering = lib_ordering
+                                            if GRAB_SEASONS:
+                                                # get seasons
+                                                seasons = item.seasons()
 
-                                        if GRAB_SEASONS:
-                                            # get seasons
-                                            seasons = item.seasons()
+                                                # loop over all:
+                                                for s in seasons:
+                                                    get_posters(lib, s)
 
-                                            # loop over all:
-                                            for s in seasons:
-                                                get_posters(lib, s)
+                                                    if GRAB_EPISODES:
+                                                        # get episodes
+                                                        episodes = s.episodes()
 
-                                                if GRAB_EPISODES:
-                                                    # get episodes
-                                                    episodes = s.episodes()
+                                                        # loop over all
+                                                        for e in episodes:
+                                                            get_posters(lib, e)
 
-                                                    # loop over all
-                                                    for e in episodes:
-                                                        get_posters(lib, e)
+                                    ID_ARRAY.append(item.ratingKey)
 
-                                ID_ARRAY.append(item.ratingKey)
-                            else:
-                                logging.info("================================")
-                                logging.info(f"SKIPPING {item.title}; status complete")
-                                bar.text = f"SKIPPING {item.title}; status complete"
+                                    with open(status_file, "a", encoding="utf-8") as sf:
+                                        sf.write(f"{item.ratingKey}{os.linesep}")
 
-                            # write out item_array to file.
-                            with open(status_file, "a", encoding="utf-8") as sf:
-                                sf.write(f"{item.ratingKey}{os.linesep}")
+                                else:
+                                    blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
+                                
+                                item_count += 1
+                            except Exception as ex:
+                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                             bar()
 
-                    lib_stats[lib_key] = item_total
+                    plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
+                    lib_stats[lib_key] = item_count
 
         progress_str = "COMPLETE"
-        logging.info(progress_str)
-
-        bar.text = progress_str
+        logger(progress_str, 'info', 'a')
 
         # print(os.linesep)
         if not POSTER_DOWNLOAD:
@@ -1101,15 +1092,13 @@ for lib in LIB_ARRAY:
                 with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
-        file = open(stat_file, 'wb')
-        pickle.dump(lib_stats, file)
-        file.close()
-
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
-        logging.info(progress_str)
+        plogger(progress_str, 'info', 'a')
 
-        print(progress_str)
+    file = open(stat_file, 'wb')
+    pickle.dump(lib_stats, file)
+    file.close()
 
 idx = 1
 max = len(my_futures)
@@ -1131,6 +1120,6 @@ for future in alive_it(as_completed(my_futures)):   # <<-- wrapped items
 #     sys.stdout.flush()
 #     idx += 1
 
-print(f"Complete!")
+plogger(f"Complete!", 'info', 'a')
 # shutdown the thread pool
 executor.shutdown() # blocks

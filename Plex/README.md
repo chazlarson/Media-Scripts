@@ -63,6 +63,7 @@ TRACK_IMAGE_SOURCES=1                        # keep a file containing file names
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
+RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
 ```
 
 ## Scripts:
@@ -226,6 +227,7 @@ TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containi
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
+RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -247,6 +249,8 @@ If you delete the directory of extracted posters intending to download them agai
 Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with missing parts absent as seen in the lists below.  The ID in 
 
 The "provider" is the original source of the image [tmdb, fanarttv, etc] and "source" will be "local" [downloaded from the plex server] or "remote" [downloaded from somewhere else].  A source of "none" means the image was uploaded to plex by a tool like PMM.  The remote URL can be found in the log.
+
+THe script keeps track of how many items it last processed from each library-collection set.  If the count hasn't changed, that library-collection is skipped.  You can use `RESET_LIBRARIES` to force the "last time" count to 0 for a given library and `RESET_COLLECTIONS` to do the same for a given collection.  If you want to reset the whole thing, delete `grab-all-posters-stats.pickle`.
 
 ### Usage
 1. setup as above
