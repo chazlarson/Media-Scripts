@@ -274,6 +274,9 @@ The image names are: `title-source-location-INCREMENT.ext`
 
 `location` will be `local` or `remote` depending whether the URL pointed to the plex server or to some other site like tmdb.
 
+The folder structure in which the images are saved is controlled by a combination of settings; please review the examples below to find the format you want and the settings that you need to generate it.
+
+All movies and TV shows in a single folder:
 ```
 POSTER_CONSOLIDATE=1:
 
@@ -308,6 +311,7 @@ extracted_posters/
         └── IMDb Top 250-None-local-002.png
 ```
 
+Split by Plex library name:
 ```
 POSTER_CONSOLIDATE=0:
 
@@ -343,6 +347,7 @@ extracted_posters/
         └── ABC-None-local-002.jpg
 ```
 
+Use PMM Asset-directory naming, flat:
 ```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
@@ -361,6 +366,7 @@ assets
 └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}_background.jpg
 ```
 
+Use PMM Asset-directory naming, movies and TV in a single directory, split by item name:
 ```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
@@ -382,6 +388,7 @@ assets
     └── poster.jpg
 ```
 
+Use PMM Asset-directory naming, split by Plex library name, flat folder:
 ```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
@@ -402,6 +409,7 @@ assets
     └── Adam-12 Collection.jpg
 ```
 
+Use PMM Asset-directory naming, split by Plex library name, split by item name:
 ```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
@@ -425,6 +433,7 @@ assets
         └── poster.jpg
 ```
 
+Use PMM Asset-directory naming, split by Plex library name, split by first letter, split by item name:
 ```
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
