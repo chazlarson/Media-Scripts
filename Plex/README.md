@@ -477,7 +477,7 @@ PLEX_OWNER=yournamehere                      # account name of the server owner
 2. Run with `python grab-all-status.py`
 
 ```
-onnecting to https://cp1.DOMAIN.TLD...
+Connecting to https://cp1.DOMAIN.TLD...
 ------------ chazlarson ------------
 ------------ Movies - 4K ------------
 chazlarson      movie   Movies - 4K     It Comes at Night       2017    R
