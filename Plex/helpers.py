@@ -61,6 +61,7 @@ def imdb_from_tmdb(tmdb_id, TMDB_KEY):
 
 
 def validate_filename(filename):
+    # return filename
     if is_valid_filename(filename):
         return filename, None
     else:
@@ -196,6 +197,22 @@ def get_type(type):
         return plexapi.video.Episode
     return None
 
+def get_size(the_lib, tgt_class=None, filter=None):
+    lib_size = the_lib.totalViewSize()
+    item_class = the_lib.type
+
+    if tgt_class is not None:
+        item_class = tgt_class
+    
+    if filter is not None:
+        foo = the_lib.search(libtype=item_class, filters=filter)
+        lib_size = len(foo)
+    else:
+        foo = the_lib.search(libtype=item_class)
+        lib_size = len(foo)
+
+    return lib_size
+    
 def get_all(plex, the_lib, tgt_class=None, filter=None):
     lib_size = the_lib.totalViewSize()
     lib_type = get_type(the_lib.type)
@@ -225,5 +242,45 @@ def get_all_watched(plex, the_lib):
     results = the_lib.search(unwatched=False)
     return results
 
+def char_range(c1, c2):
+    """Generates the characters from `c1` to `c2`, inclusive."""
+    for c in range(ord(c1), ord(c2)+1):
+        yield chr(c)
 
+ALPHABET = []
+NUMBERS = []
+
+for c in char_range('a', 'z'):
+    ALPHABET.append(c)
+
+for c in char_range('0', '9'):
+    NUMBERS.append(c)
+
+
+def remove_articles(thing):
+    if thing.startswith('The '):
+        thing = thing.replace('The ','')
+    if thing.startswith('A '):
+        thing = thing.replace('A ','')
+    if thing.startswith('An '):
+        thing = thing.replace('An ','')
+    if thing.startswith('El '):
+        thing = thing.replace('El ','')
+
+    return thing
+
+def get_letter_dir(thing):
+    ret_val = "Other"
+    
+    thing = remove_articles(thing)
+                            
+    first_char = thing[0]
+
+    if first_char.lower() in ALPHABET:
+        ret_val = first_char.upper()
+    else:
+        if first_char in NUMBERS:
+            ret_val = first_char
+
+    return ret_val
 

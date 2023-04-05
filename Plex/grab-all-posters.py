@@ -16,7 +16,7 @@ import piexif
 import piexif.helper
 import plexapi
 import requests
-from alive_progress import alive_bar
+from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
 from pathvalidate import ValidationError, validate_filename
 from plexapi import utils
@@ -24,16 +24,22 @@ from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-from helpers import booler, get_size, get_all, get_ids, get_plex, redact, validate_filename
+from helpers import booler, get_size, get_all, get_ids, get_letter_dir, get_plex, redact, validate_filename
 
 import logging
 from pathlib import Path
+
+# TODO: store stuff in sqlite tables rather than text or pickle files.
+# TODO: process libraries in chunks rather than loading all 75K movies in advance
+# TODO: resumable queue
+
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.5"
+VERSION = "0.5.5"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
 LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
+DOWNLOAD_QUEUE = f"{SCRIPT_NAME}-queue.pickle"
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     log_setup = logging.getLogger(logger_name)
@@ -100,12 +106,19 @@ lib_stats = {}
 stat_file = Path(LIBRARY_STATS)
 
 if stat_file.is_file():
-    file = open(stat_file, 'rb')
-    lib_stats = pickle.load(file)
+    with open(stat_file, 'rb') as sf:
+        lib_stats = pickle.load(sf)
+
+queue_file = Path(DOWNLOAD_QUEUE)
+
+# if queue_file.is_file():
+#     with open(queue_file, 'rb') as qf:
+#         download_queue = pickle.load(qf)
 
 ID_FILES = True
 
 URL_ARRAY = []
+QUEUED_DOWNLOADS = {}
 STATUS_FILE_NAME = "URLS.txt"
 
 PLEX_URL = os.getenv("PLEX_URL")
@@ -378,7 +391,11 @@ def get_progress_string(item):
 
 def get_image_name(params, tgt_ext, background=False):
     ret_val = ""
-    item = params['item']
+
+    item_type = params['type']
+    item_season = params['seasonNumber']
+    item_se_str = params['se_str']
+ 
     idx = params['idx']
     provider = params['provider']
     source = params['source']
@@ -393,14 +410,14 @@ def get_image_name(params, tgt_ext, background=False):
         if background:
             ret_val = f"_background{base_name}"
         else:
-            if item.TYPE == "season":
+            if item_type == "season":
                 # _Season##.ext
                 # _Season##_background.ext
-                ret_val = f"_Season{str(item.seasonNumber).zfill(2)}{base_name}"
-            elif item.TYPE == "episode":
+                ret_val = f"_Season{str(item_season).zfill(2)}{base_name}"
+            elif item_type == "episode":
                 # _S##E##.ext
                 # _S##E##_background.ext
-                ret_val = f"_{get_SE_str(item)}{base_name}"
+                ret_val = f"_{item_se_str}{base_name}"
             else:
                 if USE_ASSET_FOLDERS:
                     ret_val = f"_poster{base_name}"
@@ -413,8 +430,8 @@ def get_image_name(params, tgt_ext, background=False):
         if background:
             ret_val = f"background-{base_name}"
         else:
-            if item.TYPE == "season" or item.TYPE == "episode":
-                ret_val = f"{get_SE_str(item)}-{safe_name}-{base_name}"
+            if item_type == "season" or item_type == "episode":
+                ret_val = f"{item_se_str}-{safe_name}-{base_name}"
             else:
                 ret_val = f"{safe_name}-{base_name}"
 
@@ -434,36 +451,39 @@ def check_for_images(file_path):
     png_here = png_file.is_file()
 
     if dat_here:
-        os.remove(file_path)
+        try:
+            os.remove(file_path)
+        except:
+            plogger(f"Can't find {file_path} even though it was here a moment ago", 'info', 'd')
 
     if jpg_here and png_here:
-        os.remove(jpg_path)
-        os.remove(png_path)
+        try:
+            os.remove(jpg_path)
+        except:
+            plogger(f"Can't find {jpg_path} even though it was here a moment ago", 'info', 'd')
+
+        try:
+            os.remove(png_path)
+        except:
+            plogger(f"Can't find {png_path} even though it was here a moment ago", 'info', 'd')
 
     if jpg_here or png_here:
         return True
 
     return False
 
-# parallelizing downloads
-# put these "params" onto a queue
-# threadpool pulls them off and runs process_the_thing()
-# 
-# --------
-
-# 1. Create: Create the thread pool by calling the constructor ThreadPoolExecutor().
 executor = ThreadPoolExecutor()
 my_futures = []
-
-# 2. Submit: Submit tasks and get futures by calling submit() or map().
-# 3. Wait: Wait and get results as tasks complete (optional).
-# 4. Shut down: Shut down the thread pool by calling shutdown().
 
 def process_the_thing(params):
 
     tmid = params['tmid']
     tvid = params['tvid']
-    item = params['item']
+    item_type = params['type']
+    item_season = params['seasonNumber']
+    item_episode = params['episodeNumber']
+    item_se_str = params['se_str']
+
     idx = params['idx']
     folder_path = params['path']
     # current_posters/all_libraries/collection-Adam-12 Collection'
@@ -474,6 +494,10 @@ def process_the_thing(params):
     src_URL = params['src_URL']
     provider = params['provider']
     source = params['source']
+
+    result = {}
+    result['success'] = False
+    result['status'] = 'Nothing happened'
 
     if not TRACK_URLS or (TRACK_URLS and URL_ARRAY.count(src_URL) == 0):
         tgt_ext = ".dat" if ID_FILES else ".jpg"
@@ -523,7 +547,6 @@ def process_the_thing(params):
                         # Wait between items in case hammering the Plex server turns out badly.
                         time.sleep(DELAY)
 
-
                         local_file = str(rename_by_type(final_file_path))
 
                         if not KEEP_JUNK:
@@ -560,6 +583,8 @@ def process_the_thing(params):
                                 sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
 
                     except Exception as ex:
+                        result['success'] = False
+                        result['status'] = f"{ex}"
                         logger(f"error on {src_URL} - {ex}", 'info', 'd')
             else:
                 mkdir_flag = "" if IS_WINDOWS else "-p "
@@ -572,6 +597,11 @@ def process_the_thing(params):
                 SCRIPT_STRING = (
                     SCRIPT_STRING + f"{script_line}{os.linesep}"
                 )
+    else:
+        result['success'] = True
+        result['status'] = 'duplicate URL'
+
+    return result
 
 class poster_placeholder:
     def __init__(self, provider, key):
@@ -642,11 +672,15 @@ def get_art(item, artwork_path, tmid, tvid):
                         art_params = {}
                         art_params['tmid'] = tmid
                         art_params['tvid'] = tvid
-                        art_params['item'] = item
                         art_params['idx'] = idx
                         art_params['path'] = bg_path
                         art_params['provider'] = art.provider
                         art_params['source'] = 'remote'
+
+                        art_params['type'] = item.TYPE
+                        art_params['seasonNumber'] = item.seasonNumber
+                        art_params['episodeNumber'] = item.episodeNumber
+                        art_params['se_str'] = get_SE_str(item)
 
                         art_params['background'] = True
 
@@ -661,8 +695,9 @@ def get_art(item, artwork_path, tmid, tvid):
                         logger(f"processing {progress_str} - {idx}", 'info', 'a')
 
                         future = executor.submit(process_the_thing, art_params) # does not block
+                        # append it to the queue
                         my_futures.append(future)
-                        # process_the_thing(art_params)
+
                     else: 
                         logger(f"skipping empty internal art object", 'info', 'a')
 
@@ -673,47 +708,6 @@ def get_art(item, artwork_path, tmid, tvid):
             progress_str = f"EX: {ex} {item.title}"
             logger(progress_str, 'info', 'a')
             attempts  += 1
-
-def char_range(c1, c2):
-    """Generates the characters from `c1` to `c2`, inclusive."""
-    for c in range(ord(c1), ord(c2)+1):
-        yield chr(c)
-
-ALPHABET = []
-NUMBERS = []
-
-for c in char_range('a', 'z'):
-    ALPHABET.append(c)
-
-for c in char_range('0', '9'):
-    NUMBERS.append(c)
-
-def remove_articles(thing):
-    if thing.startswith('The '):
-        thing = thing.replace('The ','')
-    if thing.startswith('A '):
-        thing = thing.replace('A ','')
-    if thing.startswith('An '):
-        thing = thing.replace('An ','')
-    if thing.startswith('El '):
-        thing = thing.replace('El ','')
-
-    return thing
-
-def get_letter_dir(thing):
-    ret_val = "Other"
-    
-    thing = remove_articles(thing)
-                            
-    first_char = thing[0]
-
-    if first_char.lower() in ALPHABET:
-        ret_val = first_char.upper()
-    else:
-        if first_char in NUMBERS:
-            ret_val = first_char
-
-    return ret_val
 
 def get_posters(lib, item):
     global SCRIPT_STRING
@@ -821,13 +815,19 @@ def get_posters(lib, item):
                         break
 
                     art_params = {}
+                    art_params['rating_key'] = item.ratingKey
                     art_params['tmid'] = tmid
                     art_params['tvid'] = tvid
-                    art_params['item'] = item
+                    # art_params['item'] = item
                     art_params['idx'] = idx
                     art_params['path'] = artwork_path
                     art_params['provider'] = poster.provider
                     art_params['source'] = 'remote'
+                    
+                    art_params['type'] = item.TYPE
+                    art_params['seasonNumber'] = item.seasonNumber
+                    art_params['episodeNumber'] = item.episodeNumber
+                    art_params['se_str'] = get_SE_str(item)
 
                     art_params['background'] = False
 
@@ -837,7 +837,6 @@ def get_posters(lib, item):
                         src_URL = f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
                         art_params['source'] = 'local'
 
-
                     art_params['src_URL'] = src_URL
 
                     bar.text = f"{progress_str} - {idx}"
@@ -846,6 +845,12 @@ def get_posters(lib, item):
                     future = executor.submit(process_the_thing, art_params) # does not block
                     my_futures.append(future)
                     # process_the_thing(art_params)
+                    QUEUED_DOWNLOADS[item.ratingKey] = art_params
+                    # this key cant be just the ratingkey; has to be ratingkey-idx-background?
+
+
+                    with open(queue_file, 'wb') as qf:
+                        pickle.dump(QUEUED_DOWNLOADS, qf)
 
                     idx += 1
 
@@ -893,33 +898,6 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
     else:
         script_line = f'{os.linesep}mkdir -p "{artwork_path}" && curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
     return f"{script_line}{os.linesep}"
-
-def bar_and_log(the_bar, msg):
-    logging.info(msg)
-    the_bar.text = msg
-
-def download_file(src_URL, target_path, target_filename):
-    p = Path(target_path)
-    p.mkdir(parents=True, exist_ok=True)
-
-    dlPath = download(
-        f"{src_URL}", PLEX_TOKEN, filename=target_filename, savepath=target_path
-    )
-    rename_by_type(dlPath)
-
-def get_file(src_URL, bar, item, target_path, target_file):
-    if src_URL[0] == "/":
-        src_URL_with_token = f"{PLEX_URL}{src_URL}?X-Plex-Token={PLEX_TOKEN}"
-        src_URL = f"{PLEX_URL}{src_URL}"
-
-    bar_and_log(bar, f"{item.title} - art: {src_URL}")
-
-    if POSTER_DOWNLOAD:
-        bar_and_log(bar, f"{item.title} - DOWNLOADING {target_file}")
-        download_file(src_URL, target_path, target_file)
-    else:
-        bar_and_log(bar, f"{item.title} - building download command")
-        SCRIPT_STRING += add_script_line(target_path, target_file, src_URL_with_token)
 
 for lib in LIB_ARRAY:
     try:
@@ -1096,29 +1074,19 @@ for lib in LIB_ARRAY:
         progress_str = f"Problem processing {lib}; {ex}"
         plogger(progress_str, 'info', 'a')
 
-    file = open(stat_file, 'wb')
-    pickle.dump(lib_stats, file)
-    file.close()
+    with open(stat_file, 'wb') as sf:
+        pickle.dump(lib_stats, sf)
 
 idx = 1
 max = len(my_futures)
 plogger(f"waiting on {max} downloads", 'info', 'a')
 # iterate over all submitted tasks and get results as they are available
 
-from alive_progress import alive_it
-
 for future in alive_it(as_completed(my_futures)):   # <<-- wrapped items
     result = future.result() # blocks
     # sys.stdout.write(f"\r{idx}/{max}       ")
     # sys.stdout.flush()
     idx += 1
-
-# for future in as_completed(my_futures):
-# 	# get the result for the next completed task
-#     result = future.result() # blocks
-#     sys.stdout.write(f"\r{idx}/{max}       ")
-#     sys.stdout.flush()
-#     idx += 1
 
 plogger(f"Complete!", 'info', 'a')
 # shutdown the thread pool
