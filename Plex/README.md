@@ -240,7 +240,7 @@ If "INCLUDE_COLLECTION_ARTWORK" is `1`, the script will grab artwork for all the
 
 If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
 
-If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.
+If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.  IF YOU DON'T CHANGE THIS SETTING, NOTHING WILL BE DOWNLOADED.
 
 If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
 
