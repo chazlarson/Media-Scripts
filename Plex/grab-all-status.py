@@ -102,17 +102,23 @@ DO_NOTHING = False
 print(f"------------ {account.username} ------------")
 try:
     # plex_sections = plex.library.sections()
+    print(f"------------ getting libraries -------------")
     plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
 
-    for plex_section in plex_sections['MediaContainer']['Directory']:
-        if not DO_NOTHING:
-            if plex_section['type'] != "artist":
-                status_text = process_section(account.username, plex_section)
-                file_string = (f"{file_string}{status_text}{os.linesep}")
-            else:
-                file_line = f"Skipping {plex_section['title']}"
-                print(file_line)
-                file_string = file_string + f"{file_line}{os.linesep}"
+    if plex_sections is not None:
+        for plex_section in plex_sections['MediaContainer']['Directory']:
+            if not DO_NOTHING:
+                if plex_section['type'] != "artist":
+                    print(f"- processing {plex_section['type']} library: {plex_section['title']}")
+                    status_text = process_section(account.username, plex_section)
+                    file_string = (f"{file_string}{status_text}{os.linesep}")
+                else:
+                    file_line = f"Skipping {plex_section['title']}"
+                    print(file_line)
+                    file_string = file_string + f"{file_line}{os.linesep}"
+    else:
+        print(f"Could not retrieve libraries for {account.username}")
+        
 except Exception as ex:
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
@@ -126,6 +132,7 @@ for plex_user in all_users:
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
         PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
+        print(f"------------ getting libraries -------------")
         plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
         if plex_sections is not None:
             for plex_section in plex_sections['MediaContainer']['Directory']:
