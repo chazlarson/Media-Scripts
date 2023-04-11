@@ -34,7 +34,7 @@ from pathlib import Path
 # TODO: resumable queue
 
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.5.5"
+VERSION = "0.5.6"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
