@@ -32,6 +32,8 @@ from pathlib import Path
 # TODO: store stuff in sqlite tables rather than text or pickle files.
 # TODO: process libraries in chunks rather than loading all 75K movies in advance
 # TODO: resumable queue
+# TODO: only shows, seasons, episodes
+# TODO: store completion status at show/season/episode level
 
 SCRIPT_NAME = Path(__file__).stem
 VERSION = "0.5.6"
