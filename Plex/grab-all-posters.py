@@ -35,8 +35,10 @@ from pathlib import Path
 # TODO: only shows, seasons, episodes
 # TODO: store completion status at show/season/episode level
 
+# DONE 0.5.7: allowing skipping a library
+
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.5.6"
+VERSION = "0.5.7"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
@@ -123,6 +125,7 @@ URL_ARRAY = []
 QUEUED_DOWNLOADS = {}
 STATUS_FILE_NAME = "URLS.txt"
 STOP_FILE_NAME = "stop.dat"
+SKIP_FILE_NAME = "skip.dat"
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -1099,10 +1102,11 @@ for lib in LIB_ARRAY:
                             bar()
 
                             stop_file = Path(STOP_FILE_NAME)
+                            skip_file = Path(SKIP_FILE_NAME)
 
-                            if stop_file.is_file():
+                            if stop_file.is_file() or skip_file.is_file():
                                 raise StopIteration
-
+                            
                     plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
                     lib_stats[lib_key] = item_count
 
@@ -1118,10 +1122,19 @@ for lib in LIB_ARRAY:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
     except StopIteration:
-        progress_str = f"stop file found, leaving loop"
+        if stop_file.is_file():
+            progress_str = f"stop file found, leaving loop"
+        if skip_file.is_file():
+            progress_str = f"skip file found, skipping library"
+        
         plogger(progress_str, 'info', 'a')
-        stop_file.unlink()
-        break
+
+        if stop_file.is_file():
+            stop_file.unlink()
+            break
+        if skip_file.is_file():
+            skip_file.unlink()
+
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
         plogger(progress_str, 'info', 'a')
