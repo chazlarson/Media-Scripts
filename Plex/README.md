@@ -204,6 +204,8 @@ This script will download some or all the posters for every item in a given set 
 
 The script can name these files so that they are ready for use with [Plex-Meta-Manager's Asset Directory](https://metamanager.wiki/en/latest/home/guides/assets.html).  Currently this only works with `ONLY_CURRENT` set.
 
+The script queues downlaods so they happen in the background in multiple threads.  Once it's gone through the libraries listed in the config, it will then wait until the queue is drained before exiting.  If you want to drop out of the library-scanning loop early, create a file `stop.dat` next to the script, and the library loop will exit at the end of the current show or movie, then go to the "waiting for the downloads" section.  This allows you to get out early without flushing the queue [as control-C would do].
+
 Script-specific variables in .env:
 ```
 POSTER_DIR=extracted_posters                 # put downloaded posters here

@@ -249,13 +249,19 @@ def get_xml(plex_url, plex_token, lib_index):
     return media_output
 
 def get_xml_libraries(plex_url, plex_token):
-    ssn = requests.Session()
     media_output = None
-    ssn.headers.update({'Accept': 'application/json'})
-    ssn.params.update({'X-Plex-Token': plex_token})
-    raw_output = ssn.get(f'{plex_url}/library/sections/')
-    if raw_output.status_code == 200:
-        media_output = raw_output.json()
+    try:
+        ssn = requests.Session()
+        ssn.headers.update({'Accept': 'application/json'})
+        ssn.params.update({'X-Plex-Token': plex_token})
+        print(f"- making request")
+        raw_output = ssn.get(f'{plex_url}/library/sections/')
+        if raw_output.status_code == 200:
+            print(f"- success")
+            media_output = raw_output.json()
+    except Exception as ex:
+        print(f"- problem getting libraries: {ex}")
+    
     return media_output
 
 def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):

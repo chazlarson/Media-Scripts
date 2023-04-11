@@ -120,6 +120,7 @@ ID_FILES = True
 URL_ARRAY = []
 QUEUED_DOWNLOADS = {}
 STATUS_FILE_NAME = "URLS.txt"
+STOP_FILE_NAME = "stop.dat"
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -158,7 +159,11 @@ DELAY = int(os.getenv("DELAY"))
 
 GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
 GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
+ONLY_SEASONS = booler(os.getenv("ONLY_SEASONS"))
+
 GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
+ONLY_EPISODES = booler(os.getenv("ONLY_EPISODES"))
+
 ONLY_CURRENT = booler(os.getenv("ONLY_CURRENT"))
 
 if ONLY_CURRENT:
@@ -168,6 +173,10 @@ TRACK_URLS = booler(os.getenv("TRACK_URLS"))
 TRACK_COMPLETION = booler(os.getenv("TRACK_COMPLETION"))
 
 ASSET_DIR = os.getenv("ASSET_DIR")
+if ASSET_DIR is None:
+    ASSET_DIR = 'assets'
+
+ASSET_PATH = Path(ASSET_DIR)
 
 USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
@@ -176,7 +185,8 @@ NO_FS_WARNING = booler(os.getenv("NO_FS_WARNING"))
 ADD_SOURCE_EXIF_COMMENT = booler(os.getenv("ADD_SOURCE_EXIF_COMMENT"))
 SRC_ARRAY = []
 TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
-    
+IGNORE_SHRINKING_LIBRARIES = booler(os.getenv("IGNORE_SHRINKING_LIBRARIES"))
+
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
     ASSETS_BY_LIBRARIES = False
@@ -680,8 +690,17 @@ def get_art(item, artwork_path, tmid, tvid):
                         art_params['source'] = 'remote'
 
                         art_params['type'] = item.TYPE
-                        art_params['seasonNumber'] = item.seasonNumber
-                        art_params['episodeNumber'] = item.episodeNumber
+
+                        try:
+                            art_params['seasonNumber'] = item.seasonNumber
+                        except:
+                            art_params['seasonNumber'] = None
+
+                        try:
+                            art_params['episodeNumber'] = item.episodeNumber
+                        except:
+                            art_params['episodeNumber'] = None
+                        
                         art_params['se_str'] = get_SE_str(item)
 
                         art_params['background'] = True
@@ -789,6 +808,7 @@ def get_posters(lib, item):
                     search_filter = f"{get_SE_str(item)}*.*"
 
                 if os.path.exists(artwork_path):
+                    logger(f"{artwork_path} exists", 'info', 'a')
                     count = len(fnmatch.filter(os.listdir(artwork_path), search_filter))
                     logger(f"{count} files in {artwork_path}", 'info', 'a')
 
@@ -827,8 +847,17 @@ def get_posters(lib, item):
                     art_params['source'] = 'remote'
                     
                     art_params['type'] = item.TYPE
-                    art_params['seasonNumber'] = item.seasonNumber
-                    art_params['episodeNumber'] = item.episodeNumber
+
+                    try:
+                        art_params['seasonNumber'] = item.seasonNumber
+                    except:
+                        art_params['seasonNumber'] = None
+
+                    try:
+                        art_params['episodeNumber'] = item.episodeNumber
+                    except:
+                        art_params['episodeNumber'] = None
+
                     art_params['se_str'] = get_SE_str(item)
 
                     art_params['background'] = False
@@ -849,7 +878,6 @@ def get_posters(lib, item):
                     # process_the_thing(art_params)
                     QUEUED_DOWNLOADS[item.ratingKey] = art_params
                     # this key cant be just the ratingkey; has to be ratingkey-idx-background?
-
 
                     with open(queue_file, 'wb') as qf:
                         pickle.dump(QUEUED_DOWNLOADS, qf)
@@ -904,6 +932,7 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
 for lib in LIB_ARRAY:
     try:
         highwater = 0
+        start_queue_length = len(my_futures)
 
         if len(my_futures) > 0:
             plogger(f"queue length: {len(my_futures)}", 'info', 'a')
@@ -918,9 +947,10 @@ for lib in LIB_ARRAY:
 
         if TRACK_COMPLETION:
             if status_file.is_file():
-                with open(f"{status_file_name}") as fp:
+                 with open(status_file) as fp:
                     for line in fp:
                         ID_ARRAY.append(line.strip())
+                    logger(f"{len(ID_ARRAY)} completed rating keys loaded", 'info', 'a')
 
         URL_ARRAY = []
         title, msg = validate_filename(f"{the_lib.title}")
@@ -928,9 +958,11 @@ for lib in LIB_ARRAY:
         url_file = Path(URL_FILE_NAME)
 
         if url_file.is_file():
-            with open(f"{URL_FILE_NAME}") as fp:
+            logger(f"Reading URLs from {url_file.resolve()}", 'info', 'a')
+            with open(url_file) as fp:
                 for line in fp:
                     URL_ARRAY.append(line.strip())
+                logger(f"{len(URL_ARRAY)} URls loaded", 'info', 'a')
 
         SOURCE_FILE_NAME = f"sources-{title}-{the_lib.uuid}.txt"
 
@@ -967,7 +999,7 @@ for lib in LIB_ARRAY:
                             else:
                                 blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
                         else:
-                            blogger(f"SKIPPING {item.title}; not in ONLY_THESE_COLLECTIONS", 'info', 'a', bar)
+                            blogger(f"SKIPPING {item.title}; not in a targeted collection", 'info', 'a', bar)
 
         if not ONLY_COLLECTION_ARTWORK:
 
@@ -1064,11 +1096,18 @@ for lib in LIB_ARRAY:
 
                             bar()
 
+                            stop_file = Path(STOP_FILE_NAME)
+
+                            if stop_file.is_file():
+                                raise StopIteration
+
                     plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
                     lib_stats[lib_key] = item_count
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
+
+        end_queue_length = len(my_futures)
 
         # print(os.linesep)
         if not POSTER_DOWNLOAD:
@@ -1076,6 +1115,11 @@ for lib in LIB_ARRAY:
                 with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
+    except StopIteration:
+        progress_str = f"stop file found, leaving loop"
+        plogger(progress_str, 'info', 'a')
+        stop_file.unlink()
+        break
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
         plogger(progress_str, 'info', 'a')
