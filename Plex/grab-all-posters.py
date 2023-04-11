@@ -1051,7 +1051,6 @@ for lib in LIB_ARRAY:
                                     if TRACK_COMPLETION:
                                         ID_ARRAY.append(item.ratingKey)
                                 else:
-                                    logger("================================")
                                     blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
                                 if TRACK_COMPLETION:
