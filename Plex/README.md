@@ -639,3 +639,112 @@ getting items from [ TV Shows - Anime]...
 looping over 2964 items...
 [========================================] 100.0% ... Ōkami Shōnen Ken - DONE
 ```
+
+## actor-count.py
+
+Perhaps you want a list of actors with a count of how many movies from your libraries they have been in.
+
+This script:
+
+1. Connects to a plex library, grabs all the items.
+2. For each item, gets the cast from TMDB; keeps track across all items how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
+
+At the end, it produces a list of a configurable size in descending order of number of appearances.
+
+Script-specific variables in .env:
+```
+CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
+TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
+```
+
+`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
+
+`TOP_COUNT` is the number of actors to show in the list at the end.
+
+### Usage
+1. setup as above
+1. Run with `python actor-count.py`
+
+```
+connecting to https://plex.bing.bang...
+getting items from [Movies - 4K DV]...
+Completed loading 1996 items from Movies - 4K DV
+looping over 1996 items...
+[======----------------------------------] 15.0% ... Captain America: Civil War    
+```
+
+It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT.
+
+Sample results for the library above:
+
+CAST_DEPTH=20
+TOP_COUNT = 10
+```
+30      Samuel L. Jackson - 2231
+22      Idris Elba - 17605
+22      Tom Hanks - 31
+21      Woody Harrelson - 57755
+21      Gary Oldman - 64
+21      Tom Cruise - 500
+21      Morgan Freeman - 192
+21      Sylvester Stallone - 16483
+20      Willem Dafoe - 5293
+20      Laurence Fishburne - 2975
+```
+
+CAST_DEPTH=40
+TOP_COUNT=50
+```
+33      Samuel L. Jackson - 2231
+24      John Ratzenberger - 7907
+23      Tom Hanks - 31
+22      Bruce Willis - 62
+22      Gary Oldman - 64
+22      Idris Elba - 17605
+22      Morgan Freeman - 192
+21      Woody Harrelson - 57755
+21      Fred Tatasciore - 60279
+21      Tom Cruise - 500
+21      Willem Dafoe - 5293
+21      Matt Damon - 1892
+21      Sylvester Stallone - 16483
+20      Frank Welker - 15831
+20      Laurence Fishburne - 2975
+19      Alan Tudyk - 21088
+19      Benedict Cumberbatch - 71580
+19      J.K. Simmons - 18999
+19      Harrison Ford - 3
+19      Toby Jones - 13014
+19      Dwayne Johnson - 18918
+18      Michael Peña - 454
+18      Tara Strong - 15762
+18      Ralph Fiennes - 5469
+17      Brad Pitt - 287
+17      Will Smith - 2888
+17      Keanu Reeves - 6384
+17      Scarlett Johansson - 1245
+17      Steve Buscemi - 884
+17      Bob Bergen - 78317
+16      Chris Hemsworth - 74568
+16      Keegan-Michael Key - 298410
+16      Robert De Niro - 380
+16      Bill Hader - 19278
+16      Pierre Coffin - 124747
+16      Michael Caine - 3895
+16      Ron Perlman - 2372
+16      Ken Jeong - 83586
+16      Elizabeth Banks - 9281
+16      Mark Wahlberg - 13240
+15      Ryan Reynolds - 10859
+15      Channing Tatum - 38673
+15      Ben Affleck - 880
+15      Zoe Saldaña - 8691
+15      John DiMaggio - 31531
+15      Ewan McGregor - 3061
+15      Benedict Wong - 30082
+15      Bill Murray - 1532
+15      Djimon Hounsou - 938
+15      Anthony Hopkins - 4173
+```
+
+Note that the top ten changed dramatically due to looking deeper into the cast lists.
