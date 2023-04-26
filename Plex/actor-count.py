@@ -18,6 +18,7 @@ TMDB_KEY = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
+ACTORS_ONLY = booler(os.getenv("ACTORS_ONLY"))
 DELAY = int(os.getenv("DELAY"))
 
 if not DELAY:
@@ -34,6 +35,7 @@ tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
 actors = Counter()
+casts = Counter()
 
 def getTID(theList):
     tmid = None
@@ -68,6 +70,11 @@ for lib in lib_array:
     item_total = len(items)
     print(f"looping over {item_total} items...")
     item_count = 1
+    cast_count = 0
+    credit_count = 0
+    skip_count = 0
+    highwater_cast = 0
+    total_cast = 0
     for item in items:
         tmpDict = {}
         tmdb_id, tvdb_id = getTID(item.guids)
@@ -80,16 +87,46 @@ for lib in lib_array:
             else:
                 cast = tmdb.movie(tmdb_id).cast
             count = 0
+            cast_size = len(cast)
+            if cast_size < 2:
+                print(f"{item.title}: {cast_size}")
+            casts[f"{cast_size}"] += 1
+            total_cast += cast_size
+            if cast_size > highwater_cast:
+                highwater_cast = cast_size
+                print(f"New high water mark: {highwater_cast}")
+
             for actor in cast:
                 if count < CAST_DEPTH:
                     count = count + 1
-                    if actor.known_for_department == "Acting":
-                        the_key = f"{actor.name} - {actor.person_id}"
+                    cast_count += 1
+                    the_key = f"{actor.name} - {actor.person_id}"
+                    count_them = False
+                    if ACTORS_ONLY:
+                        if actor.known_for_department == "Acting":
+                            count_them = True
+                        else:
+                            skip_count += 1
+                            print(f"Skipping {actor.name}: {actor.known_for_department}")
+                    else:
+                        count_them = True
+
+                    if count_them:
                         actors[the_key] += 1
+                        credit_count += 1
+
         except Exception as ex:
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")
+
+    print(f"Looked at {cast_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE}")
+    print(f"Unique people: {len(actors)}")
+    print(f"Unique cast counts: {len(casts)}")
+    print(f"Longest cast list: {highwater_cast}")
+    print(f"Skipped {skip_count} non-actors")
+    print(f"Total {credit_count} credits recorded")
+    print(f"Top {TOP_COUNT} listed below")
 
     count = 0
     for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):

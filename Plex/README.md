@@ -645,10 +645,7 @@ looping over 2964 items...
 
 Perhaps you want a list of actors with a count of how many movies from your libraries they have been in.
 
-This script:
-
-1. Connects to a plex library, grabs all the items.
-2. For each item, gets the cast from TMDB; keeps track across all items how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
+This script connects to a plex library, and grabs all the items.  For each item, it then gets the cast from TMDB and keeps track across all items how many times it sees each actor within the list, looking down to a configurable depth.  For TV libraries, it's pulling the cast at the show level, and I haven't yet done any research to see if guest stars from individual episodes show up in that list.
 
 At the end, it produces a list of a configurable size in descending order of number of appearances.
 
@@ -656,11 +653,14 @@ Script-specific variables in .env:
 ```
 CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
+ACTORS_ONLY=False               ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
 ```
 
 `CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
 
 `TOP_COUNT` is the number of actors to show in the list at the end.
+
+Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `ACTORS_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
 
 ### Usage
 1. setup as above
@@ -694,7 +694,7 @@ TOP_COUNT = 10
 ```
 
 CAST_DEPTH=40
-TOP_COUNT=50
+TOP_COUNT=10
 ```
 33      Samuel L. Jackson - 2231
 24      John Ratzenberger - 7907
@@ -706,46 +706,7 @@ TOP_COUNT=50
 21      Woody Harrelson - 57755
 21      Fred Tatasciore - 60279
 21      Tom Cruise - 500
-21      Willem Dafoe - 5293
-21      Matt Damon - 1892
-21      Sylvester Stallone - 16483
-20      Frank Welker - 15831
-20      Laurence Fishburne - 2975
-19      Alan Tudyk - 21088
-19      Benedict Cumberbatch - 71580
-19      J.K. Simmons - 18999
-19      Harrison Ford - 3
-19      Toby Jones - 13014
-19      Dwayne Johnson - 18918
-18      Michael Peña - 454
-18      Tara Strong - 15762
-18      Ralph Fiennes - 5469
-17      Brad Pitt - 287
-17      Will Smith - 2888
-17      Keanu Reeves - 6384
-17      Scarlett Johansson - 1245
-17      Steve Buscemi - 884
-17      Bob Bergen - 78317
-16      Chris Hemsworth - 74568
-16      Keegan-Michael Key - 298410
-16      Robert De Niro - 380
-16      Bill Hader - 19278
-16      Pierre Coffin - 124747
-16      Michael Caine - 3895
-16      Ron Perlman - 2372
-16      Ken Jeong - 83586
-16      Elizabeth Banks - 9281
-16      Mark Wahlberg - 13240
-15      Ryan Reynolds - 10859
-15      Channing Tatum - 38673
-15      Ben Affleck - 880
-15      Zoe Saldaña - 8691
-15      John DiMaggio - 31531
-15      Ewan McGregor - 3061
-15      Benedict Wong - 30082
-15      Bill Murray - 1532
-15      Djimon Hounsou - 938
-15      Anthony Hopkins - 4173
 ```
 
 Note that the top ten changed dramatically due to looking deeper into the cast lists.
+
