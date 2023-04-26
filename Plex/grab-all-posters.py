@@ -34,6 +34,9 @@ from pathlib import Path
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
 # TODO: store completion status at show/season/episode level
+# TODO: download to random number filename, rename at completion
+# possible bruteforce to avoid: 
+# on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
 
 # DONE 0.5.7: allowing skipping a library
 
@@ -1049,7 +1052,7 @@ for lib in LIB_ARRAY:
                 item_total = len(items)
                 if item_total > 0:
                     logger(f"looping over {item_total} items...", 'info', 'a')
-                    item_count = 1
+                    item_count = 0
 
                     plex_links = []
                     external_links = []
@@ -1057,8 +1060,8 @@ for lib in LIB_ARRAY:
                     with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                         for item in items:
                             try:
-                                if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                                    logger(f"Starting {item.title}", 'info', 'a')
+                                if item.TYPE == "show" or ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                                    blogger(f"Starting {item.title}", 'info', 'a')
 
                                     get_posters(lib, item)
 
