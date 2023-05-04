@@ -1,47 +1,57 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import logging
 import os
+import pickle
 import platform
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import filetype
-import pickle
 import piexif
 import piexif.helper
 import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from pathvalidate import ValidationError, validate_filename
+from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
+                     get_size, redact, validate_filename)
+from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-from helpers import booler, get_size, get_all, get_ids, get_letter_dir, get_plex, redact, validate_filename
-
-import logging
-from pathlib import Path
+from database import add_last_run, get_last_run
 
 # TODO: store stuff in sqlite tables rather than text or pickle files.
-# TODO: process libraries in chunks rather than loading all 75K movies in advance
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
-# TODO: store completion status at show/season/episode level
 # TODO: download to random number filename, rename at completion
 # possible bruteforce to avoid: 
 # on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
 
 # DONE 0.5.7: allowing skipping a library
+# 0.5.8: QOL, bugfixes
+# DONE 0.6.0: only grab new things based on a stored "last run" date
+# DONE 0.6.0: store completion status at show/season/episode level
 
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.5.7"
+VERSION = "0.6.0"
+
+# current dateTime
+now = datetime.now()
+
+one_year_ago = now - timedelta(weeks = 52)
+ten_years_ago = now - timedelta(weeks = 520)
+
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
@@ -100,7 +110,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if os.path.exists(".env"):
     load_dotenv()
@@ -947,22 +957,34 @@ for lib in LIB_ARRAY:
 
         plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
+        the_uuid = the_lib.uuid
         lib_size = the_lib.totalViewSize()
         
+        last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
+
+        if last_run_lib is None:
+            last_run_lib = one_year_ago
+            add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
+
         ID_ARRAY = []
-        status_file_name = f"status-{the_lib.uuid}-{POSTER_DEPTH}.txt"
+        status_file_name = f"status-{the_uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
 
         if TRACK_COMPLETION:
             if status_file.is_file():
-                 with open(status_file) as fp:
+                with open(status_file) as fp:
                     for line in fp:
                         ID_ARRAY.append(line.strip())
                     logger(f"{len(ID_ARRAY)} completed rating keys loaded", 'info', 'a')
 
+                # Stick a date in the file to help with failed runs
+                with open(status_file, "a", encoding="utf-8") as sf:
+                    sf.write(f"{RUNTIME_STR}{os.linesep}")
+
         URL_ARRAY = []
-        title, msg = validate_filename(f"{the_lib.title}")
-        URL_FILE_NAME = f"{title}-{the_lib.uuid}.txt"
+        the_title = the_lib.title
+        title, msg = validate_filename(the_title)
+        URL_FILE_NAME = f"{title}-{the_uuid}.txt"
         url_file = Path(URL_FILE_NAME)
 
         if url_file.is_file():
@@ -972,7 +994,7 @@ for lib in LIB_ARRAY:
                     URL_ARRAY.append(line.strip())
                 logger(f"{len(URL_ARRAY)} URls loaded", 'info', 'a')
 
-        SOURCE_FILE_NAME = f"sources-{title}-{the_lib.uuid}.txt"
+        SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
 
         if INCLUDE_COLLECTION_ARTWORK:
             plogger(f"getting collections from [{lib}]...", 'info', 'a')
@@ -1015,7 +1037,7 @@ for lib in LIB_ARRAY:
                 COLLECTION_ARRAY = ['nzffnqipxg']
 
             for coll in COLLECTION_ARRAY:
-                lib_key = f"{the_lib.uuid}-{coll}"
+                lib_key = f"{the_uuid}-{coll}"
 
                 count_last_time = 0
 
@@ -1030,24 +1052,39 @@ for lib in LIB_ARRAY:
                     plogger(f"Resetting count for {the_lib.title} ...", 'info', 'a')
                     count_last_time = 0
 
+                items = []
+
                 if coll == 'nzffnqipxg':
-                    plogger(f"Checking size of {the_lib.title} ...", 'info', 'a')
-                    count_this_time = get_size(the_lib)
-                    if count_this_time != count_last_time:
-                        plogger(f"{count_this_time - count_last_time} new items in {the_lib.title}", 'info', 'a')
-                        items = get_all(plex, the_lib)
-                    else:
-                        plogger(f"nothing new in {the_lib.title}", 'info', 'a')
-                        items = []
+                    plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
+                    items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
+                    last_run_lib = datetime.now()
+
+                    if the_lib.TYPE == "show" and GRAB_SEASONS:
+                        last_run_season = get_last_run(the_uuid, 'season')
+
+                        if last_run_season is None:
+                            last_run_season = one_year_ago
+                            add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
+
+                        plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
+                        seasons = get_all(plex, the_lib, 'season', {"addedAt>>": last_run_season})
+                        last_run_season = datetime.now()
+                        items.extend(seasons)
+
+                    if the_lib.TYPE == "show" and GRAB_EPISODES:
+                        last_run_episode = get_last_run(the_uuid, 'episode')
+
+                        if last_run_episode is None:
+                            last_run_episode = one_year_ago
+                            add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
+
+                        plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
+                        episodes = get_all(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+                        last_run_episode = datetime.now()
+                        items.extend(episodes)
+
                 else:
-                    plogger(f"Checking size of {the_lib.title} collection {coll} ...", 'info', 'a')
-                    count_this_time = get_size(the_lib, None, {'collection': coll})
-                    if count_this_time != count_last_time:
-                        plogger(f"{count_this_time - count_last_time} new items in {the_lib.title}", 'info', 'a')
-                        items = get_all(plex, the_lib, None, {'collection': coll})
-                    else:
-                        plogger(f"nothing new in {the_lib.title}", 'info', 'a')
-                        items = []
+                    items = get_all(plex, the_lib, None, {'collection': coll})
 
                 item_total = len(items)
                 if item_total > 0:
@@ -1060,8 +1097,8 @@ for lib in LIB_ARRAY:
                     with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                         for item in items:
                             try:
-                                if item.TYPE == "show" or ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                                    blogger(f"Starting {item.title}", 'info', 'a')
+                                if ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                                    blogger(f"Starting {item.title}", 'info', 'a', bar)
 
                                     get_posters(lib, item)
 
@@ -1080,6 +1117,13 @@ for lib in LIB_ARRAY:
                                                 for s in seasons:
                                                     get_posters(lib, s)
 
+                                                    if TRACK_COMPLETION:
+                                                        ID_ARRAY.append(s.ratingKey)
+
+                                                        # write out item_array to file.
+                                                        with open(status_file, "a", encoding="utf-8") as sf:
+                                                            sf.write(f"{s.ratingKey}{os.linesep}")
+
                                                     if GRAB_EPISODES:
                                                         # get episodes
                                                         episodes = s.episodes()
@@ -1088,16 +1132,22 @@ for lib in LIB_ARRAY:
                                                         for e in episodes:
                                                             get_posters(lib, e)
 
+                                                            if TRACK_COMPLETION:
+                                                                ID_ARRAY.append(e.ratingKey)
+
+                                                                # write out item_array to file.
+                                                                with open(status_file, "a", encoding="utf-8") as sf:
+                                                                    sf.write(f"{e.ratingKey}{os.linesep}")
+
                                     if TRACK_COMPLETION:
                                         ID_ARRAY.append(item.ratingKey)
+
+                                        # write out item_array to file.
+                                        with open(status_file, "a", encoding="utf-8") as sf:
+                                            sf.write(f"{item.ratingKey}{os.linesep}")
                                 else:
                                     blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
-                                if TRACK_COMPLETION:
-                                    # write out item_array to file.
-                                    with open(status_file, "a", encoding="utf-8") as sf:
-                                        sf.write(f"{item.ratingKey}{os.linesep}")
-                                
                                 item_count += 1
                             except Exception as ex:
                                 plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
@@ -1109,12 +1159,19 @@ for lib in LIB_ARRAY:
 
                             if stop_file.is_file() or skip_file.is_file():
                                 raise StopIteration
-                            
+   
                     plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
                     lib_stats[lib_key] = item_count
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
+
+        add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
+        if the_lib.TYPE == "show":
+            if GRAB_SEASONS:
+                add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
+            if GRAB_EPISODES:
+                add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
 
         end_queue_length = len(my_futures)
 
@@ -1154,6 +1211,7 @@ for future in alive_it(as_completed(my_futures)):   # <<-- wrapped items
     result = future.result() # blocks
     # sys.stdout.write(f"\r{idx}/{max}       ")
     # sys.stdout.flush()
+    # TODO: write status file down here
     idx += 1
 
 plogger(f"Complete!", 'info', 'a')
