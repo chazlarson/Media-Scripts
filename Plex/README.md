@@ -235,6 +235,7 @@ USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
 RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+DEFAULT_YEARS_BACK=2                         # If there is no "last run date" stored, go this many years back [integer; negative values will be made positive]
 ```
 
 The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
@@ -249,7 +250,7 @@ If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the c
 
 If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.  IF YOU DON'T CHANGE THIS SETTING, NOTHING WILL BE DOWNLOADED.
 
-If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.  THis file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
+If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.  This file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
 
 If "TRACK_COMPLETION" is `1`, the script will create a file named for the library and record movies/shows by rating key in the file.  On future runs, if a given rating key is found in that file the show/movie is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all 2000 episodes of some show only to determine that it's already downloaded all the images.  HOWEVER, this also means that future episodes won't be picked up when you run the script again.  This file will be named including the uuid and the depth setting: `status-9ecacbf7-ad70-4ae2-bef4-3d183be4798b-12.txt`
 
@@ -261,19 +262,13 @@ Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with m
 
 The "provider" is the original source of the image [tmdb, fanarttv, etc] and "source" will be "local" [downloaded from the plex server] or "remote" [downloaded from somewhere else].  A source of "none" means the image was uploaded to plex by a tool like PMM.  The remote URL can be found in the log.
 
-THe script keeps track of how many items it last processed from each library-collection set.  If the count hasn't changed, that library-collection is skipped.  You can use `RESET_LIBRARIES` to force the "last time" count to 0 for a given library and `RESET_COLLECTIONS` to do the same for a given collection.  If you want to reset the whole thing, delete `grab-all-posters-stats.pickle`.
+The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script assumes a last run date of today - `DEFAULT_YEARS_BACK`.
+
+You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for a given library.  If you want to reset the whole thing, delete `mediascripts.sqlite`.
 
 ### Usage
 1. setup as above
 2. Run with `python grab-all-posters.py`
-
-```
-tmdb config...
-connecting to https://cp1.BING.BANG...
-getting items from [Movies - 4K]...
-looping over 754 items...
-[==================================------] 84.7% ... The Sum of All Fears - 41 posters - 20
-```
 
 The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
 

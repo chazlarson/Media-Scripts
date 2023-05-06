@@ -29,6 +29,7 @@ from plexapi.utils import download
 
 from database import add_last_run, get_last_run
 
+# TODO: Track Collection status in SQLITE with guid
 # TODO: store stuff in sqlite tables rather than text or pickle files.
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
@@ -46,9 +47,6 @@ VERSION = "0.6.0"
 
 # current dateTime
 now = datetime.now()
-
-one_year_ago = now - timedelta(weeks = 52)
-ten_years_ago = now - timedelta(weeks = 520)
 
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -139,6 +137,16 @@ QUEUED_DOWNLOADS = {}
 STATUS_FILE_NAME = "URLS.txt"
 STOP_FILE_NAME = "stop.dat"
 SKIP_FILE_NAME = "skip.dat"
+
+try:
+    DEFAULT_YEARS_BACK = abs(int(os.getenv("DEFAULT_YEARS_BACK")))
+except:
+    plogger(f"DEFAULT_YEARS_BACK: {os.getenv('DEFAULT_YEARS_BACK')} not an integer. Defaulting to 1", 'info', 'a')
+    DEFAULT_YEARS_BACK = 1
+
+WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
+
+fallback_date = now - timedelta(weeks = WEEKS_BACK)
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -958,12 +966,15 @@ for lib in LIB_ARRAY:
         plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
         the_uuid = the_lib.uuid
-        lib_size = the_lib.totalViewSize()
-        
-        last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
+
+        if the_lib.title in RESET_ARRAY:
+            plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
+            last_run_lib = fallback_date
+        else:
+            last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
         if last_run_lib is None:
-            last_run_lib = one_year_ago
+            last_run_lib = fallback_date
             add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
 
         ID_ARRAY = []
@@ -1010,6 +1021,7 @@ for lib in LIB_ARRAY:
                     item_total, dual_line=True, title="Grab Collection Posters"
                 ) as bar:
                     for item in items:
+                        # guid: 'collection://175b6fe6-fe95-480c-8bb2-2c5052b03b7e'
                         if len(COLLECTION_ARRAY) == 0 or item.title in COLLECTION_ARRAY:
 
                             if ID_ARRAY.count(f"{item.ratingKey}") == 0:
@@ -1034,36 +1046,27 @@ for lib in LIB_ARRAY:
         if not ONLY_COLLECTION_ARTWORK:
 
             if len(COLLECTION_ARRAY) == 0:
-                COLLECTION_ARRAY = ['nzffnqipxg']
+                COLLECTION_ARRAY = ['placeholder_collection_name']
 
             for coll in COLLECTION_ARRAY:
                 lib_key = f"{the_uuid}-{coll}"
 
-                count_last_time = 0
-
-                if lib_key in lib_stats.keys():
-                    count_last_time = lib_stats[lib_key]
-
-                if the_lib.title in RESET_ARRAY and (coll == 'nzffnqipxg'):
-                    plogger(f"Resetting count for {the_lib.title} ...", 'info', 'a')
-                    count_last_time = 0
-                
-                if coll in RESET_COLL_ARRAY:
-                    plogger(f"Resetting count for {the_lib.title} ...", 'info', 'a')
-                    count_last_time = 0
-
                 items = []
 
-                if coll == 'nzffnqipxg':
+                if coll == 'placeholder_collection_name':
                     plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
                     items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
                     last_run_lib = datetime.now()
 
                     if the_lib.TYPE == "show" and GRAB_SEASONS:
-                        last_run_season = get_last_run(the_uuid, 'season')
+                        if the_lib.title in RESET_ARRAY:
+                            plogger(f"Resetting SEASON rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
+                            last_run_season = fallback_date
+                        else:
+                            last_run_season = get_last_run(the_uuid, 'season')
 
                         if last_run_season is None:
-                            last_run_season = one_year_ago
+                            last_run_season = fallback_date
                             add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
 
                         plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
@@ -1072,10 +1075,14 @@ for lib in LIB_ARRAY:
                         items.extend(seasons)
 
                     if the_lib.TYPE == "show" and GRAB_EPISODES:
-                        last_run_episode = get_last_run(the_uuid, 'episode')
+                        if the_lib.title in RESET_ARRAY:
+                            plogger(f"Resetting EPISODE rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
+                            last_run_episode = fallback_date
+                        else:
+                            last_run_episode = get_last_run(the_uuid, 'episode')
 
                         if last_run_episode is None:
-                            last_run_episode = one_year_ago
+                            last_run_episode = fallback_date
                             add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
 
                         plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
@@ -1207,10 +1214,10 @@ max = len(my_futures)
 plogger(f"waiting on {max} downloads", 'info', 'a')
 # iterate over all submitted tasks and get results as they are available
 
-for future in alive_it(as_completed(my_futures)):   # <<-- wrapped items
+for future in as_completed(my_futures):
     result = future.result() # blocks
-    # sys.stdout.write(f"\r{idx}/{max}       ")
-    # sys.stdout.flush()
+    sys.stdout.write(f"\r{idx}/{max}       ")
+    sys.stdout.flush()
     # TODO: write status file down here
     idx += 1
 
