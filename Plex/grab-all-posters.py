@@ -763,8 +763,27 @@ def get_posters(lib, item):
     tmid = None
     tvid = None
 
+    collection_title = None
+    movie_title = None
+    show_title = None
+    season_title = None
+    episode_title = None
+
     if item.type != 'collection':
         imdbid, tmid, tvid = get_ids(item.guids, None)
+        if item.type == "show":
+            show_title = item.title
+        if item.type == "movie":
+            movie_title = item.title
+        if item.type == "season":
+            show_title = item.parentTitle
+            season_title = item.title
+        if item.type == "episode":
+            show_title = item.grandparentTitle
+            season_title = item.parentTitle
+            episode_title = item.title
+    else:
+        collection_title = item.title
 
     if USE_ASSET_NAMING:
         tgt_dir = ASSET_DIR
@@ -784,11 +803,10 @@ def get_posters(lib, item):
         if item.type == 'collection':
             tgt_dir = os.path.join(tgt_dir, "Collections")
         else:
+            # TODO: This is broken as it doesn't account for The in season/episode cases
             asset_subdir_target = item.titleSort
-            if item.type == "season":
-                asset_subdir_target = item.parentTitle
-            if item.type == "episode":
-                asset_subdir_target = item.grandparentTitle
+            if item.type == "season" or item.type == "episode":
+                asset_subdir_target = show_title
             tgt_dir = os.path.join(tgt_dir, get_letter_dir(asset_subdir_target))
 
     if not os.path.exists(tgt_dir):
@@ -943,7 +961,7 @@ def rename_by_type(target):
         logging.info(f"deleting html file {p}")
         p.unlink()
     else:
-        logging.info(f"changing file extension to {extension}")
+        logging.info(f"changing file extension to {extension} on {p}")
         p.rename(new_name)
 
     return new_name
@@ -978,7 +996,9 @@ for lib in LIB_ARRAY:
             add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
 
         ID_ARRAY = []
-        status_file_name = f"status-{the_uuid}-{POSTER_DEPTH}.txt"
+        the_title = the_lib.title
+        title, msg = validate_filename(the_title)
+        status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
 
         if TRACK_COMPLETION:
@@ -993,9 +1013,7 @@ for lib in LIB_ARRAY:
                     sf.write(f"{RUNTIME_STR}{os.linesep}")
 
         URL_ARRAY = []
-        the_title = the_lib.title
-        title, msg = validate_filename(the_title)
-        URL_FILE_NAME = f"{title}-{the_uuid}.txt"
+        URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
         url_file = Path(URL_FILE_NAME)
 
         if url_file.is_file():
@@ -1105,7 +1123,10 @@ for lib in LIB_ARRAY:
                         for item in items:
                             try:
                                 if ID_ARRAY.count(f"{item.ratingKey}") == 0:
-                                    blogger(f"Starting {item.title}", 'info', 'a', bar)
+                                    blogger(f"Starting {item.TYPE}: {item.title}", 'info', 'a', bar)
+
+                                    if item.TYPE == 'season':
+                                        foo = item.TYPE
 
                                     get_posters(lib, item)
 
