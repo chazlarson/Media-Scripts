@@ -27,10 +27,10 @@ from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-from database import add_last_run, get_last_run, add_url, check_url, add_key, check_key
+from database import add_last_run, get_last_run, add_media_details
 
-# TODO: Track Collection status in sqlite with guid
-# I can't recall what that ^ means
+# TODO: Track Collection status in SQLITE with guid
+# TODO: store stuff in sqlite tables rather than text or pickle files.
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
 # TODO: download to random number filename, rename at completion
@@ -41,10 +41,9 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # 0.5.8: QOL, bugfixes
 # DONE 0.6.0: only grab new things based on a stored "last run" date
 # DONE 0.6.0: store completion status at show/season/episode level
-# DONE 0.7.0: store status information in sqlite tables
 
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.7.0"
+VERSION = "0.0.0"
 
 # current dateTime
 now = datetime.now()
@@ -54,10 +53,8 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
-# nobody using this data
-# LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
-# nobody using this data
-# DOWNLOAD_QUEUE = f"{SCRIPT_NAME}-queue.pickle"
+LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
+DOWNLOAD_QUEUE = f"{SCRIPT_NAME}-queue.pickle"
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     log_setup = logging.getLogger(logger_name)
@@ -119,18 +116,15 @@ else:
     plogger(f"No environment [.env] file.  Exiting.", 'info', 'a')
     exit()
 
-# nobody's using these stats
-# lib_stats = {}
+lib_stats = {}
 
-# or this file as a result
-# stat_file = Path(LIBRARY_STATS) # lib_stats is going to be dumped in here
+stat_file = Path(LIBRARY_STATS)
 
-# if stat_file.is_file():
-#     with open(stat_file, 'rb') as sf:
-#         lib_stats = pickle.load(sf)
+if stat_file.is_file():
+    with open(stat_file, 'rb') as sf:
+        lib_stats = pickle.load(sf)
 
-# nobody's using this file
-# queue_file = Path(DOWNLOAD_QUEUE)
+queue_file = Path(DOWNLOAD_QUEUE)
 
 # if queue_file.is_file():
 #     with open(queue_file, 'rb') as qf:
@@ -139,19 +133,12 @@ else:
 ID_FILES = True
 
 URL_ARRAY = []
-# no one using this yet
-# QUEUED_DOWNLOADS = {}
-
+QUEUED_DOWNLOADS = {}
+STATUS_FILE_NAME = "URLS.txt"
 STOP_FILE_NAME = "stop.dat"
 SKIP_FILE_NAME = "skip.dat"
 
-try:
-    DEFAULT_YEARS_BACK = abs(int(os.getenv("DEFAULT_YEARS_BACK")))
-except:
-    plogger(f"DEFAULT_YEARS_BACK: {os.getenv('DEFAULT_YEARS_BACK')} not an integer. Defaulting to 1", 'info', 'a')
-    DEFAULT_YEARS_BACK = 1
-
-WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
+WEEKS_BACK = 10400
 
 fallback_date = now - timedelta(weeks = WEEKS_BACK)
 
@@ -252,6 +239,7 @@ else:
         print("pausing for 15 seconds...")
         time.sleep(15)
 
+
 if not DELAY:
     DELAY = 0
 
@@ -304,6 +292,9 @@ tvdb_str = "tvdb://"
 redaction_list = []
 redaction_list.append(PLEX_URL)
 redaction_list.append(PLEX_TOKEN)
+
+KNOWN_STATED_ASPECT_RATIOS = {}
+KNOWN_CALCED_ASPECT_RATIOS = {}
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
 
@@ -539,14 +530,11 @@ def process_the_thing(params):
     provider = params['provider']
     source = params['source']
 
-    uuid = params['uuid']
-    lib_title = params['lib_title']
-
     result = {}
     result['success'] = False
     result['status'] = 'Nothing happened'
 
-    if not TRACK_URLS or (TRACK_URLS and not check_url(src_URL, uuid)):
+    if not TRACK_URLS or (TRACK_URLS and URL_ARRAY.count(src_URL) == 0):
         tgt_ext = ".dat" if ID_FILES else ".jpg"
         tgt_filename = get_image_name(params, tgt_ext, background)
         # in asset case, I have '_poster.ext'
@@ -620,7 +608,7 @@ def process_the_thing(params):
                                 local_file
                             )
 
-                        add_url(src_URL)
+                        URL_ARRAY.append(src_URL)
 
                         with open(URL_FILE_NAME, "a", encoding="utf-8") as sf:
                             sf.write(f"{src_URL}{os.linesep}")
@@ -655,7 +643,7 @@ class poster_placeholder:
         self.provider = provider
         self.key = key
 
-def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
+def get_art(item, artwork_path, tmid, tvid):
     global SCRIPT_STRING
     attempts = 0
     if ONLY_CURRENT:
@@ -723,8 +711,6 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
                         art_params['path'] = bg_path
                         art_params['provider'] = art.provider
                         art_params['source'] = 'remote'
-                        art_params['uuid'] = uuid
-                        art_params['lib_title'] = lib_title
 
                         art_params['type'] = item.TYPE
 
@@ -767,15 +753,13 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
             logger(progress_str, 'info', 'a')
             attempts  += 1
 
-def get_posters(lib, item, uuid, title):
+def get_posters(lib, item):
     global SCRIPT_STRING
 
     imdbid = None
     tmid = None
     tvid = None
-    uuid = uuid
-    lib_title = title
-    
+
     collection_title = None
     movie_title = None
     show_title = None
@@ -904,9 +888,7 @@ def get_posters(lib, item, uuid, title):
                     art_params['source'] = 'remote'
                     
                     art_params['type'] = item.TYPE
-                    art_params['uuid'] = uuid
-                    art_params['lib_title'] = lib_title
-    
+
                     try:
                         art_params['seasonNumber'] = item.seasonNumber
                     except:
@@ -934,13 +916,12 @@ def get_posters(lib, item, uuid, title):
 
                     future = executor.submit(process_the_thing, art_params) # does not block
                     my_futures.append(future)
-
-                    # no one using this yet
-                    # QUEUED_DOWNLOADS[item.ratingKey] = art_params
+                    # process_the_thing(art_params)
+                    QUEUED_DOWNLOADS[item.ratingKey] = art_params
                     # this key cant be just the ratingkey; has to be ratingkey-idx-background?
 
-                    # with open(queue_file, 'wb') as qf:
-                    #     pickle.dump(QUEUED_DOWNLOADS, qf)
+                    with open(queue_file, 'wb') as qf:
+                        pickle.dump(QUEUED_DOWNLOADS, qf)
 
                     idx += 1
 
@@ -952,7 +933,7 @@ def get_posters(lib, item, uuid, title):
             attempts  += 1
 
     if GRAB_BACKGROUNDS:
-        get_art(item, artwork_path, tmid, tvid, uuid, lib_title)
+        get_art(item, artwork_path, tmid, tvid)
 
 def rename_by_type(target):
     p = Path(target)
@@ -961,7 +942,7 @@ def rename_by_type(target):
     if kind is None:
         with open(target, 'r') as file:
             content = file.read()
-            # check if string present or not
+	    	# check if string present or not
             if '404 Not Found' in content:
                 logger('Contains 404, deleting', 'info', 'a')
                 extension = ".del"
@@ -992,248 +973,107 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
 for lib in LIB_ARRAY:
     try:
         highwater = 0
-        start_queue_length = len(my_futures)
+        # start_queue_length = len(my_futures)
 
-        if len(my_futures) > 0:
-            plogger(f"queue length: {len(my_futures)}", 'info', 'a')
+        # if len(my_futures) > 0:
+        #     plogger(f"queue length: {len(my_futures)}", 'info', 'a')
 
         plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
         the_uuid = the_lib.uuid
 
-        if the_lib.title in RESET_ARRAY:
-            plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
-            last_run_lib = fallback_date
-        else:
-            last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
-
-        if last_run_lib is None:
-            last_run_lib = fallback_date
-            add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
+        last_run_lib = fallback_date
 
         ID_ARRAY = []
         the_title = the_lib.title
-        title, msg = validate_filename(the_title)
-        status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
-        status_file = Path(status_file_name)
+        # title, msg = validate_filename(the_title)
+        # status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
+        # status_file = Path(status_file_name)
 
-        if TRACK_COMPLETION:
-            if status_file.is_file():
-                with open(status_file) as fp:
-                    idx = 0
-                    for line in fp:
-                        add_key(line.strip(), the_uuid)
-                        # ID_ARRAY.append(line.strip())
-                        idx += 1
-                    logger(f"{idx} URls loaded and stored in the DB", 'info', 'a')
+        # if TRACK_COMPLETION:
+        #     if status_file.is_file():
+        #         with open(status_file) as fp:
+        #             for line in fp:
+        #                 ID_ARRAY.append(line.strip())
+        #             logger(f"{len(ID_ARRAY)} completed rating keys loaded", 'info', 'a')
 
-                # Stick a date in the file to help with failed runs
-                # with open(status_file, "a", encoding="utf-8") as sf:
-                #     sf.write(f"{RUNTIME_STR}{os.linesep}")
+        #         # Stick a date in the file to help with failed runs
+        #         with open(status_file, "a", encoding="utf-8") as sf:
+        #             sf.write(f"{RUNTIME_STR}{os.linesep}")
 
         # URL_ARRAY = []
-        URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
-        url_file = Path(URL_FILE_NAME)
+        # URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
+        # url_file = Path(URL_FILE_NAME)
 
-        if url_file.is_file():
-            logger(f"Reading URLs from {url_file.resolve()}", 'info', 'a')
-            with open(url_file) as fp:
-                idx = 0
-                for line in fp:
-                    add_url(line.strip(), the_uuid, title)
-                    idx += 1
-                    # URL_ARRAY.append(line.strip())
-                logger(f"{idx} URls loaded and stored in the DB", 'info', 'a')
+        # if url_file.is_file():
+        #     logger(f"Reading URLs from {url_file.resolve()}", 'info', 'a')
+        #     with open(url_file) as fp:
+        #         for line in fp:
+        #             URL_ARRAY.append(line.strip())
+        #         logger(f"{len(URL_ARRAY)} URls loaded", 'info', 'a')
 
-        SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
+        # SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
 
-        if INCLUDE_COLLECTION_ARTWORK:
-            plogger(f"getting collections from [{lib}]...", 'info', 'a')
+        lib_key = f"{the_uuid}-aspect"
 
-            items = the_lib.collections()
-            item_total = len(items)
-            plogger(f"{item_total} collection(s) retrieved...", 'info', 'a')
+        items = []
 
-            tgt_ext = ".dat"
+        plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
+        if the_lib.TYPE == "movie":
+            items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
+            last_run_lib = datetime.now()
 
-            if item_total > 0:
-                with alive_bar(
-                    item_total, dual_line=True, title="Grab Collection Posters"
-                ) as bar:
-                    for item in items:
-                        # guid: 'collection://175b6fe6-fe95-480c-8bb2-2c5052b03b7e'
-                        if len(COLLECTION_ARRAY) == 0 or item.title in COLLECTION_ARRAY:
+        if the_lib.TYPE == "show":
+            last_run_episode = fallback_date
 
-                            if not check_key(item.ratingKey, the_uuid):
-                                logger(f"Starting {item.title}", 'info', 'a')
+            plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
+            episodes = get_all(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+            last_run_episode = datetime.now()
+            items.extend(episodes)
 
-                                get_posters(lib, item, the_uuid, the_title)
+        item_total = len(items)
+        if item_total > 0:
+            logger(f"looping over {item_total} items...", 'info', 'a')
+            item_count = 0
 
-                                bar()
+            plex_links = []
+            external_links = []
 
-                                if TRACK_COMPLETION:
-                                    add_key(item.ratingKey, the_uuid)
-                                    # ID_ARRAY.append(item.ratingKey)
+            with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
+                for item in items:
+                    try:
+                        if ID_ARRAY.count(f"{item.ratingKey}") == 0:
+                            blogger(f"Starting {item.TYPE}: {item.title}", 'info', 'a', bar)
 
-                                    # write out item_array to file.
-                                    # with open(status_file, "a", encoding="utf-8") as sf:
-                                    #     sf.write(f"{item.ratingKey}{os.linesep}")
+                            mediaParts = item.media
 
-                            else:
-                                blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
+                            for part in mediaParts:
+                                try:
+                                    arc = str(round(part.width/part.height, 2))
+                                except:
+                                    arc = "None"
+                                add_media_details(part.parts[0].file, item.title, the_lib.TYPE, part.height, part.width, part.aspectRatio, arc)
+                                    
                         else:
-                            blogger(f"SKIPPING {item.title}; not in a targeted collection", 'info', 'a', bar)
+                            blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
-        if not ONLY_COLLECTION_ARTWORK:
+                        item_count += 1
+                    except Exception as ex:
+                        plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-            if len(COLLECTION_ARRAY) == 0:
-                COLLECTION_ARRAY = ['placeholder_collection_name']
+                    bar()
 
-            for coll in COLLECTION_ARRAY:
-                lib_key = f"{the_uuid}-{coll}"
+                    stop_file = Path(STOP_FILE_NAME)
+                    skip_file = Path(SKIP_FILE_NAME)
 
-                items = []
+                    if stop_file.is_file() or skip_file.is_file():
+                        raise StopIteration
 
-                if coll == 'placeholder_collection_name':
-                    plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
-                    items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
-                    last_run_lib = datetime.now()
-
-                    if the_lib.TYPE == "show" and GRAB_SEASONS:
-                        if the_lib.title in RESET_ARRAY:
-                            plogger(f"Resetting SEASON rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
-                            last_run_season = fallback_date
-                        else:
-                            last_run_season = get_last_run(the_uuid, 'season')
-
-                        if last_run_season is None:
-                            last_run_season = fallback_date
-                            add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
-
-                        plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
-                        seasons = get_all(plex, the_lib, 'season', {"addedAt>>": last_run_season})
-                        last_run_season = datetime.now()
-                        items.extend(seasons)
-
-                    if the_lib.TYPE == "show" and GRAB_EPISODES:
-                        if the_lib.title in RESET_ARRAY:
-                            plogger(f"Resetting EPISODE rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
-                            last_run_episode = fallback_date
-                        else:
-                            last_run_episode = get_last_run(the_uuid, 'episode')
-
-                        if last_run_episode is None:
-                            last_run_episode = fallback_date
-                            add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
-
-                        plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
-                        episodes = get_all(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
-                        last_run_episode = datetime.now()
-                        items.extend(episodes)
-
-                else:
-                    items = get_all(plex, the_lib, None, {'collection': coll})
-
-                item_total = len(items)
-                if item_total > 0:
-                    logger(f"looping over {item_total} items...", 'info', 'a')
-                    item_count = 0
-
-                    plex_links = []
-                    external_links = []
-
-                    with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
-                        for item in items:
-                            try:
-                                if not check_key(item.ratingKey, the_uuid):
-                                    blogger(f"Starting {item.TYPE}: {item.title}", 'info', 'a', bar)
-
-                                    if item.TYPE == 'season':
-                                        foo = item.TYPE
-
-                                    get_posters(lib, item, the_uuid, the_title)
-
-                                    if not FOLDERS_ONLY:
-                                        if item.TYPE == "show":
-                                            lib_ordering = get_lib_setting(the_lib, 'showOrdering')
-                                            show_ordering = item.showOrdering
-                                            if show_ordering is None:
-                                                show_ordering = lib_ordering
-
-                                            if GRAB_SEASONS:
-                                                # get seasons
-                                                seasons = item.seasons()
-
-                                                # loop over all:
-                                                for s in seasons:
-                                                    get_posters(lib, s, the_uuid, the_title)
-
-                                                    if TRACK_COMPLETION:
-                                                        add_key(item.ratingKey, the_uuid)
-                                                        # ID_ARRAY.append(s.ratingKey)
-
-                                                        # # write out item_array to file.
-                                                        # with open(status_file, "a", encoding="utf-8") as sf:
-                                                        #     sf.write(f"{s.ratingKey}{os.linesep}")
-
-                                                    if GRAB_EPISODES:
-                                                        # get episodes
-                                                        episodes = s.episodes()
-
-                                                        # loop over all
-                                                        for e in episodes:
-                                                            get_posters(lib, e, the_uuid, the_title)
-
-                                                            if TRACK_COMPLETION:
-                                                                add_key(item.ratingKey, the_uuid)
-                                                                # ID_ARRAY.append(e.ratingKey)
-
-                                                                # # write out item_array to file.
-                                                                # with open(status_file, "a", encoding="utf-8") as sf:
-                                                                #     sf.write(f"{e.ratingKey}{os.linesep}")
-
-                                    if TRACK_COMPLETION:
-                                        add_key(item.ratingKey, the_uuid)
-                                        # ID_ARRAY.append(item.ratingKey)
-
-                                        # # write out item_array to file.
-                                        # with open(status_file, "a", encoding="utf-8") as sf:
-                                        #     sf.write(f"{item.ratingKey}{os.linesep}")
-                                else:
-                                    blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
-
-                                item_count += 1
-                            except Exception as ex:
-                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
-
-                            bar()
-
-                            stop_file = Path(STOP_FILE_NAME)
-                            skip_file = Path(SKIP_FILE_NAME)
-
-                            if stop_file.is_file() or skip_file.is_file():
-                                raise StopIteration
-   
-                    plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
-                    # lib_stats[lib_key] = item_count
+            plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
+            lib_stats[lib_key] = item_count
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
-
-        add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
-        if the_lib.TYPE == "show":
-            if GRAB_SEASONS:
-                add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
-            if GRAB_EPISODES:
-                add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
-
-        end_queue_length = len(my_futures)
-
-        # print(os.linesep)
-        if not POSTER_DOWNLOAD:
-            if len(SCRIPT_STRING) > 0:
-                with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
-                    myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
     except StopIteration:
         if stop_file.is_file():
@@ -1252,22 +1092,6 @@ for lib in LIB_ARRAY:
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
         plogger(progress_str, 'info', 'a')
-
-# nobody's using these stats
-    # with open(stat_file, 'wb') as sf:
-    #     pickle.dump(lib_stats, sf)
-
-idx = 1
-max = len(my_futures)
-plogger(f"waiting on {max} downloads", 'info', 'a')
-# iterate over all submitted tasks and get results as they are available
-
-for future in as_completed(my_futures):
-    result = future.result() # blocks
-    sys.stdout.write(f"\r{idx}/{max}       ")
-    sys.stdout.flush()
-    # TODO: write status file down here
-    idx += 1
 
 plogger(f"Complete!", 'info', 'a')
 # shutdown the thread pool

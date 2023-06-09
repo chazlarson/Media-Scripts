@@ -250,15 +250,13 @@ If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the c
 
 If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.  IF YOU DON'T CHANGE THIS SETTING, NOTHING WILL BE DOWNLOADED.
 
-If "TRACK_URLS" is `1`, the script will create a file named for the library and put every URL it downloads into the file.  On future runs, if a given URL is found in that file it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.  This file will be named for the library, including the uuid: `TV Shows-9ecacbf7-ad70-4ae2-bef4-3d183be4798b.txt`
+If "TRACK_URLS" is `1`, the script will track every URL it downloads in a sqlite database.  On future runs, if a given URL is found in that database it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.
 
-If "TRACK_COMPLETION" is `1`, the script will create a file named for the library and record movies/shows by rating key in the file.  On future runs, if a given rating key is found in that file the show/movie is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all 2000 episodes of some show only to determine that it's already downloaded all the images.  HOWEVER, this also means that future episodes won't be picked up when you run the script again.  This file will be named including the uuid and the depth setting: `status-9ecacbf7-ad70-4ae2-bef4-3d183be4798b-12.txt`
+If "TRACK_COMPLETION" is `1`, the script record movies/shows by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the show/movie is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all 2000 episodes of some show only to determine that it's already downloaded all the images.  HOWEVER, this also means that future episodes won't be picked up when you run the script again.
 
 If you delete the directory of extracted posters intending to download them again, be sure to delete these files, or nothing will be downloaded on that second pass.
 
-You can delete individual rating keys or the entire file to fill in gaps.
-
-Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with missing parts absent as seen in the lists below.  The ID in 
+Files are named following the pattern `S00E00-TITLE-PROVIDER-SOURCE.EXT`, with missing parts absent as seen in the lists below.
 
 The "provider" is the original source of the image [tmdb, fanarttv, etc] and "source" will be "local" [downloaded from the plex server] or "remote" [downloaded from somewhere else].  A source of "none" means the image was uploaded to plex by a tool like PMM.  The remote URL can be found in the log.
 
