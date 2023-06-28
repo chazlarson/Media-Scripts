@@ -32,7 +32,6 @@ def print_and_log(msg):
     logging.info(msg)
     print(msg)
 
-
 print_and_log(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
@@ -82,6 +81,29 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
 
+def get_log_title(item):
+    if item.type == 'season':
+        return f"{item.parentTitle}-{item.seasonNumber}-{item.title}"
+    elif item.type == 'episode':
+        return f"{item.grandparentTitle}-{item.seasonEpisode}-{item.title}"
+    else:
+        return f"{item.title}"
+
+def pick_poster(poster_list, fallback):
+    the_poster = fallback
+    if len(posters) > 0:
+        bar_and_log(bar, f"-> picking the first poster in the list")
+        the_poster = posters[0]
+    else:
+        bar_and_log(bar, f"-> empty list, using fallback")
+
+    return the_poster
+
+def apply_poster(item, item_poster):
+    if item_poster is not None:
+        bar_and_log(bar, f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}")
+        item.setPoster(item_poster)
+
 for lib in LIB_ARRAY:
     id_array = []
     the_lib = plex.library.section(lib)
@@ -96,12 +118,12 @@ for lib in LIB_ARRAY:
 
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
-            print_and_log(f"{os.linesep}getting all items from the {the_type} library [{lib}]...")
+            print_and_log(f"getting all items from the {the_type} library [{lib}]...")
             items = get_all(plex, the_lib)
             REMOVE_LABELS = False
         else:
             print_and_log(
-                f"{os.linesep}getting items from the {the_type} library [{lib}] with the label [{lbl}]..."
+                f"getting items from the {the_type} library [{lib}] with the label [{lbl}]..."
             )
             items = the_lib.search(label=lbl)
         item_total = len(items)
@@ -112,27 +134,22 @@ for lib in LIB_ARRAY:
                 item_count = item_count + 1
                 if id_array.count(f"{item.ratingKey}") == 0:
                     id_array.append(item.ratingKey)
-
+                    item_title = get_log_title(item)
                     try:
-                        bar_and_log(bar, f"-> starting: {item.title}")
+                        bar_and_log(bar, f"-> starting: {item_title}")
                         pp = None
                         local_file = None
 
-                        bar_and_log(bar, f"-> getting posters: {item.title}")
+                        bar_and_log(bar, f"-> getting posters: {item_title}")
                         posters = item.posters()
-                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item.title}")
+                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
  
-                        if len(posters) > 0:
-                            bar_and_log(bar, f"-> picking the first poster in the list")
-                            showPoster = posters[0]
-                            bar_and_log(bar, f"-> setting {the_type} poster for {item.title} to {showPoster.thumb}")
-                            item.setPoster(showPoster)
-                        else:
-                            bar_and_log(bar, f"-> No plex posters; making no changes")
-                            showPoster = None
+                        showPoster = pick_poster(posters, None)
+                        
+                        apply_poster(item, showPoster)
 
                         if REMOVE_LABELS:
-                            bar_and_log(bar, f"-> removing label {lbl}: {item.title}")
+                            bar_and_log(bar, f"-> removing label {lbl}: {item_title}")
                             item.removeLabel(lbl, True)
 
                         # write out item_array to file.
@@ -143,51 +160,36 @@ for lib in LIB_ARRAY:
                             if RESET_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()
-                                bar_and_log(bar, f"-> Plex has {len(seasons)} seasons for: {item.title}")
+                                bar_and_log(bar, f"-> Plex has {len(seasons)} seasons for: {item_title}")
                                 # loop over all:
                                 for s in seasons:
+                                    item_title = get_log_title(s)
                                     # reset artwork
                                     bar_and_log(bar, 
-                                        f"-> getting season posters: {s.parentTitle}-{s.seasonNumber}-{s.title}"
+                                        f"-> getting season posters: {item_title}"
                                     )
                                     posters = s.posters()
-                                    bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {s.parentTitle}-{s.seasonNumber}-{s.title}")
+                                    bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
 
-                                    if len(posters) > 0:
-                                        bar_and_log(bar, f"-> picking the first poster in the list")
-                                        seasonPoster = posters[0]
-                                    else:
-                                        bar_and_log(bar, f"-> No plex posters; making no changes")
-                                        seasonPoster = showPoster
-
-                                    if seasonPoster is not None:
-                                        bar_and_log(bar, 
-                                            f"-> setting season poster for : {s.parentTitle}-{s.seasonNumber}-{s.title} to {seasonPoster.thumb}"
-                                            )
-                                        s.setPoster(seasonPoster)
+                                    seasonPoster = pick_poster(posters, showPoster)
+                                    
+                                    apply_poster(s, seasonPoster)
 
                                     if RESET_EPISODES:
                                         # get episodes
                                         episodes = s.episodes()
                                         # loop over all
                                         for e in episodes:
+                                            item_title = get_log_title(e)
                                             # reset artwork
-                                            # reset artwork
-                                            bar_and_log(bar, f"-> getting episode posters: {s.parentTitle}-{s.seasonNumber}-{s.title}-{e.episodeNumber}-{e.title}")
+                                            bar_and_log(bar, f"-> getting episode posters: {item_title}")
                                             posters = e.posters()
 
-                                            bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {s.parentTitle}-{s.seasonNumber}-{s.title}-{e.episodeNumber}-{e.title}")
+                                            bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
 
-                                            if len(posters) > 0:
-                                                bar_and_log(bar, f"-> picking the first poster in the list")
-                                                episodePoster = posters[0]
-                                            else:
-                                                bar_and_log(bar, f"-> No plex posters; making no changes")
-                                                episodePoster = showPoster
+                                            episodePoster = pick_poster(posters, showPoster)
 
-                                            if episodePoster is not None:
-                                                bar_and_log(bar, f"-> setting episode poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title} to {episodePoster.thumb}")
-                                                s.setPoster(episodePoster)
+                                            apply_poster(e, episodePoster)
 
                     except Exception as ex:
                         print_and_log(f'Exception processing "{item.title}": {ex}')
