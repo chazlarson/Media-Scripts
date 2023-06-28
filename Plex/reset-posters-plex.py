@@ -120,13 +120,15 @@ for lib in LIB_ARRAY:
 
                         bar_and_log(bar, f"-> getting posters: {item.title}")
                         posters = item.posters()
-                        bar_and_log(bar, f"-> setting poster: {item.title}")
+                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item.title}")
  
                         if len(posters) > 0:
+                            bar_and_log(bar, f"-> picking the first poster in the list")
                             showPoster = posters[0]
                             bar_and_log(bar, f"-> setting {the_type} poster for {item.title} to {showPoster.thumb}")
                             item.setPoster(showPoster)
                         else:
+                            bar_and_log(bar, f"-> No plex posters; making no changes")
                             showPoster = None
 
                         if REMOVE_LABELS:
@@ -141,6 +143,7 @@ for lib in LIB_ARRAY:
                             if RESET_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()
+                                bar_and_log(bar, f"-> Plex has {len(seasons)} seasons for: {item.title}")
                                 # loop over all:
                                 for s in seasons:
                                     # reset artwork
@@ -148,15 +151,19 @@ for lib in LIB_ARRAY:
                                         f"-> getting season posters: {s.parentTitle}-{s.seasonNumber}-{s.title}"
                                     )
                                     posters = s.posters()
+                                    bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {s.parentTitle}-{s.seasonNumber}-{s.title}")
+
                                     if len(posters) > 0:
+                                        bar_and_log(bar, f"-> picking the first poster in the list")
                                         seasonPoster = posters[0]
                                     else:
+                                        bar_and_log(bar, f"-> No plex posters; making no changes")
                                         seasonPoster = showPoster
 
                                     if seasonPoster is not None:
                                         bar_and_log(bar, 
                                             f"-> setting season poster for : {s.parentTitle}-{s.seasonNumber}-{s.title} to {seasonPoster.thumb}"
-               	                        )
+                                            )
                                         s.setPoster(seasonPoster)
 
                                     if RESET_EPISODES:
@@ -168,9 +175,14 @@ for lib in LIB_ARRAY:
                                             # reset artwork
                                             bar_and_log(bar, f"-> getting episode posters: {s.parentTitle}-{s.seasonNumber}-{s.title}-{e.episodeNumber}-{e.title}")
                                             posters = e.posters()
+
+                                            bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {s.parentTitle}-{s.seasonNumber}-{s.title}-{e.episodeNumber}-{e.title}")
+
                                             if len(posters) > 0:
+                                                bar_and_log(bar, f"-> picking the first poster in the list")
                                                 episodePoster = posters[0]
                                             else:
+                                                bar_and_log(bar, f"-> No plex posters; making no changes")
                                                 episodePoster = showPoster
 
                                             if episodePoster is not None:
