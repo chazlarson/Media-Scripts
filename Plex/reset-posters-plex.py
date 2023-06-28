@@ -24,20 +24,27 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+def bar_and_log(the_bar, msg):
+    logging.info(msg)
+    the_bar.text = msg
+
+def print_and_log(msg):
+    logging.info(msg)
+    print(msg)
+
+
+print_and_log(f"Starting {SCRIPT_NAME}")
 
 if os.path.exists(".env"):
     load_dotenv()
 else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
+    print_and_log(f"No environment [.env] file.  Exiting.")
     exit()
 
 PLEX_URL = os.getenv("PLEX_URL")
 
 if PLEX_URL is None:
-    print("Your .env file is incomplete or missing: PLEX_URL is empty")
+    print_and_log("Your .env file is incomplete or missing: PLEX_URL is empty")
     exit()
 
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -66,7 +73,7 @@ else:
     LIB_ARRAY = [LIBRARY_NAME]
 
 plex = get_plex(PLEX_URL, PLEX_TOKEN)
-logging.info("connection success")
+print_and_log("connection success")
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
@@ -78,6 +85,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 for lib in LIB_ARRAY:
     id_array = []
     the_lib = plex.library.section(lib)
+    the_type = the_lib.type
     status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
 
@@ -88,16 +96,16 @@ for lib in LIB_ARRAY:
 
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
-            print(f"{os.linesep}getting all items from the library [{lib}]...")
+            print_and_log(f"{os.linesep}getting all items from the {the_type} library [{lib}]...")
             items = get_all(plex, the_lib)
             REMOVE_LABELS = False
         else:
-            print(
-                f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]..."
+            print_and_log(
+                f"{os.linesep}getting items from the {the_type} library [{lib}] with the label [{lbl}]..."
             )
             items = the_lib.search(label=lbl)
         item_total = len(items)
-        print(f"{item_total} item(s) retrieved...")
+        print_and_log(f"{item_total} item(s) retrieved...")
         item_count = 1
         with alive_bar(item_total, dual_line=True, title="Poster Reset - Plex") as bar:
             for item in items:
@@ -106,22 +114,23 @@ for lib in LIB_ARRAY:
                     id_array.append(item.ratingKey)
 
                     try:
-                        bar.text = f"-> starting: {item.title}"
+                        bar_and_log(bar, f"-> starting: {item.title}")
                         pp = None
                         local_file = None
 
-                        bar.text = f"-> getting posters: {item.title}"
+                        bar_and_log(bar, f"-> getting posters: {item.title}")
                         posters = item.posters()
-                        bar.text = f"-> setting poster: {item.title}"
+                        bar_and_log(bar, f"-> setting poster: {item.title}")
  
                         if len(posters) > 0:
-                           showPoster = posters[0]
-                           item.setPoster(showPoster)
+                            showPoster = posters[0]
+                            bar_and_log(bar, f"-> setting {the_type} poster for {item.title} to {showPoster.thumb}")
+                            item.setPoster(showPoster)
                         else:
-                           showPoster = None
+                            showPoster = None
 
                         if REMOVE_LABELS:
-                            bar.text = f"-> removing label {lbl}: {item.title}"
+                            bar_and_log(bar, f"-> removing label {lbl}: {item.title}")
                             item.removeLabel(lbl, True)
 
                         # write out item_array to file.
@@ -135,8 +144,8 @@ for lib in LIB_ARRAY:
                                 # loop over all:
                                 for s in seasons:
                                     # reset artwork
-                                    bar.text = (
-                                        f"-> getting posters: {s.parentTitle}-{s.title}"
+                                    bar_and_log(bar, 
+                                        f"-> getting season posters: {s.parentTitle}-{s.seasonNumber}-{s.title}"
                                     )
                                     posters = s.posters()
                                     if len(posters) > 0:
@@ -145,8 +154,8 @@ for lib in LIB_ARRAY:
                                         seasonPoster = showPoster
 
                                     if seasonPoster is not None:
-                                        bar.text = (
-                                            f"-> setting poster: {s.parentTitle}-{s.title}"
+                                        bar_and_log(bar, 
+                                            f"-> setting season poster for : {s.parentTitle}-{s.seasonNumber}-{s.title} to {seasonPoster.thumb}"
                	                        )
                                         s.setPoster(seasonPoster)
 
@@ -157,7 +166,7 @@ for lib in LIB_ARRAY:
                                         for e in episodes:
                                             # reset artwork
                                             # reset artwork
-                                            bar.text = f"-> getting posters: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
+                                            bar_and_log(bar, f"-> getting episode posters: {s.parentTitle}-{s.seasonNumber}-{s.title}-{e.episodeNumber}-{e.title}")
                                             posters = e.posters()
                                             if len(posters) > 0:
                                                 episodePoster = posters[0]
@@ -165,11 +174,11 @@ for lib in LIB_ARRAY:
                                                 episodePoster = showPoster
 
                                             if episodePoster is not None:
-                                                bar.text = f"-> setting poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title}"
+                                                bar_and_log(bar, f"-> setting episode poster: {s.parentTitle}-{s.title}-{e.episodeNumber}-{e.title} to {episodePoster.thumb}")
                                                 s.setPoster(episodePoster)
 
                     except Exception as ex:
-                        print(f'Exception processing "{item.title}": {ex}')
+                        print_and_log(f'Exception processing "{item.title}": {ex}')
 
                     bar()
 
@@ -182,4 +191,4 @@ for lib in LIB_ARRAY:
 
 end = timer()
 elapsed = end - start
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+print_and_log(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")

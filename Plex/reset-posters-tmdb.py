@@ -117,7 +117,7 @@ plex = get_plex(PLEX_URL, PLEX_TOKEN)
 logging.info("connection success")
 
 def plex_knows_this_image(item, source, path):
-    logging.info(f"Retrieving posters for {item}")
+    logging.info(f"Retrieving posters for {item.type}: {item.title} ")
     # item.reload()
     attempts = 0
     while attempts < 5:
@@ -216,7 +216,7 @@ for lib in LIB_ARRAY:
 
                     if pp is not None:
                         seriesPosterURL = f"{base_url}{size_str}{pp}"
-                        logging.info(f"seriesPosterURL: {seriesPosterURL}")
+                        logging.info(f"top-level poster URL: {seriesPosterURL}")
 
                     if id_array.count(f"{i_rk}-top") == 0:
                         logging.info(f"{i_t}: haven't reset this yet")
@@ -225,7 +225,7 @@ for lib in LIB_ARRAY:
                             bar_and_log(bar, f"-> checking if Plex knows about this image: {seriesPosterURL}")
                             pp_o = plex_knows_this_image(item, 'tmdb', seriesPosterURL)
                             if pp_o is not None:
-                                print_and_log(f"This is one of Plex' posters for {i_t}: {seriesPosterURL}")
+                                print_and_log(f"This is one of Plex' posters for {i_t}-{i_rk}: {seriesPosterURL}")
 
                             if LOCAL_RESET_ARCHIVE:
                                 bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk}")
@@ -238,6 +238,7 @@ for lib in LIB_ARRAY:
                                 if not os.path.exists(local_file):
                                     dl_URL = seriesPosterURL
                                     if pp_o is not None:
+                                        bar_and_log(bar, f"-> poster will come from plex: {dl_URL}")
                                         dl_URL = pp_o.key
 
                                     bar_and_log(bar, f"-> requesting series: {dl_URL}")
@@ -248,18 +249,18 @@ for lib in LIB_ARRAY:
 
 
                                 if pp_o is not None:
-                                    bar_and_log(bar, f"-> SETTING poster: {i_t}")
+                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {ppo.key}")
                                     item.setPoster(pp_o)
                                 else:
-                                    bar_and_log(bar, f"-> uploading poster from local file: {i_t}")
+                                    bar_and_log(bar, f"-> UPLOADING poster for {item.type} {i_t} from {local_file}")
                                     item.uploadPoster(filepath=local_file)
                             else:
-                                bar_and_log(bar, f"-> setting series poster URL: {i_t}")
+                                bar_and_log(bar, f"-> setting top-level poster URL: {i_t}")
                                 if pp_o is not None:
-                                    bar_and_log(bar, f"-> SETTING poster: {i_t}")
+                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {ppo.key}")
                                     item.setPoster(pp_o)
                                 else:
-                                    bar_and_log(bar, f"-> uploading poster from URL: {i_t}")
+                                    bar_and_log(bar, f"-> uploading poster for {item.type} {i_t} from {seriesPosterURL}")
                                     item.uploadPoster(url=seriesPosterURL)
 
                             id_array.append(f"{i_rk}-top")
@@ -310,7 +311,7 @@ for lib in LIB_ARRAY:
                                             bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
                                             pp_o = plex_knows_this_image(s, 'tmdb', posterURL)
                                             if pp_o is not None:
-                                                print_and_log(f"This is one of Plex' posters for {i_t}: {posterURL}")
+                                                print_and_log(f"This is one of Plex' posters for {i_t}-{i_rk} Season {s_id}: {posterURL}")
 
                                             if LOCAL_RESET_ARCHIVE:
                                                 bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk} Season {s_id}")
@@ -339,17 +340,17 @@ for lib in LIB_ARRAY:
                                                     open(f"{local_file}", "wb").write(r.content)
 
                                                 if pp_o is not None:
-                                                    bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}")
+                                                    bar_and_log(bar, f"-> SETTING poster for {i_t} S{s_id} to {pp_o.key}")
                                                     s.setPoster(pp_o)
                                                 else:
-                                                    bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
+                                                    bar_and_log(bar, f"-> uploading poster for {i_t} S{s_id} from {local_file}")
                                                     s.uploadPoster(filepath=local_file)
                                             else:
                                                 if pp_o is not None:
-                                                    bar_and_log(bar, f"-> SETTING poster: {i_t} S{s_id}")
+                                                    bar_and_log(bar, f"-> SETTING poster for {i_t} S{s_id} to {pp_o.key}")
                                                     s.setPoster(pp_o)
                                                 else:
-                                                    bar_and_log(bar, f"-> uploading poster: {i_t} S{s_id}")
+                                                    bar_and_log(bar, f"-> uploading poster for {i_t} S{s_id} from {posterURL}")
                                                     s.uploadPoster(url=posterURL)
                                             
                                             id_array.append(f"{s_rk}")
@@ -401,10 +402,10 @@ for lib in LIB_ARRAY:
                                                                         f"{i_rk}-S{s_id}E{e_id}",
                                                                     )
 
-                                                                    bar_and_log(bar, f"-> checking if Plex knows about that image")
+                                                                    bar_and_log(bar, f"-> checking if Plex knows about this image: {posterURL}")
                                                                     pp_o = plex_knows_this_image(plex_ep, 'tmdb', posterURL)
                                                                     if pp_o is not None:
-                                                                        logging.info(f"This is one of Plex' posters for {i_t}: {posterURL}")
+                                                                        logging.info(f"This is one of Plex' posters for {i_t}-{i_rk} S{s_id} E{e_id}: {posterURL}")
 
                                                                     if LOCAL_RESET_ARCHIVE:
                                                                         bar_and_log(bar, f"Checking local archive for {i_t}-{i_rk} S{s_id} E{e_id}")
@@ -437,18 +438,20 @@ for lib in LIB_ARRAY:
                                                                             )
                                                                             open(f"{local_file}", "wb").write(r.content)
 
+                                                                        bar_and_log(bar, f"-> resetting poster: {i_t} S{s_id}E{e_id}")
                                                                         if pp_o is not None:
-                                                                            bar_and_log(bar, f"-> SETTING episode poster: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> SETTING poster for {i_t} to {pp_o.key}")
                                                                             s.setPoster(pp_o)
                                                                         else:
-                                                                            bar_and_log(bar, f"-> uploading episode poster: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> uploading poster for {i_t} S{s_id}E{e_id} from {local_file}")
                                                                             s.uploadPoster(filepath=local_file)
                                                                     else:
+                                                                        bar_and_log(bar, f"-> setting poster: {i_t} S{s_id}E{e_id}")
                                                                         if pp_o is not None:
-                                                                            bar_and_log(bar, f"-> setting episode poster URL: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> setting episode poster: {i_t} S{s_id}E{e_id} to {pp_o.key}")
                                                                             plex_ep.setPoster(pp_o)
                                                                         else:
-                                                                            bar_and_log(bar, f"-> setting episode poster URL: {i_t} S{s_id}E{e_id}")
+                                                                            bar_and_log(bar, f"-> uploading episode poster: {i_t} S{s_id}E{e_id} from {posterURL}")
                                                                             plex_ep.uploadPoster(url=posterURL)
 
                                                                     id_array.append(f"{e_rk}")
