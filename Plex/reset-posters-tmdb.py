@@ -249,7 +249,7 @@ for lib in LIB_ARRAY:
 
 
                                 if pp_o is not None:
-                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {ppo.key}")
+                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {pp_o.key}")
                                     item.setPoster(pp_o)
                                 else:
                                     bar_and_log(bar, f"-> UPLOADING poster for {item.type} {i_t} from {local_file}")
@@ -257,7 +257,7 @@ for lib in LIB_ARRAY:
                             else:
                                 bar_and_log(bar, f"-> setting top-level poster URL: {i_t}")
                                 if pp_o is not None:
-                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {ppo.key}")
+                                    bar_and_log(bar, f"-> SETTING poster for {item.type} {i_t} to {pp_o.key}")
                                     item.setPoster(pp_o)
                                 else:
                                     bar_and_log(bar, f"-> uploading poster for {item.type} {i_t} from {seriesPosterURL}")
