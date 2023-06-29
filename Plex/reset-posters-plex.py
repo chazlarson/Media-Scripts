@@ -169,6 +169,9 @@ for lib in LIB_ARRAY:
                         
                         apply_poster(item, showPoster)
 
+                        # Wait between items in case hammering the Plex server turns out badly.
+                        time.sleep(DELAY)
+
                         if REMOVE_LABELS:
                             bar_and_log(bar, f"-> removing label {lbl}: {item_title}")
                             item.removeLabel(lbl, True)
@@ -195,6 +198,9 @@ for lib in LIB_ARRAY:
                                         
                                         apply_poster(s, seasonPoster)
 
+                                        # Wait between items in case hammering the Plex server turns out badly.
+                                        time.sleep(DELAY)
+
                                         track_completion(id_array, status_file, f"{s.ratingKey}")
 
                                     if RESET_EPISODES:
@@ -213,6 +219,9 @@ for lib in LIB_ARRAY:
                                                 episodePoster = pick_poster(posters, None)
 
                                                 apply_poster(e, episodePoster)
+
+                                                # Wait between items in case hammering the Plex server turns out badly.
+                                                time.sleep(DELAY)
 
                                                 track_completion(id_array, status_file, f"{e.ratingKey}")
 

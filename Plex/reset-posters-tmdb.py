@@ -135,6 +135,7 @@ def plex_knows_this_image(item, source, path):
     while attempts < 5:
         try:
             list_of_posters = item.posters()
+            time.sleep(DELAY)
             logging.info(f"Checking {len(list_of_posters)} posters")
             for poster in list_of_posters:
                 if poster.provider == source:
@@ -210,6 +211,9 @@ def set_or_upload_image(bar, item, plex_poster, local_source):
                 item.uploadPoster(url=local_source)
         else:
             logging.info(f"DRY_RUN - NO ACTION TAKEN")
+    
+    time.sleep(DELAY)
+            
 
 def get_art_source(bar, item, local_file, poster_path, dl_URL):
     art_source = None
@@ -327,6 +331,7 @@ for lib in LIB_ARRAY:
                                 bar_and_log(bar, f"Resetting seasons for {item_title}-{item_key}")
                                 # get seasons
                                 plex_seasons = library_item.seasons()
+                                time.sleep(DELAY)
                                 tmdb_seasons = tmdb_item.seasons
 
                                 # loop over all:
@@ -393,6 +398,7 @@ for lib in LIB_ARRAY:
                                                 tmdb_episodes = tmdb_season.episodes
                                                 bar_and_log(bar, f"getting Plex episodes for season: {plex_s_id}")
                                                 episodes = plex_season.episodes()
+                                                time.sleep(DELAY)
 
                                                 bar_and_log(bar, f"Looping over Plex episodes:")
                                                 for plex_ep in episodes:
