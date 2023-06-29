@@ -10,6 +10,7 @@ from timeit import default_timer as timer
 import time
 from helpers import booler, get_all, get_plex, load_and_upgrade_env
 from pathlib import Path
+import random
 
 start = timer()
 
@@ -86,6 +87,13 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in all_libs:
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
+
+def sleep_for_a_while():
+    sleeptime = DELAY
+    if DELAY == 99:
+        sleeptime = random.uniform(0, 1)
+    
+    time.sleep(sleeptime)
 
 def get_log_title(item):
     if item.type == 'season':
@@ -170,7 +178,7 @@ for lib in LIB_ARRAY:
                         apply_poster(item, showPoster)
 
                         # Wait between items in case hammering the Plex server turns out badly.
-                        time.sleep(DELAY)
+                        sleep_for_a_while()
 
                         if REMOVE_LABELS:
                             bar_and_log(bar, f"-> removing label {lbl}: {item_title}")
@@ -199,7 +207,7 @@ for lib in LIB_ARRAY:
                                         apply_poster(s, seasonPoster)
 
                                         # Wait between items in case hammering the Plex server turns out badly.
-                                        time.sleep(DELAY)
+                                        sleep_for_a_while()
 
                                         track_completion(id_array, status_file, f"{s.ratingKey}")
 
@@ -221,7 +229,7 @@ for lib in LIB_ARRAY:
                                                 apply_poster(e, episodePoster)
 
                                                 # Wait between items in case hammering the Plex server turns out badly.
-                                                time.sleep(DELAY)
+                                                sleep_for_a_while()
 
                                                 track_completion(id_array, status_file, f"{e.ratingKey}")
 
@@ -231,7 +239,7 @@ for lib in LIB_ARRAY:
                     bar()
 
                     # Wait between items in case hammering the Plex server turns out badly.
-                    time.sleep(DELAY)
+                    sleep_for_a_while()
 
     # delete the status file
     if not RETAIN_RESET_STATUS_FILE and not DRY_RUN:

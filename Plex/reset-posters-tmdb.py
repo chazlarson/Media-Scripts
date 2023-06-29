@@ -12,6 +12,7 @@ import platform
 from timeit import default_timer as timer
 import time
 import validators
+import random
 
 from helpers import booler, get_all, get_ids, get_plex, load_and_upgrade_env
 
@@ -128,6 +129,13 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
 
+def sleep_for_a_while():
+    sleeptime = DELAY
+    if DELAY == 99:
+        sleeptime = random.uniform(0, 1)
+    
+    time.sleep(sleeptime)
+
 def plex_knows_this_image(item, source, path):
     logging.info(f"Retrieving posters for Plex {item.type}: {item.title} ")
     # item.reload()
@@ -135,7 +143,7 @@ def plex_knows_this_image(item, source, path):
     while attempts < 5:
         try:
             list_of_posters = item.posters()
-            time.sleep(DELAY)
+            sleep_for_a_while()
             logging.info(f"Checking {len(list_of_posters)} posters")
             for poster in list_of_posters:
                 if poster.provider == source:
@@ -212,7 +220,7 @@ def set_or_upload_image(bar, item, plex_poster, local_source):
         else:
             logging.info(f"DRY_RUN - NO ACTION TAKEN")
     
-    time.sleep(DELAY)
+    sleep_for_a_while()
             
 
 def get_art_source(bar, item, local_file, poster_path, dl_URL):
@@ -331,7 +339,7 @@ for lib in LIB_ARRAY:
                                 bar_and_log(bar, f"Resetting seasons for {item_title}-{item_key}")
                                 # get seasons
                                 plex_seasons = library_item.seasons()
-                                time.sleep(DELAY)
+                                sleep_for_a_while()
                                 tmdb_seasons = tmdb_item.seasons
 
                                 # loop over all:
@@ -398,7 +406,7 @@ for lib in LIB_ARRAY:
                                                 tmdb_episodes = tmdb_season.episodes
                                                 bar_and_log(bar, f"getting Plex episodes for season: {plex_s_id}")
                                                 episodes = plex_season.episodes()
-                                                time.sleep(DELAY)
+                                                sleep_for_a_while()
 
                                                 bar_and_log(bar, f"Looping over Plex episodes:")
                                                 for plex_ep in episodes:
