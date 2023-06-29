@@ -20,7 +20,7 @@ import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
 from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename)
+                     get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, validate_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -29,6 +29,9 @@ from plexapi.utils import download
 from plexapi.video import Episode
 
 SCRIPT_NAME = Path(__file__).stem
+
+env_file_path = Path(".env")
+
 VERSION = "0.1.0"
 
 # current dateTime
@@ -96,10 +99,9 @@ else:
     print(f"No environment [.env] file.  Exiting.")
     exit()
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+status = load_and_upgrade_env(env_file_path)
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 logger("connection success", 'info', 'a')
 

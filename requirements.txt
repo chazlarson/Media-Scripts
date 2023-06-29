@@ -14,3 +14,5 @@ tvdb_v4_official
 piexif
 filetype
 sqlalchemy<2.0
+tabulate
+validators

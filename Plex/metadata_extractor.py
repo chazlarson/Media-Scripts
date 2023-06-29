@@ -9,7 +9,7 @@ from tmdbapis import TMDbAPIs
 import requests
 import pathlib
 from timeit import default_timer as timer
-from helpers import get_ids, get_plex
+from helpers import get_ids, get_plex, load_and_upgrade_env
 
 # // TODO: improved error handling
 # // TODO: TV Theme tunes
@@ -22,7 +22,19 @@ start = timer()
 
 import logging
 from pathlib import Path
+from datetime import datetime, timedelta
+# current dateTime
+now = datetime.now()
+
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
 SCRIPT_NAME = Path(__file__).stem
+
+VERSION = "0.1.0"
+
+
+env_file_path = Path(".env")
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -34,15 +46,8 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
-    exit()
+status = load_and_upgrade_env(env_file_path)
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 TMDB_KEY = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
@@ -87,7 +92,7 @@ print("tmdb config...")
 base_url = tmdb.configuration().secure_base_image_url
 size_str = "original"
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 logging.info("connection success")
 

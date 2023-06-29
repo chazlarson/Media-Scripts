@@ -11,13 +11,24 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 All these scripts use the same `.env` and requirements.
 
+NOTE: on 06-29 these scripts have changed to using ENV vars to set up the Plex API details.  This was done primarily to enable the timeout to apply to all Plex interactions.
+
+If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entires those will be silently changed for you.
+
 ### `.env` contents
 
 ```
 TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
-PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
-PLEX_TOKEN=PLEX-TOKEN
+PLEXAPI_PLEXAPI_TIMEOUT='360'
+PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
+PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
+PLEXAPI_LOG_BACKUP_COUNT='3'
+PLEXAPI_LOG_FORMAT='%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s'
+PLEXAPI_LOG_LEVEL='INFO'
+PLEXAPI_LOG_PATH='plexapi.log'
+PLEXAPI_LOG_ROTATE_BYTES='512000'
+PLEXAPI_LOG_SHOW_SECRETS='false'
 PLEX_OWNER=yournamehere                      # account name of the server owner
 TARGET_PLEX_URL=https://plex.domain2.tld     # As above, the target of apply_all_status
 TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO             # As above, the target of apply_all_status
@@ -65,6 +76,10 @@ USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolder
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+RETAIN_RESET_STATUS_FILE=0                   # Don't delete the reset progress file at the end
+DRY_RUN=0                                    # [currently only works with reset-posters-*]; don't actually do anything, just log
+FLUSH_STATUS_AT_START=0                      # Delete the reset progress file at the start instead of reading them
+RESET_SEASONS_WITH_SERIES=0                  # If there isn't a season poster, use the series poster
 ```
 
 ## Scripts:
@@ -118,6 +133,10 @@ REMOVE_LABELS=True                              # remove labels when done [NOT R
 RESET_SEASONS=True                              # reset-posters-plex resets season artwork as well in TV libraries
 RESET_EPISODES=True                             # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 LOCAL_RESET_ARCHIVE=True                        # keep a local archive of posters
+RETAIN_RESET_STATUS_FILE=0                      # Don't delete the reset progress file at the end
+DRY_RUN=0                                       # [currently only works with reset-posters-*]; don't actually do anything, just log
+FLUSH_STATUS_AT_START=0                         # Delete the reset progress file at the start instead of reading them
+RESET_SEASONS_WITH_SERIES=0                     # If there isn't a season poster, use the series poster
 ```
 
 If you set:
@@ -126,9 +145,9 @@ TRACK_RESET_STATUS=True
 ```
 The script will keep track of where it is and will pick up at that point on subsequent runs.  This is useful in the event of a lost connection to Plex.
 
-Once it gets to the end of the library successfully, the tracking file is deleted.
+Once it gets to the end of the library successfully, the tracking file is deleted.  If you want to disable that for some reason, set `RETAIN_RESET_STATUS_FILE` to 1
 
-If you want to reset the progress tracking and start from the beginning for some reason, delete a file named something like `8c9d8955-b414-4f35-98a4-8f3f26d0249c.txt` in the same directory as this script.  The file name is the internal UUID of the library being processed.
+If you want to reset any existing progress tracking and start from the beginning for some reason, set `FLUSH_STATUS_AT_START` to 1.
 
 If you specify a comma-separated list of labels in the env file:
 ```
@@ -156,11 +175,15 @@ Example timings on a test library of 1140 TV Shows, resetting artwork for Show-S
 1. With downloading: 2 hours 30 minutes
 2. Second run with downloaded archive: 1 hours 10 minutes
 
-That is on a system with a 1G connection up and down, so values are just relative ot each other.
+That is on a system with a 1G connection up and down, so values are just relative to each other.
 
-The value of the local archive is that if you want to replace some of those images with your own, it provides a simple way to update all the posters in a library to custom posters of your own.  When teh script runs, it looks at that archive first, only downloading an image if one doesn't exist in the archive.
+The value of the local archive is that if you want to replace some of those images with your own, it provides a simple way to update all the posters in a library to custom posters of your own.  When the script runs, it looks at that archive first, only downloading an image if one doesn't exist in the archive.
+
+In that way it's sort of like PMM's Asset Directory.
 
 If you're just looking to reset as a one-off, that may not have value.
+
+If no artwork is found at TMDB for a thing, no action is taken.
 
 ### Usage
 1. setup as above
@@ -182,6 +205,10 @@ Script-specific variables in .env:
 ```
 RESET_SEASONS=True                           # reset-posters-plex resets season artwork as well in TV libraries
 RESET_EPISODES=True                          # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+RETAIN_RESET_STATUS_FILE=0                   # Don't delete the reset progress file at the end
+DRY_RUN=0                                    # [currently only works with reset-posters-*]; don't actually do anything, just log
+FLUSH_STATUS_AT_START=0                      # Delete the reset progress file at the start instead of reading them
+RESET_SEASONS_WITH_SERIES=0                  # If there isn't a season poster, use the series poster
 ```
 
 Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.

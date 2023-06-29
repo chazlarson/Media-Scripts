@@ -39,6 +39,7 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
 
+
 env_file_path = Path(".env")
 
 logging.basicConfig(

@@ -3,11 +3,20 @@ from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv
 import time
-from helpers import get_plex
+from helpers import get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
+from datetime import datetime
+# current dateTime
+now = datetime.now()
+
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
 SCRIPT_NAME = Path(__file__).stem
+
+env_file_path = Path(".env")
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -19,15 +28,8 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    print(f"No environment [.env] file.  Exiting.")
-    exit()
+status = load_and_upgrade_env(env_file_path)
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-PLEX_TIMEOUT = os.getenv("PLEX_TIMEOUT")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 DELAY = int(os.getenv("DELAY"))
@@ -35,9 +37,6 @@ KEEP_COLLECTIONS = os.getenv("KEEP_COLLECTIONS")
 
 if not DELAY:
     DELAY = 0
-
-if not PLEX_TIMEOUT:
-    PLEX_TIMEOUT = 120
 
 if LIBRARY_NAMES:
     LIB_ARRAY = LIBRARY_NAMES.split(",")
@@ -49,9 +48,7 @@ if KEEP_COLLECTIONS:
 else:
     keeper_array = [KEEP_COLLECTIONS]
 
-os.environ["PLEXAPI_PLEXAPI_TIMEOUT"] = str(PLEX_TIMEOUT)
-
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []

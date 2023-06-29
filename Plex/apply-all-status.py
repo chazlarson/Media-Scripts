@@ -5,11 +5,24 @@ import sys
 import textwrap
 from dotenv import load_dotenv
 from plexapi.server import PlexServer
-from helpers import get_all, get_plex
+from helpers import get_all, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
+
+from datetime import datetime
+
 SCRIPT_NAME = Path(__file__).stem
+
+VERSION = "0.1.0"
+
+# current dateTime
+now = datetime.now()
+
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
+env_file_path = Path(".env")
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -21,20 +34,13 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    print(f"No environment [.env] file.  Exiting.")
-    exit()
+status = load_and_upgrade_env(env_file_path)
 
-PLEX_URL = os.getenv("TARGET_PLEX_URL")
-PLEX_TOKEN = os.getenv("TARGET_PLEX_TOKEN")
 PLEX_OWNER = os.getenv("TARGET_PLEX_OWNER")
 
 LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 
 lib_map = json.loads(LIBRARY_MAP)
-
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -61,7 +67,7 @@ connected_plex_library = None
 current_show = None
 last_library = None
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
@@ -114,7 +120,7 @@ with open("status.txt") as fp:
 
         if plex_user != connected_plex_user:
             if plex_user.lower() == PLEX_OWNER.lower():
-                plex = get_plex(PLEX_URL, PLEX_TOKEN)
+                plex = get_plex()
             else:
                 user_acct = get_user_acct(all_users, plex_user)
                 plex = get_plex(PLEX_URL, user_acct.get_token(PMI))

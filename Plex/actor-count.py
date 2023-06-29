@@ -6,12 +6,10 @@ import sys
 import textwrap
 from tmdbapis import TMDbAPIs
 
-from helpers import booler, get_size, get_all, get_ids, get_letter_dir, get_plex, redact, validate_filename
+from helpers import booler, get_size, get_all, get_ids, get_letter_dir, get_plex, redact, validate_filename, load_and_upgrade_env
 
-load_dotenv()
+status = load_and_upgrade_env(env_file_path)
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TMDB_KEY = os.getenv("TMDB_KEY")
@@ -60,7 +58,7 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 for lib in lib_array:
     print(f"getting items from [{lib}]...")

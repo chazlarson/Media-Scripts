@@ -20,7 +20,7 @@ import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
 from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename)
+                     get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -43,7 +43,10 @@ from database import add_last_run, get_last_run, add_media_details
 # DONE 0.6.0: store completion status at show/season/episode level
 
 SCRIPT_NAME = Path(__file__).stem
-VERSION = "0.0.0"
+
+VERSION = "0.1.0"
+
+env_file_path = Path(".env")
 
 # current dateTime
 now = datetime.now()
@@ -110,11 +113,7 @@ logging.basicConfig(
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    plogger(f"No environment [.env] file.  Exiting.", 'info', 'a')
-    exit()
+status = load_and_upgrade_env(env_file_path)
 
 lib_stats = {}
 
@@ -141,17 +140,6 @@ SKIP_FILE_NAME = "skip.dat"
 WEEKS_BACK = 10400
 
 fallback_date = now - timedelta(weeks = WEEKS_BACK)
-
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger("You must specify PLEX_URL in the .env file.", 'info', 'a')
-    exit()
-
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger("You must specify PLEX_TOKEN in the .env file.", 'info', 'a')
-    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -296,7 +284,7 @@ redaction_list.append(PLEX_TOKEN)
 KNOWN_STATED_ASPECT_RATIOS = {}
 KNOWN_CALCED_ASPECT_RATIOS = {}
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 logger("connection success", 'info', 'a')
 

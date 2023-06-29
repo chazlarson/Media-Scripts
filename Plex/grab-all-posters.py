@@ -20,7 +20,7 @@ import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
 from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename)
+                     get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -29,6 +29,11 @@ from plexapi.utils import download
 
 from database import add_last_run, get_last_run, add_url, check_url, add_key, check_key
 
+# BUG: https://discord.com/channels/822460010649878528/822460010649878531/1104506813111603322
+# current_posters/TV Show(s)/Adam Savage's Tested-None/Doctor Who (2005) -001-current-local.jpg
+
+# TODO: superchatty logging for underskore
+# TODO: lib_stats[lib_key] = item_count in sqlite
 # TODO: Track Collection status in sqlite with guid
 # I can't recall what that ^ means
 # TODO: resumable queue
@@ -44,7 +49,10 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # DONE 0.7.0: store status information in sqlite tables
 
 SCRIPT_NAME = Path(__file__).stem
+
 VERSION = "0.7.0"
+
+env_file_path = Path(".env")
 
 # current dateTime
 now = datetime.now()
@@ -58,6 +66,7 @@ DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
 # LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
 # nobody using this data
 # DOWNLOAD_QUEUE = f"{SCRIPT_NAME}-queue.pickle"
+SUPERCHAT = False
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     log_setup = logging.getLogger(logger_name)
@@ -101,6 +110,10 @@ def blogger(msg, level, logfile, bar):
     if level == 'error'   : log.error(msg)
     bar.text(msg)
 
+def superchat(msg, level, logfile):
+    if SUPERCHAT:
+        logger(msg, level, logfile)
+
 setup_logger('activity_log', ACTIVITY_LOG)
 setup_logger('download_log', DOWNLOAD_LOG)
 
@@ -113,28 +126,7 @@ logging.basicConfig(
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    plogger(f"No environment [.env] file.  Exiting.", 'info', 'a')
-    exit()
-
-# nobody's using these stats
-# lib_stats = {}
-
-# or this file as a result
-# stat_file = Path(LIBRARY_STATS) # lib_stats is going to be dumped in here
-
-# if stat_file.is_file():
-#     with open(stat_file, 'rb') as sf:
-#         lib_stats = pickle.load(sf)
-
-# nobody's using this file
-# queue_file = Path(DOWNLOAD_QUEUE)
-
-# if queue_file.is_file():
-#     with open(queue_file, 'rb') as qf:
-#         download_queue = pickle.load(qf)
+status = load_and_upgrade_env(env_file_path)
 
 ID_FILES = True
 
@@ -169,6 +161,8 @@ if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 POSTER_DIR = os.getenv("POSTER_DIR")
+
+SUPERCHAT = os.getenv("SUPERCHAT")
 
 if POSTER_DIR is None:
     POSTER_DIR = 'extracted_posters'
@@ -305,7 +299,7 @@ redaction_list = []
 redaction_list.append(PLEX_URL)
 redaction_list.append(PLEX_TOKEN)
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 logger("connection success", 'info', 'a')
 
@@ -550,6 +544,7 @@ def process_the_thing(params):
         tgt_ext = ".dat" if ID_FILES else ".jpg"
         tgt_filename = get_image_name(params, tgt_ext, background)
         # in asset case, I have '_poster.ext'
+        superchat(f"target filename {tgt_filename}", 'info', 'a')
 
         if USE_ASSET_NAMING and not USE_ASSET_FOLDERS:
             # folder_path: assets/One Show/Adam-12 Collection
@@ -572,6 +567,7 @@ def process_the_thing(params):
             final_file_path = os.path.join(
                 folder_path, tgt_filename
             )
+        superchat(f"finale file path {final_file_path}", 'info', 'a')
 
         if not check_for_images(final_file_path):
             logger(f"{final_file_path} does not yet exist", 'info', 'd')
@@ -797,6 +793,8 @@ def get_posters(lib, item, uuid, title):
             episode_title = item.title
     else:
         collection_title = item.title
+    
+    superchat(f"This {item.type} is called {item.title}", 'info', 'a')
 
     if USE_ASSET_NAMING:
         tgt_dir = ASSET_DIR
@@ -807,6 +805,8 @@ def get_posters(lib, item, uuid, title):
             tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
         else:
             tgt_dir = os.path.join(POSTER_DIR, lib)
+    
+    superchat(f"Target directory for {item.title} artwork: {tgt_dir}", 'info', 'a')
     # current_posters/all_libraries
     # for assets we want:
     # assets/One Show
@@ -822,12 +822,16 @@ def get_posters(lib, item, uuid, title):
                 asset_subdir_target = show_title
             tgt_dir = os.path.join(tgt_dir, get_letter_dir(asset_subdir_target))
 
+    superchat(f"final top-level directory for {item.title} artwork: {tgt_dir}", 'info', 'a')
+
     if not os.path.exists(tgt_dir):
         os.makedirs(tgt_dir)
 
     attempts = 0
 
     item_path= get_subdir(item)
+
+    superchat(f"item target directory for {item.title} artwork: {item_path}", 'info', 'a')
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
@@ -839,10 +843,13 @@ def get_posters(lib, item, uuid, title):
 
     attempts = 0
     if ONLY_CURRENT:
+        superchat(f"only grabbing current artwork for {item.title}", 'info', 'a')
         all_posters = []
         all_posters.append(poster_placeholder('current', item.thumb))
     else:
         all_posters = item.posters()
+    
+    superchat(f"{len(all_posters)} for {item.title}", 'info', 'a')
 
     while attempts < 5:
         try:
@@ -932,15 +939,9 @@ def get_posters(lib, item, uuid, title):
                     bar.text = f"{progress_str} - {idx}"
                     logger(f"processing {progress_str} - {idx}", 'info', 'a')
 
+                    superchat(f"Built out params for {item.title}: {art_params}", 'info', 'a')
                     future = executor.submit(process_the_thing, art_params) # does not block
                     my_futures.append(future)
-
-                    # no one using this yet
-                    # QUEUED_DOWNLOADS[item.ratingKey] = art_params
-                    # this key cant be just the ratingkey; has to be ratingkey-idx-background?
-
-                    # with open(queue_file, 'wb') as qf:
-                    #     pickle.dump(QUEUED_DOWNLOADS, qf)
 
                     idx += 1
 
@@ -1000,6 +1001,7 @@ for lib in LIB_ARRAY:
         plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
         the_uuid = the_lib.uuid
+        superchat(f"{the_lib} uuid {the_uuid}", 'info', 'a')
 
         if the_lib.title in RESET_ARRAY:
             plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
@@ -1008,11 +1010,13 @@ for lib in LIB_ARRAY:
             last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
         if last_run_lib is None:
+            superchat(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
             last_run_lib = fallback_date
             add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
 
         ID_ARRAY = []
         the_title = the_lib.title
+        superchat(f"This library is called {the_title}", 'info', 'a')
         title, msg = validate_filename(the_title)
         status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
         status_file = Path(status_file_name)
@@ -1023,15 +1027,9 @@ for lib in LIB_ARRAY:
                     idx = 0
                     for line in fp:
                         add_key(line.strip(), the_uuid)
-                        # ID_ARRAY.append(line.strip())
                         idx += 1
                     logger(f"{idx} URls loaded and stored in the DB", 'info', 'a')
 
-                # Stick a date in the file to help with failed runs
-                # with open(status_file, "a", encoding="utf-8") as sf:
-                #     sf.write(f"{RUNTIME_STR}{os.linesep}")
-
-        # URL_ARRAY = []
         URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
         url_file = Path(URL_FILE_NAME)
 
@@ -1042,7 +1040,6 @@ for lib in LIB_ARRAY:
                 for line in fp:
                     add_url(line.strip(), the_uuid, title)
                     idx += 1
-                    # URL_ARRAY.append(line.strip())
                 logger(f"{idx} URls loaded and stored in the DB", 'info', 'a')
 
         SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
@@ -1061,6 +1058,8 @@ for lib in LIB_ARRAY:
                     item_total, dual_line=True, title="Grab Collection Posters"
                 ) as bar:
                     for item in items:
+                        superchat(f"This collection is called {item.title}", 'info', 'a')
+
                         # guid: 'collection://175b6fe6-fe95-480c-8bb2-2c5052b03b7e'
                         if len(COLLECTION_ARRAY) == 0 or item.title in COLLECTION_ARRAY:
 
@@ -1073,11 +1072,6 @@ for lib in LIB_ARRAY:
 
                                 if TRACK_COMPLETION:
                                     add_key(item.ratingKey, the_uuid)
-                                    # ID_ARRAY.append(item.ratingKey)
-
-                                    # write out item_array to file.
-                                    # with open(status_file, "a", encoding="utf-8") as sf:
-                                    #     sf.write(f"{item.ratingKey}{os.linesep}")
 
                             else:
                                 blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
@@ -1170,11 +1164,6 @@ for lib in LIB_ARRAY:
 
                                                     if TRACK_COMPLETION:
                                                         add_key(item.ratingKey, the_uuid)
-                                                        # ID_ARRAY.append(s.ratingKey)
-
-                                                        # # write out item_array to file.
-                                                        # with open(status_file, "a", encoding="utf-8") as sf:
-                                                        #     sf.write(f"{s.ratingKey}{os.linesep}")
 
                                                     if GRAB_EPISODES:
                                                         # get episodes
@@ -1186,19 +1175,9 @@ for lib in LIB_ARRAY:
 
                                                             if TRACK_COMPLETION:
                                                                 add_key(item.ratingKey, the_uuid)
-                                                                # ID_ARRAY.append(e.ratingKey)
-
-                                                                # # write out item_array to file.
-                                                                # with open(status_file, "a", encoding="utf-8") as sf:
-                                                                #     sf.write(f"{e.ratingKey}{os.linesep}")
 
                                     if TRACK_COMPLETION:
                                         add_key(item.ratingKey, the_uuid)
-                                        # ID_ARRAY.append(item.ratingKey)
-
-                                        # # write out item_array to file.
-                                        # with open(status_file, "a", encoding="utf-8") as sf:
-                                        #     sf.write(f"{item.ratingKey}{os.linesep}")
                                 else:
                                     blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
@@ -1215,7 +1194,6 @@ for lib in LIB_ARRAY:
                                 raise StopIteration
    
                     plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
-                    # lib_stats[lib_key] = item_count
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')

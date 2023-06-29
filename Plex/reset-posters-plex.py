@@ -4,18 +4,30 @@ from alive_progress import alive_bar
 from plexapi.server import PlexServer
 from plexapi.exceptions import Unauthorized
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key, unset_key
 
 from timeit import default_timer as timer
 import time
-from helpers import booler, get_all, get_plex
+from helpers import booler, get_all, get_plex, load_and_upgrade_env
 from pathlib import Path
 
 start = timer()
 
 import logging
 from pathlib import Path
+
+from datetime import datetime, timedelta
+# current dateTime
+now = datetime.now()
+
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
 SCRIPT_NAME = Path(__file__).stem
+
+VERSION = "0.1.0"
+
+env_file_path = Path(".env")
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -34,23 +46,17 @@ def print_and_log(msg):
 
 print_and_log(f"Starting {SCRIPT_NAME}")
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    print_and_log(f"No environment [.env] file.  Exiting.")
-    exit()
+status = load_and_upgrade_env(env_file_path)
 
-PLEX_URL = os.getenv("PLEX_URL")
-
-if PLEX_URL is None:
-    print_and_log("Your .env file is incomplete or missing: PLEX_URL is empty")
-    exit()
-
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
 TRACK_RESET_STATUS = os.getenv("TRACK_RESET_STATUS")
+RETAIN_RESET_STATUS_FILE = os.getenv("RETAIN_RESET_STATUS_FILE")
+DRY_RUN = booler(os.getenv("DRY_RUN"))
+FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
+RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
+
 REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
 RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
 RESET_EPISODES = booler(os.getenv("RESET_EPISODES"))
@@ -71,7 +77,7 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-plex = get_plex(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 print_and_log("connection success")
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
@@ -90,19 +96,32 @@ def get_log_title(item):
         return f"{item.title}"
 
 def pick_poster(poster_list, fallback):
-    the_poster = fallback
+    the_poster = None
     if len(posters) > 0:
         bar_and_log(bar, f"-> picking the first poster in the list")
         the_poster = posters[0]
     else:
-        bar_and_log(bar, f"-> empty list, using fallback")
+        if RESET_SEASONS_WITH_SERIES:
+            the_poster = fallback
+            bar_and_log(bar, f"-> empty list, using fallback")
 
     return the_poster
 
 def apply_poster(item, item_poster):
     if item_poster is not None:
         bar_and_log(bar, f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}")
-        item.setPoster(item_poster)
+        if not DRY_RUN:
+            item.setPoster(item_poster)
+    else:
+        bar_and_log(bar, f"-> No poster; no action being taken")
+
+
+def track_completion(id_array, status_file, item_id):
+    id_array.append(f"{item_id}")
+
+    if not DRY_RUN:
+        with open(status_file, "a", encoding="utf-8") as sf:
+            sf.write(f"{item_id}{os.linesep}")
 
 for lib in LIB_ARRAY:
     id_array = []
@@ -112,9 +131,12 @@ for lib in LIB_ARRAY:
     status_file = Path(status_file_name)
 
     if status_file.is_file():
-        with open(f"{status_file_name}") as fp:
-            for line in fp:
-                id_array.append(line.strip())
+        if FLUSH_STATUS_AT_START and not DRY_RUN:
+            status_file.unlink()
+        else:
+            with open(f"{status_file_name}") as fp:
+                for line in fp:
+                    id_array.append(line.strip())
 
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
@@ -133,7 +155,6 @@ for lib in LIB_ARRAY:
             for item in items:
                 item_count = item_count + 1
                 if id_array.count(f"{item.ratingKey}") == 0:
-                    id_array.append(item.ratingKey)
                     item_title = get_log_title(item)
                     try:
                         bar_and_log(bar, f"-> starting: {item_title}")
@@ -143,7 +164,7 @@ for lib in LIB_ARRAY:
                         bar_and_log(bar, f"-> getting posters: {item_title}")
                         posters = item.posters()
                         bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
- 
+
                         showPoster = pick_poster(posters, None)
                         
                         apply_poster(item, showPoster)
@@ -152,10 +173,8 @@ for lib in LIB_ARRAY:
                             bar_and_log(bar, f"-> removing label {lbl}: {item_title}")
                             item.removeLabel(lbl, True)
 
-                        # write out item_array to file.
-                        with open(status_file, "a", encoding="utf-8") as sf:
-                            sf.write(f"{item.ratingKey}{os.linesep}")
-
+                        track_completion(id_array, status_file, f"{item.ratingKey}")
+                        
                         if item.TYPE == "show":
                             if RESET_SEASONS:
                                 # get seasons
@@ -163,33 +182,39 @@ for lib in LIB_ARRAY:
                                 bar_and_log(bar, f"-> Plex has {len(seasons)} seasons for: {item_title}")
                                 # loop over all:
                                 for s in seasons:
-                                    item_title = get_log_title(s)
-                                    # reset artwork
-                                    bar_and_log(bar, 
-                                        f"-> getting season posters: {item_title}"
-                                    )
-                                    posters = s.posters()
-                                    bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
+                                    if id_array.count(f"{s.ratingKey}") == 0:
+                                        item_title = get_log_title(s)
+                                        # reset artwork
+                                        bar_and_log(bar, 
+                                            f"-> getting season posters: {item_title}"
+                                        )
+                                        posters = s.posters()
+                                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
 
-                                    seasonPoster = pick_poster(posters, showPoster)
-                                    
-                                    apply_poster(s, seasonPoster)
+                                        seasonPoster = pick_poster(posters, showPoster)
+                                        
+                                        apply_poster(s, seasonPoster)
+
+                                        track_completion(id_array, status_file, f"{s.ratingKey}")
 
                                     if RESET_EPISODES:
                                         # get episodes
                                         episodes = s.episodes()
                                         # loop over all
                                         for e in episodes:
-                                            item_title = get_log_title(e)
-                                            # reset artwork
-                                            bar_and_log(bar, f"-> getting episode posters: {item_title}")
-                                            posters = e.posters()
+                                            if id_array.count(f"{e.ratingKey}") == 0:
+                                                item_title = get_log_title(e)
+                                                # reset artwork
+                                                bar_and_log(bar, f"-> getting episode posters: {item_title}")
+                                                posters = e.posters()
 
-                                            bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
+                                                bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
 
-                                            episodePoster = pick_poster(posters, showPoster)
+                                                episodePoster = pick_poster(posters, None)
 
-                                            apply_poster(e, episodePoster)
+                                                apply_poster(e, episodePoster)
+
+                                                track_completion(id_array, status_file, f"{e.ratingKey}")
 
                     except Exception as ex:
                         print_and_log(f'Exception processing "{item.title}": {ex}')
@@ -200,8 +225,9 @@ for lib in LIB_ARRAY:
                     time.sleep(DELAY)
 
     # delete the status file
-    if status_file.is_file():
-        os.remove(status_file)
+    if not RETAIN_RESET_STATUS_FILE and not DRY_RUN:
+        if status_file.is_file():
+            os.remove(status_file)
 
 end = timer()
 elapsed = end - start

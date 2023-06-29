@@ -7,23 +7,25 @@ from pathlib import Path, PurePath
 from dotenv import load_dotenv
 import time
 from tabulate import tabulate
+from helpers import get_plex, load_and_upgrade_env
 
-load_dotenv()
+from datetime import datetime, timedelta
+# current dateTime
+now = datetime.now()
 
-PLEX_URL = os.getenv('PLEX_URL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN')
-PLEX_TIMEOUT = os.getenv('PLEX_TIMEOUT')
+# convert to string
+RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
+env_file_path = Path(".env")
+
+status = load_and_upgrade_env(env_file_path)
+
 DELAY = int(os.getenv('DELAY'))
 
 if not DELAY:
     DELAY = 0
 
-if not PLEX_TIMEOUT:
-    PLEX_TIMEOUT = 120
-
-os.environ["PLEXAPI_PLEXAPI_TIMEOUT"] = str(PLEX_TIMEOUT)
-
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
 
 coll_obj = {}
 coll_obj['libraries'] = {}

@@ -8,6 +8,9 @@ from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
 import requests
 import json
+import os
+from dotenv import load_dotenv, set_key, unset_key
+import shutil
 
 def booler(thing):
     if type(thing) == str:
@@ -24,11 +27,11 @@ def redact(the_url, str_list):
         ret_val = ret_val.replace(thing, '[REDACTED]')
     return ret_val
     
-def get_plex(PLEX_URL, PLEX_TOKEN):
-    print(f"connecting to {PLEX_URL}...")
+def get_plex():
+    print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
     try:
-        plex = PlexServer(PLEX_URL, PLEX_TOKEN, timeout=360)
+        plex = PlexServer()
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
         raise Unauthorized
@@ -362,3 +365,43 @@ def get_letter_dir(thing):
 
     return ret_val
 
+def load_and_upgrade_env(file_path):
+    status = "LOAD"
+    
+    if os.path.exists(file_path):
+        load_dotenv(dotenv_path=file_path)
+    else:
+        print(f"No environment [.env] file.  Creating base file.")
+        if os.path.exists('.env.example'):
+            src_file = os.path.join('.', '.env.example')
+            tgt_file = os.path.join('.','.env')
+            shutil.copyfile(src_file, tgt_file)
+            print(f"Please edit .env file to suit and rerun script.")
+        else:
+            print(f"No example [.env.example] file.  Cannot create base file.")
+        exit()
+
+    PLEX_URL = os.getenv("PLEX_URL")
+    PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+
+    if PLEX_URL is not None:
+        # Add the PLEXAPI env vars
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_PLEXAPI_TIMEOUT", value_to_set="360")
+
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_BASEURL", value_to_set=PLEX_URL)
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_TOKEN", value_to_set=PLEX_TOKEN)
+        unset_key(dotenv_path=file_path, key_to_unset="PLEX_URL", quote_mode='always', encoding='utf-8')
+        unset_key(dotenv_path=file_path, key_to_unset="PLEX_TOKEN", quote_mode='always', encoding='utf-8')
+
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_BACKUP_COUNT", value_to_set='3')
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_FORMAT", value_to_set="%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s")
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_LEVEL", value_to_set="INFO")
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_PATH", value_to_set="plexapi.log")
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_ROTATE_BYTES", value_to_set='512000')
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_SHOW_SECRETS", value_to_set="false")
+        
+        # and load the neww file
+        load_dotenv(dotenv_path=file_path)
+        status = "UPGRADE"
+    
+    return status
