@@ -7,7 +7,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 1. A system that can run Python 3.7
 1. Python 3.7 installed on that system
 
-One of the requirements of this script is alive-progress 2.4.1, which requires python 3.7.
+One of the requirements of these scripts is alive-progress 2.4.1, which requires python 3.7.
 
 ## Setup
 
