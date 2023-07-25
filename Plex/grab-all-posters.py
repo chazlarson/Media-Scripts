@@ -147,15 +147,24 @@ WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
 
 fallback_date = now - timedelta(weeks = WEEKS_BACK)
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+target_url_var = 'PLEX_URL'
+PLEX_URL = os.getenv(target_url_var)
+if PLEX_URL is None:
+    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    PLEX_URL = os.getenv(target_url_var)
+
+target_token_var = 'PLEX_TOKEN'
+PLEX_TOKEN = os.getenv(target_token_var)
+if PLEX_TOKEN is None:
+    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    PLEX_TOKEN = os.getenv(target_token_var)
 
 if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger("You must specify PLEX_URL in the .env file.", 'info', 'a')
+    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
     exit()
 
 if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger("You must specify PLEX_TOKEN in the .env file.", 'info', 'a')
+    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -296,8 +305,8 @@ tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
 redaction_list = []
-redaction_list.append(PLEX_URL)
-redaction_list.append(PLEX_TOKEN)
+redaction_list.append(os.getenv('PLEXAPI_AUTH_SERVER_BASEURL'))
+redaction_list.append(os.getenv('PLEXAPI_AUTH_SERVER_TOKEN'))
 
 plex = get_plex()
 
