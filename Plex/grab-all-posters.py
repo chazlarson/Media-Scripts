@@ -30,7 +30,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 
 # TODO: lib_stats[lib_key] = item_count in sqlite
 # TODO: Track Collection status in sqlite with guid
-# I can't recall what that ^ means
+# ~~I can't recall what that ^ means~~ OH Track collection completion like other things using the collection's GUID
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
 # TODO: download to random number filename, rename at completion
