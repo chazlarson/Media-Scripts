@@ -241,7 +241,6 @@ def get_all(plex, the_lib, tgt_class=None, filter=None):
         c_start += c_size
         if len(results) < c_start:
             c_start = lib_size + 1
-    print(f"Completed loading {len(results)} of {lib_size} items from {the_lib.title}")
     return results
 
 def get_xml(plex_url, plex_token, lib_index):

@@ -195,61 +195,63 @@ def check_url(url, uuid):
 
     return known_url
 
-def add_key(rating_key, uuid):
-    try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
-        cursor = sqliteConnection.cursor()
+def add_key(rating_key, uuid, tracking):
+    if not tracking:
+        try:
+            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                            detect_types=sqlite3.PARSE_DECLTYPES |
+                                                            sqlite3.PARSE_COLNAMES)
+            cursor = sqliteConnection.cursor()
 
-        sqlite_create_table_query = completion_tracking_table_create_query()
+            sqlite_create_table_query = completion_tracking_table_create_query()
 
-        cursor = sqliteConnection.cursor()
-        cursor.execute(sqlite_create_table_query)
+            cursor = sqliteConnection.cursor()
+            cursor.execute(sqlite_create_table_query)
 
-        sqlite_insert_with_param = """INSERT OR IGNORE INTO 'completed_keys' ('rating_key', 'uuid') VALUES (?, ?);"""
+            sqlite_insert_with_param = """INSERT OR IGNORE INTO 'completed_keys' ('rating_key', 'uuid') VALUES (?, ?);"""
 
-        data_tuple = (rating_key, uuid, )
-        cursor.execute(sqlite_insert_with_param, data_tuple)
+            data_tuple = (rating_key, uuid, )
+            cursor.execute(sqlite_insert_with_param, data_tuple)
 
-        sqliteConnection.commit()
+            sqliteConnection.commit()
 
-        cursor.close()
+            cursor.close()
 
-    except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
-    finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        except sqlite3.Error as error:
+            print("Error while working with SQLite", error)
+        finally:
+            if (sqliteConnection):
+                sqliteConnection.close()
 
-def check_key(rating_key, uuid):
+def check_key(rating_key, uuid, tracking):
     known_key = False
 
-    try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
-        cursor = sqliteConnection.cursor()
+    if not tracking:
+        try:
+            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                            detect_types=sqlite3.PARSE_DECLTYPES |
+                                                            sqlite3.PARSE_COLNAMES)
+            cursor = sqliteConnection.cursor()
 
-        sqlite_create_table_query = completion_tracking_table_create_query()
+            sqlite_create_table_query = completion_tracking_table_create_query()
 
-        cursor = sqliteConnection.cursor()
-        cursor.execute(sqlite_create_table_query)
+            cursor = sqliteConnection.cursor()
+            cursor.execute(sqlite_create_table_query)
 
-        sqlite_select_query = """SELECT rating_key from completed_keys where rating_key = ? and uuid = ?"""
-        cursor.execute(sqlite_select_query, (rating_key, uuid, ))
-        records = cursor.fetchall()
+            sqlite_select_query = """SELECT rating_key from completed_keys where rating_key = ? and uuid = ?"""
+            cursor.execute(sqlite_select_query, (rating_key, uuid, ))
+            records = cursor.fetchall()
 
-        for row in records:
-            known_key = True
-    
-        cursor.close()
+            for row in records:
+                known_key = True
+        
+            cursor.close()
 
-    except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
-    finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        except sqlite3.Error as error:
+            print("Error while working with SQLite", error)
+        finally:
+            if (sqliteConnection):
+                sqliteConnection.close()
 
     return known_key
 
