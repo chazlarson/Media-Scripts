@@ -44,10 +44,10 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # DONE 0.7.0: store status information in sqlite tables
 # DONE 0.7.1: superchatty logging for underskore
 # NEW  0.7.1: Threading can be toggled
-# FIX? 0.7.1: Underskore's thing
-#            https://discord.com/channels/822460010649878528/822460010649878531/1104506813111603322
-#            current_posters/TV Show(s)/Adam Savage's Tested-None/Doctor Who (2005) -001-current-local.jpg
-#      0.7.1 removed some code that would have attempted mulitple downlaods for seasons and episodes
+# FIX? 0.7.1: POSSIBLE FIX for Underskore's thing
+#             https://discord.com/channels/822460010649878528/822460010649878531/1104506813111603322
+#             current_posters/TV Show(s)/Adam Savage's Tested-None/Doctor Who (2005) -001-current-local.jpg
+#      0.7.1 removed some code that would have attempted multiple downloads for seasons and episodes
 #      0.7.1 EXIF source comment disabled
 #      0.7.1 Check URL before queueing the potential download
 #      0.7.1 Delete leftover completion and URL files
