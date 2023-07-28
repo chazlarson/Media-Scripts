@@ -7,7 +7,7 @@ import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
-from helpers import get_plex, get_all, load_and_upgrade_env
+from helpers import get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
 import logging
@@ -78,9 +78,9 @@ for lib in LIB_ARRAY:
     logging.info(f"getting items from [{lib}]...")
 
     if UNMATCHED_ONLY:
-        items = get_all(plex, the_lib, None, {'unmatched': True})
+        items = get_all_from_library(plex, the_lib, None, {'unmatched': True})
     else:
-        items = get_all(plex, the_lib)
+        items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
     print(f"looping over {item_total} items...")

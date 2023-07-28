@@ -19,7 +19,7 @@ import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
+from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex,
                      get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, validate_filename
 from plexapi import utils
@@ -128,7 +128,7 @@ for lib in LIB_ARRAY:
         lib_size = the_lib.totalViewSize()
         
         # items = get_all(plex, the_lib, 'episode', {"addedAt>>": "2023-12-30"})
-        items = get_all(plex, the_lib, None, {"addedAt>>": "2023-12-30"})
+        items = get_all_from_library(plex, the_lib, None, {"addedAt>>": "2023-12-30"})
  
         item_total = len(items)
         if item_total > 0:

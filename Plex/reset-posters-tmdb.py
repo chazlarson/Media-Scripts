@@ -14,7 +14,7 @@ import time
 import validators
 import random
 
-from helpers import booler, get_all, get_ids, get_plex, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_ids, get_plex, load_and_upgrade_env
 
 # import tvdb_v4_official
 
@@ -276,7 +276,7 @@ for lib in LIB_ARRAY:
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
             print(f"{os.linesep}getting all items from the library [{lib}]...")
-            library_items = get_all(plex, the_lib)
+            library_items = get_all_from_library(plex, the_lib)
             REMOVE_LABELS = False
         else:
             print(

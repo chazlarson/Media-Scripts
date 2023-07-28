@@ -5,7 +5,7 @@ import sys
 import textwrap
 from dotenv import load_dotenv
 from plexapi.server import PlexServer
-from helpers import get_all, get_plex, load_and_upgrade_env
+from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path

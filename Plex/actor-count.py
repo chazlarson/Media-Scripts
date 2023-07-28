@@ -6,7 +6,7 @@ import sys
 import textwrap
 from tmdbapis import TMDbAPIs
 
-from helpers import booler, get_size, get_all, get_ids, get_letter_dir, get_plex, redact, validate_filename, load_and_upgrade_env
+from helpers import booler, get_size, get_all_from_library, get_ids, get_letter_dir, get_plex, redact, validate_filename, load_and_upgrade_env
 
 status = load_and_upgrade_env(env_file_path)
 
@@ -63,7 +63,7 @@ plex = get_plex()
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
     the_lib = plex.library.section(lib)
-    items = get_all(plex, the_lib)
+    items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
     print(f"looping over {item_total} items...")

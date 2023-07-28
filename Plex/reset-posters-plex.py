@@ -8,7 +8,7 @@ from dotenv import load_dotenv, set_key, unset_key
 
 from timeit import default_timer as timer
 import time
-from helpers import booler, get_all, get_plex, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
 from pathlib import Path
 import random
 
@@ -149,7 +149,7 @@ for lib in LIB_ARRAY:
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
             print_and_log(f"getting all items from the {the_type} library [{lib}]...")
-            items = get_all(plex, the_lib)
+            items = get_all_from_library(plex, the_lib)
             REMOVE_LABELS = False
         else:
             print_and_log(

@@ -19,7 +19,7 @@ import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex,
+from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex,
                      get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
@@ -1008,14 +1008,14 @@ for lib in LIB_ARRAY:
 
         plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
         if the_lib.TYPE == "movie":
-            items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
+            items = get_all_from_library(plex, the_lib, None, {"addedAt>>": last_run_lib})
             last_run_lib = datetime.now()
 
         if the_lib.TYPE == "show":
             last_run_episode = fallback_date
 
             plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
-            episodes = get_all(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+            episodes = get_all_from_library(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
             last_run_episode = datetime.now()
             items.extend(episodes)
 

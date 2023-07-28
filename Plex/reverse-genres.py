@@ -7,7 +7,7 @@ import piexif.helper
 from alive_progress import alive_bar
 from dotenv import load_dotenv
 
-from helpers import booler, get_all, get_plex, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
@@ -91,7 +91,7 @@ for lib in LIB_ARRAY:
         count = plex.library.section(lib).totalSize
         print(f"getting {count} {the_lib.type}s from [{lib}]...")
         logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        items = get_all(plex, the_lib)
+        items = get_all_from_library(plex, the_lib)
         # items = the_lib.all()
         item_total = len(items)
         logging.info(f"looping over {item_total} items...")

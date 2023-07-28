@@ -218,7 +218,7 @@ def get_size(the_lib, tgt_class=None, filter=None):
 
     return lib_size
     
-def get_all(plex, the_lib, tgt_class=None, filter=None):
+def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
     lib_size = the_lib.totalViewSize()
     lib_type = get_type(the_lib.type)
     item_class = the_lib.type

@@ -19,7 +19,7 @@ import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from helpers import (booler, get_all, get_ids, get_letter_dir, get_plex, get_size, redact, validate_filename, load_and_upgrade_env)
+from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -53,15 +53,19 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.1 Delete leftover completion and URL files
 #      0.7.1 Move "IF TRACK COMPLETION" into get/set methods
 #      0.7.1 Only report queue size if there is a queue
+# FIX  0.7.2 If fallback date is < 1/1/1970 and we're on Windows, set it to None
+#            Patch for windows crash on old dates
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 env_file_path = Path(".env")
 
 # current dateTime
 now = datetime.now()
+
+IS_WINDOWS = platform.system() == "Windows"
 
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -152,6 +156,9 @@ except:
 WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
 
 fallback_date = now - timedelta(weeks = WEEKS_BACK)
+epoch = datetime(1970,1,1)
+if IS_WINDOWS and fallback_date < epoch:
+    fallback_date = None
 
 target_url_var = 'PLEX_URL'
 PLEX_URL = os.getenv(target_url_var)
@@ -268,7 +275,6 @@ KEEP_JUNK = booler(os.getenv("KEEP_JUNK"))
 
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
-IS_WINDOWS = platform.system() == "Windows"
 
 if IS_WINDOWS:
     SCRIPT_FILE = "get_images.bat"
@@ -1082,7 +1088,6 @@ for lib in LIB_ARRAY:
         if last_run_lib is None:
             superchat(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
             last_run_lib = fallback_date
-            add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
 
         superchat(f"{the_lib} last run date: {last_run_lib}", 'info', 'a')
 
@@ -1169,10 +1174,14 @@ for lib in LIB_ARRAY:
                 items = []
 
                 if coll == 'placeholder_collection_name':
-                    plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
-                    items = get_all(plex, the_lib, None, {"addedAt>>": last_run_lib})
+                    if last_run_lib is None:
+                        plogger(f"Loading {the_lib.TYPE}s  ...", 'info', 'a')
+                        items = get_all_from_library(plex, the_lib, None, None)
+                    else:
+                        plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
+                        items = get_all_from_library(plex, the_lib, None, {"addedAt>>": last_run_lib})
+                        last_run_lib = datetime.now()
                     plogger(f"Completed loading {len(items)} of {the_lib.totalViewSize()} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
-                    last_run_lib = datetime.now()
 
                     if the_lib.TYPE == "show" and GRAB_SEASONS:
                         if the_lib.title in RESET_ARRAY:
@@ -1181,14 +1190,17 @@ for lib in LIB_ARRAY:
                         else:
                             last_run_season = get_last_run(the_uuid, 'season')
 
-                        if last_run_season is None:
+                        if last_run_season is None and fallback_date is not None:
                             last_run_season = fallback_date
-                            add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
-
-                        plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
-                        seasons = get_all(plex, the_lib, 'season', {"addedAt>>": last_run_season})
+    
+                        if last_run_season is None:
+                            plogger(f"Loading seasons ...", 'info', 'a')
+                            seasons = get_all_from_library(plex, the_lib, 'season', None)
+                        else:
+                            plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
+                            seasons = get_all_from_library(plex, the_lib, 'season', {"addedAt>>": last_run_season})
+                            last_run_season = datetime.now()
                         plogger(f"Completed loading {len(seasons)} of {the_lib.totalViewSize(libtype='season')} season(s) from {the_lib.title}", 'info', 'a')
-                        last_run_season = datetime.now()
                         items.extend(seasons)
                         superchat(f"{len(items)} items to examine", 'info', 'a')
 
@@ -1200,20 +1212,23 @@ for lib in LIB_ARRAY:
                         else:
                             last_run_episode = get_last_run(the_uuid, 'episode')
 
-                        if last_run_episode is None:
+                        if last_run_episode is None and fallback_date is not None:
                             last_run_episode = fallback_date
-                            add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
-
-                        plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
-                        episodes = get_all(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+    
+                        if last_run_episode is None:
+                            plogger(f"Loading episodes ...", 'info', 'a')
+                            episodes = get_all_from_library(plex, the_lib, 'episode', None)
+                        else:
+                            plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
+                            episodes = get_all_from_library(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+                            last_run_episode = datetime.now()
                         plogger(f"Completed loading {len(episodes)} of {the_lib.totalViewSize(libtype='episode')} episode(s) from {the_lib.title}", 'info', 'a')
-                        last_run_episode = datetime.now()
                         items.extend(episodes)
                         superchat(f"{len(items)} items to examine", 'info', 'a')
 
                 else:
                     plogger(f"Loading everything in collection {coll} ...", 'info', 'a')
-                    items = get_all(plex, the_lib, None, {'collection': coll})
+                    items = get_all_from_library(plex, the_lib, None, {'collection': coll})
                     plogger(f"Completed loading {len(items)} from collection {coll}", 'info', 'a')
                 item_total = len(items)
                 if item_total > 0:
@@ -1247,17 +1262,18 @@ for lib in LIB_ARRAY:
 
                             if stop_file.is_file() or skip_file.is_file():
                                 raise StopIteration
-   
+
                     plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
 
-        add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
+        if last_run_lib is not None:
+            add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
         if the_lib.TYPE == "show":
-            if GRAB_SEASONS:
+            if GRAB_SEASONS and last_run_season is not None:
                 add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
-            if GRAB_EPISODES:
+            if GRAB_EPISODES and last_run_episode is not None:
                 add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
 
         end_queue_length = len(my_futures)
@@ -1267,6 +1283,7 @@ for lib in LIB_ARRAY:
             if len(SCRIPT_STRING) > 0:
                 with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                     myfile.write(f"{SCRIPT_STRING}{os.linesep}")
+
     except StopIteration:
         if stop_file.is_file():
             progress_str = f"stop file found, leaving loop"

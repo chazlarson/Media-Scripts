@@ -7,7 +7,7 @@ from alive_progress import alive_bar
 import sys
 import textwrap
 
-from helpers import get_all, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
+from helpers import get_all_from_library, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
 
 import logging
 from pathlib import Path
