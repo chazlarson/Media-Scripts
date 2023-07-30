@@ -32,10 +32,30 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 status = load_and_upgrade_env(env_file_path)
+
+target_url_var = 'PLEX_URL'
+PLEX_URL = os.getenv(target_url_var)
+if PLEX_URL is None:
+    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    PLEX_URL = os.getenv(target_url_var)
+
+target_token_var = 'PLEX_TOKEN'
+PLEX_TOKEN = os.getenv(target_token_var)
+if PLEX_TOKEN is None:
+    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    PLEX_TOKEN = os.getenv(target_token_var)
+
+if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
+    logging.info(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+    exit()
+
+if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
+    logging.info(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+    exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
