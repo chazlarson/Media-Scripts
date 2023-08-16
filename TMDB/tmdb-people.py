@@ -29,7 +29,7 @@ items = []
 people_file = Path(people_name_file)
 
 if people_file.is_file():
-    with open(f"{people_name_file}") as fp:
+    with open(people_name_file, encoding='utf-8') as fp:
         for line in fp:
             items.append(line.strip())
 
