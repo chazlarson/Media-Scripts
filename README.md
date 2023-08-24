@@ -21,16 +21,15 @@ All these scripts use the same `.env` and requirements.
 
 ## Plex scripts:
 
- 1. user-emails.py - extract user emails from your shares
- 2. reset-posters-tmdb.py - reset all artwork in a library to TMDB default
- 3. reset-posters-plex.py - reset all artwork in a library to Plex default
- 4. grab-current-posters.py - Grab currently-set posters and optionally background artwork
- 5. grab-all-posters.py - grab some or all of the artwork for a library from plex
- 6. grab-all-status.py - grab watch status for all users all libraries from plex
- 7. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
- 8. show-all-playlists.py - Show contents of all user playlists
- 9. delete-collections.py - delete most or all collections from one or more libraries
-10. refresh-metadata.py - Refresh metadata individually on items in a library
+1. user-emails.py - extract user emails from your shares
+2. reset-posters-tmdb.py - reset all artwork in a library to TMDB default
+3. reset-posters-plex.py - reset all artwork in a library to Plex default
+4. grab-all-posters.py - grab some or all of the artwork for a library from plex
+5. grab-all-status.py - grab watch status for all users all libraries from plex
+6. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
+7. show-all-playlists.py - Show contents of all user playlists
+8. delete-collections.py - delete most or all collections from one or more libraries
+9. refresh-metadata.py - Refresh metadata individually on items in a library
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
