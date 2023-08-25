@@ -263,7 +263,7 @@ TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containi
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+RESET_LIBRARIES=Bing,Bang,Boing              # use DEFAULT_YEARS_BACK instead of stored last run date
 DEFAULT_YEARS_BACK=2                         # If there is no "last run date" stored, go this many years back [integer; negative values will be made positive]
 ```
 
