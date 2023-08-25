@@ -22,6 +22,8 @@ TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEXAPI_PLEXAPI_TIMEOUT='360'
 PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
+                                             # Just the base URL, no /web or anything at the end.
+                                             # i.e. http://192.168.1.11:32400 or the like
 PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
 PLEXAPI_LOG_BACKUP_COUNT='3'
 PLEXAPI_LOG_FORMAT='%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s'
