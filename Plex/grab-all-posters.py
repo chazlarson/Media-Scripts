@@ -55,10 +55,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.1 Only report queue size if there is a queue
 # FIX  0.7.2 If fallback date is < 1/1/1970 and we're on Windows, set it to None
 #            Patch for windows crash on old dates
+# NEW  0.7.3 EVEN MORE SUPERCHAT to track down a Windows issue
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.2"
+VERSION = "0.7.3"
 
 env_file_path = Path(".env")
 
