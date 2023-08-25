@@ -337,40 +337,66 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 def get_asset_names(item):
     ret_val = {}
     item_file = None
+    
+    superchat(f"entering get_asset_names {item}", 'info', 'a')
 
     ret_val['poster'] = f"poster"
     ret_val['background'] = f"background"
 
     if item.TYPE == "collection":
+        superchat(f"It's a collection", 'info', 'a')
+
         ASSET_NAME = item.title
 
         ret_val['asset'] = f"{ASSET_NAME}"
     elif item.TYPE == "movie":
+        superchat(f"It's a movie", 'info', 'a')
         item_file = Path(item.media[0].parts[0].file)
+        superchat(f"item_file {item_file}", 'info', 'a')
         ASSET_NAME = item_file.parts[len(item_file.parts)-2]
+        superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
         ret_val['asset'] = f"{ASSET_NAME}"
     elif item.TYPE == "show":
+        superchat(f"It's a show", 'info', 'a')
         item_file = Path(item.locations[0])
+        superchat(f"item_file {item_file}", 'info', 'a')
+        superchat(f"item_file.parts {item_file.parts}", 'info', 'a')
+        superchat(f"Trying to grab item_file.parts[{len(item_file.parts)-1}]", 'info', 'a')
+        
         ASSET_NAME = item_file.parts[len(item_file.parts)-1]
+        superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
         ret_val['asset'] = f"{ASSET_NAME}"
     elif item.TYPE == "season":
+        superchat(f"It's a season", 'info', 'a')
         item_file = Path(item.show().locations[0])
+        superchat(f"item_file {item_file}", 'info', 'a')
+        superchat(f"item_file.parts {item_file.parts}", 'info', 'a')
+        superchat(f"Trying to grab item_file.parts[{len(item_file.parts)-1}]", 'info', 'a')
+
         ASSET_NAME = item_file.parts[len(item_file.parts)-1]
+        superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
         ret_val['poster'] = f"Season{str(item.seasonNumber).zfill(2)}"
         ret_val['background'] = f"{ret_val['poster']}_background"
         ret_val['asset'] = f"{ASSET_NAME}"
     elif item.TYPE == "episode":
+        superchat(f"It's an episode", 'info', 'a')
         item_file = Path(item.media[0].parts[0].file)
+        superchat(f"item_file {item_file}", 'info', 'a')
+        superchat(f"item_file.parts {item_file.parts}", 'info', 'a')
+        superchat(f"Trying to grab item_file.parts[{len(item_file.parts)-3}]", 'info', 'a')
+
         ASSET_NAME = item_file.parts[len(item_file.parts)-3]
+        superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
         ret_val['poster'] = f"{get_SE_str(item)}"
         ret_val['background'] = f"{ret_val['poster']}_background"
         ret_val['asset'] = f"{ASSET_NAME}"
     else:
         # Don't support it
+        superchat(f"This script doesn't support {item.TYPE}", 'info', 'a')
         ret_val['poster'] = None
         ret_val['background'] = None
         ret_val['asset'] = None
@@ -378,6 +404,7 @@ def get_asset_names(item):
     return ret_val
 
 def get_SE_str(item):
+    superchat(f"entering get_SE_str {item}", 'info', 'a')
     if item.TYPE == "season":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
     elif item.TYPE == "episode":
@@ -385,6 +412,7 @@ def get_SE_str(item):
     else:
         ret_val = f""
 
+    superchat(f"returning {ret_val}", 'info', 'a')
     return ret_val
 
 TOPLEVEL_TMID = ""
@@ -398,16 +426,21 @@ def get_lib_setting(the_lib, the_setting):
 
 def get_subdir(item):
     global TOPLEVEL_TMID
+    superchat(f"entering get_subdir {item}", 'info', 'a')
     ret_val = ""
     se_str = get_SE_str(item)
+    superchat(f"se_str {se_str}", 'info', 'a')
     s_bit = se_str[:3]
+    superchat(f"s_bit {s_bit}", 'info', 'a')
 
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
 
     if USE_ASSET_NAMING:
+        superchat(f"about to get asset names {item}", 'info', 'a')
         asset_details = get_asset_names(item)
+        superchat(f"asset_details {asset_details}", 'info', 'a')
         return asset_details['asset']
 
     level_01 = None # 9-1-1 Lone Star-89393
@@ -432,6 +465,10 @@ def get_subdir(item):
             TOPLEVEL_TMID = tmid
             TOPLEVEL_TVID = tvid
             level_01, msg = validate_filename(f"{item.title}-{TOPLEVEL_TMID}") # show level
+
+    superchat(f"level_01 {level_01}", 'info', 'a')
+    superchat(f"level_02 {level_02}", 'info', 'a')
+    superchat(f"level_03 {level_03}", 'info', 'a')
 
     ret_val = Path(level_01)
     if level_02:
@@ -678,6 +715,9 @@ class poster_placeholder:
 
 def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
     global SCRIPT_STRING
+
+    superchat(f"entering get_art {item}, {artwork_path}, {tmid}, {tvid}, {uuid}, {lib_title}", 'info', 'a')
+
     attempts = 0
     if ONLY_CURRENT:
         all_art = []
@@ -801,6 +841,8 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 def get_posters(lib, item, uuid, title):
     global SCRIPT_STRING
 
+    superchat(f"entering get_posters {lib}, {item}, {uuid}, {title}", 'info', 'a')
+
     imdbid = None
     tmid = None
     tvid = None
@@ -860,9 +902,12 @@ def get_posters(lib, item, uuid, title):
     superchat(f"final top-level directory for {item.title} artwork: {tgt_dir}", 'info', 'a')
 
     if not os.path.exists(tgt_dir):
+        superchat(f"makin' dirs", 'info', 'a')
         os.makedirs(tgt_dir)
 
     attempts = 0
+
+    superchat(f"about to get the subdir for {item}", 'info', 'a')
 
     item_path= get_subdir(item)
 
@@ -884,8 +929,7 @@ def get_posters(lib, item, uuid, title):
     else:
         superchat(f"grabbing ALL artwork for {item.title}", 'info', 'a')
         all_posters = item.posters()
-    
-    superchat(f"{len(all_posters)} poster[s] available for {item.title}", 'info', 'a')
+        superchat(f"{len(all_posters)} poster[s] available for {item.title}", 'info', 'a')
 
     while attempts < 5:
         superchat(f"attempt {attempts+1} at grabbing artwork for {item.title}", 'info', 'a')
