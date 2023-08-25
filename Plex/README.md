@@ -13,7 +13,7 @@ All these scripts use the same `.env` and requirements.
 
 NOTE: on 06-29 these scripts have changed to using ENV vars to set up the Plex API details.  This was done primarily to enable the timeout to apply to all Plex interactions.
 
-If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entires those will be silently changed for you.
+If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entries those will be silently changed for you.
 
 ### `.env` contents
 
