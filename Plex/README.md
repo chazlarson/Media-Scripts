@@ -13,7 +13,7 @@ All these scripts use the same `.env` and requirements.
 
 NOTE: on 06-29 these scripts have changed to using ENV vars to set up the Plex API details.  This was done primarily to enable the timeout to apply to all Plex interactions.
 
-If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entires those will be silently changed for you.
+If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entries those will be silently changed for you.
 
 ### `.env` contents
 
@@ -22,6 +22,8 @@ TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org
 TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
 PLEXAPI_PLEXAPI_TIMEOUT='360'
 PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
+                                             # Just the base URL, no /web or anything at the end.
+                                             # i.e. http://192.168.1.11:32400 or the like
 PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
 PLEXAPI_LOG_BACKUP_COUNT='3'
 PLEXAPI_LOG_FORMAT='%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s'
@@ -261,7 +263,7 @@ TRACK_IMAGE_SOURCES=1                        # If set to 1, keep a file containi
 USE_ASSET_SUBFOLDERS=0                       # If set to 1, create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 FOLDERS_ONLY=0                               # If set to 1, just build out the folder hierarchy; no image downloading
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them; if empty, no filter
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+RESET_LIBRARIES=Bing,Bang,Boing              # use DEFAULT_YEARS_BACK instead of stored last run date
 DEFAULT_YEARS_BACK=2                         # If there is no "last run date" stored, go this many years back [integer; negative values will be made positive]
 ```
 
