@@ -7,7 +7,7 @@ import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
-from helpers import get_plex, get_all_from_library, load_and_upgrade_env
+from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
 import logging
@@ -22,8 +22,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 SCRIPT_NAME = Path(__file__).stem
 
 # DONE 0.2.0: chattier about where we're getting items
+# DONE 0.2.1: Use booler helper to ensure correct var reading
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 env_file_path = Path(".env")
 
@@ -41,7 +42,7 @@ status = load_and_upgrade_env(env_file_path)
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-UNMATCHED_ONLY = os.getenv("UNMATCHED_ONLY")
+UNMATCHED_ONLY = booler(os.getenv("UNMATCHED_ONLY"))
 
 if LIBRARY_NAMES:
     LIB_ARRAY = LIBRARY_NAMES.split(",")
