@@ -1,3 +1,4 @@
+import logging
 from alive_progress import alive_bar
 from plexapi.server import PlexServer
 from plexapi.utils import download
@@ -9,6 +10,11 @@ import time
 from helpers import get_plex, load_and_upgrade_env
 
 from datetime import datetime, timedelta
+
+SCRIPT_NAME = Path(__file__).stem
+
+VERSION = "0.1.0"
+
 # current dateTime
 now = datetime.now()
 
@@ -17,7 +23,18 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 env_file_path = Path(".env")
 
-status = load_and_upgrade_env(env_file_path)
+logging.basicConfig(
+    filename=f"{SCRIPT_NAME}.log",
+    filemode="w",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')

@@ -88,18 +88,10 @@ def blogger(msg, level, logfile, bar):
 setup_logger('activity_log', ACTIVITY_LOG)
 setup_logger('download_log', DOWNLOAD_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
-
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    print(f"No environment [.env] file.  Exiting.")
+if load_and_upgrade_env(env_file_path) < 0:
     exit()
-
-status = load_and_upgrade_env(env_file_path)
 
 plex = get_plex()
 
@@ -107,6 +99,7 @@ logger("connection success", 'info', 'a')
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+ADDEDAT_FUTURES_ONLY = booler(os.getenv("ADDEDAT_FUTURES_ONLY"))
 
 if LIBRARY_NAMES:
     LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
@@ -127,9 +120,12 @@ for lib in LIB_ARRAY:
         the_lib = plex.library.section(lib)
         lib_size = the_lib.totalViewSize()
         
-        # items = get_all(plex, the_lib, 'episode', {"addedAt>>": "2023-12-30"})
-        items = get_all_from_library(plex, the_lib, None, {"addedAt>>": "2023-12-30"})
- 
+        if ADDEDAT_FUTURES_ONLY:
+            TODAY_STR = now.strftime("%Y-%m-%d")
+            items = get_all_from_library(plex, the_lib, None, {"addedAt>>": TODAY_STR})
+        else:
+            items = get_all_from_library(plex, the_lib)
+
         item_total = len(items)
         if item_total > 0:
             logger(f"looping over {item_total} items...", 'info', 'a')

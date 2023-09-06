@@ -18,7 +18,8 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 env_file_path = Path(".env")
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 DELAY = int(os.getenv('DELAY'))
 

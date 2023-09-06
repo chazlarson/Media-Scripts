@@ -35,10 +35,11 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -83,7 +84,6 @@ for lib in LIB_ARRAY:
         print(f"getting UNMATCHED items from [{lib}]...")
         items = get_all_from_library(plex, the_lib, None, {'unmatched': True})
     else:
-        print(f"getting ALL items from [{lib}]...")
         items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
@@ -138,14 +138,12 @@ for lib in LIB_ARRAY:
                         progress_str = f"{item.title} - agent {agt}"
                         bar.text(progress_str)
 
-                        progress(item_count, item_total, progress_str)
-
                         item.fixMatch(auto=True, agent=agt)
 
                         matched_it = True
 
                         progress_str = f"{item.title} - DONE"
-                        progress(item_count, item_total, progress_str)
+                        bar.text(progress_str)
 
                     except urllib3.exceptions.ReadTimeoutError:
                         progress(item_count, item_total, "ReadTimeoutError: " + item.title)

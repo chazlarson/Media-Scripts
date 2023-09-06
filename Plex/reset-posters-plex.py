@@ -47,9 +47,10 @@ def print_and_log(msg):
     logging.info(msg)
     print(msg)
 
-print_and_log(f"Starting {SCRIPT_NAME}")
+print_and_log(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")

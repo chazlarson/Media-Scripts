@@ -27,11 +27,14 @@ def redact(the_url, str_list):
         ret_val = ret_val.replace(thing, '[REDACTED]')
     return ret_val
     
-def get_plex():
+def get_plex(user_token=None):
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
     try:
-        plex = PlexServer()
+        if user_token is not None:
+            plex = PlexServer(token=user_token)
+        else:
+            plex = PlexServer()
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
         raise Unauthorized
@@ -365,7 +368,7 @@ def get_letter_dir(thing):
     return ret_val
 
 def load_and_upgrade_env(file_path):
-    status = "LOAD"
+    status = 0
     
     if os.path.exists(file_path):
         load_dotenv(dotenv_path=file_path)
@@ -378,7 +381,7 @@ def load_and_upgrade_env(file_path):
             print(f"Please edit .env file to suit and rerun script.")
         else:
             print(f"No example [.env.example] file.  Cannot create base file.")
-        exit()
+        status = -1
 
     PLEX_URL = os.getenv("PLEX_URL")
     PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -399,8 +402,16 @@ def load_and_upgrade_env(file_path):
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_ROTATE_BYTES", value_to_set='512000')
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_SHOW_SECRETS", value_to_set="false")
         
-        # and load the neww file
+        # and load the new file
         load_dotenv(dotenv_path=file_path)
-        status = "UPGRADE"
-    
+        status = 1
+
+    if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
+        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
+        status = -1
+
+    if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
+        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
+        status = -1
+
     return status

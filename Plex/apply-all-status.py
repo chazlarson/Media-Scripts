@@ -31,10 +31,11 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 PLEX_OWNER = os.getenv("TARGET_PLEX_OWNER")
 
@@ -119,28 +120,38 @@ with open("status.txt") as fp:
             plex_rating = parts[5].strip()
 
         if plex_user != connected_plex_user:
+            plex = None
             if plex_user.lower() == PLEX_OWNER.lower():
                 plex = get_plex()
             else:
                 user_acct = get_user_acct(all_users, plex_user)
-                plex = get_plex(PLEX_URL, user_acct.get_token(PMI))
-            connected_plex_user = plex_user
-            print(f"------------ {connected_plex_user} ------------")
+                if user_acct:
+                    plex = get_plex(user_acct.get_token(PMI))
+            if plex is not None:
+                connected_plex_user = plex_user
+                print(f"------------ {connected_plex_user} ------------")
+            else:
+                connected_plex_user = None
+                print(f"---- NOT FOUND: {plex_user} ------------")
 
-        if plex_library != connected_plex_library:
-            try:
-                items = plex.library.section(plex_library)
-                connected_plex_library = plex_library
-                last_library = None
-                print(
-                    f"\r{os.linesep}------------ {connected_plex_library}{mapped_from} ------------"
-                )
-            except:
-                if last_library is None:
+
+        if plex is not None:
+            if plex_library != connected_plex_library:
+                try:
+                    items = plex.library.section(plex_library)
+                    connected_plex_library = plex_library
+                    last_library = None
                     print(
-                        f"\r{os.linesep}------------ Exception connecting to {plex_library} ------------"
+                        f"\r{os.linesep}------------ {connected_plex_library}{mapped_from} ------------"
                     )
-                    last_library = plex_library
+                except:
+                    if last_library is None:
+                        print(
+                            f"\r{os.linesep}------------ Exception connecting to {plex_library} ------------"
+                        )
+                        last_library = plex_library
+                    connected_plex_library = None
+            else:
                 connected_plex_library = None
 
         if connected_plex_library is not None:
