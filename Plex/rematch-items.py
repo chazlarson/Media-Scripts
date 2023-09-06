@@ -21,8 +21,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+# DONE 0.2.0: chattier about where we're getting items
 
+VERSION = "0.2.0"
 
 env_file_path = Path(".env")
 
@@ -78,8 +79,10 @@ for lib in LIB_ARRAY:
     logging.info(f"getting items from [{lib}]...")
 
     if UNMATCHED_ONLY:
+        print(f"getting UNMATCHED items from [{lib}]...")
         items = get_all_from_library(plex, the_lib, None, {'unmatched': True})
     else:
+        print(f"getting ALL items from [{lib}]...")
         items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
