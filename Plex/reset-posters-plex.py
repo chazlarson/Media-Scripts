@@ -26,7 +26,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+# DONE 0.1.1 added a couple booler
+
+VERSION = "0.1.1"
 
 env_file_path = Path(".env")
 
@@ -52,8 +54,8 @@ status = load_and_upgrade_env(env_file_path)
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
-TRACK_RESET_STATUS = os.getenv("TRACK_RESET_STATUS")
-RETAIN_RESET_STATUS_FILE = os.getenv("RETAIN_RESET_STATUS_FILE")
+TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
+RETAIN_RESET_STATUS_FILE = booler(os.getenv("RETAIN_RESET_STATUS_FILE"))
 DRY_RUN = booler(os.getenv("DRY_RUN"))
 FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
 RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
