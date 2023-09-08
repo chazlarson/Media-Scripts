@@ -230,6 +230,8 @@ Perhaps you want to get local copies of some or all the posters Plex knows about
 
 Maybe you find it easier to look through a bunch of options in CoverFlow or something.
 
+Maybe you want to grab all the current custom art in a library to put in a PMM asset directory or back it up for some other purpose.
+
 This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retireved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a file exists at, for example, `extracted_posters/Movies - 4K DV/10 Cloverfield Lane/2273074-001.png`.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
 
 The script can name these files so that they are ready for use with [Plex-Meta-Manager's Asset Directory](https://metamanager.wiki/en/latest/home/guides/assets.html).  Currently this only works with `ONLY_CURRENT` set.
