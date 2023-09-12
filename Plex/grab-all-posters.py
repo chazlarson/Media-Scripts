@@ -59,10 +59,12 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # FIX  0.7.4 Orderly failure if a Plex item has no "locations"
 #            observed by wogsurfer 🇲🇹 on PMM Discord [running Windows, movies library doesn't show the problem]
 #      0.7.5 report libraries found on the server on connect and in "can't find the library" message
+#      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
+#      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.5"
+VERSION = "0.7.6"
 
 env_file_path = Path(".env")
 
@@ -76,10 +78,6 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
-# nobody using this data
-# LIBRARY_STATS = f"{SCRIPT_NAME}-stats.pickle"
-# nobody using this data
-# DOWNLOAD_QUEUE = f"{SCRIPT_NAME}-queue.pickle"
 SUPERCHAT = False
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
@@ -206,6 +204,7 @@ if not POSTER_DOWNLOAD:
     print("Script will default to .jpg extension on all images")
     print("================== ATTENTION ==================")
     ID_FILES = False
+
 POSTER_CONSOLIDATE = booler(os.getenv("POSTER_CONSOLIDATE"))
 INCLUDE_COLLECTION_ARTWORK = booler(os.getenv("INCLUDE_COLLECTION_ARTWORK"))
 ONLY_COLLECTION_ARTWORK = booler(os.getenv("ONLY_COLLECTION_ARTWORK"))
@@ -342,7 +341,6 @@ logger(f"{len(ALL_LIBS)} libraries found:", 'info', 'a')
 for lib in ALL_LIBS:
     logger(f"{lib.title.strip()}: {lib.type} - supported: {lib_type_supported(lib)}", 'info', 'a')
     ALL_LIB_NAMES.append(f"{lib.title.strip()}")
-
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
@@ -1087,7 +1085,6 @@ def get_posters(lib, item, uuid, title):
     else:
         plogger('Skipping {item.title}, error determining target subdirectory', 'info', 'a')
 
-
 def rename_by_type(target):
     
     p = Path(target)
@@ -1161,15 +1158,19 @@ for lib in LIB_ARRAY:
             the_uuid = the_lib.uuid
             superchat(f"{the_lib} uuid {the_uuid}", 'info', 'a')
 
-            if the_lib.title in RESET_ARRAY:
+            if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] != 'ALL_LIBRARIES':
                 plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
                 last_run_lib = fallback_date
             else:
                 last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
-            if last_run_lib is None:
+            if last_run_lib is None and DEFAULT_YEARS_BACK != 0:
                 superchat(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
                 last_run_lib = fallback_date
+
+            if DEFAULT_YEARS_BACK == 0:
+                superchat(f"DEFAULT_YEARS_BACK == 0, using None as last run", 'info', 'a')
+                last_run_lib = None
 
             superchat(f"{the_lib} last run date: {last_run_lib}", 'info', 'a')
 

@@ -14,7 +14,7 @@ import time
 import validators
 import random
 
-from helpers import booler, get_all_from_library, get_ids, get_plex, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_ids, get_plex, load_and_upgrade_env, get_overlay_status
 
 # import tvdb_v4_official
 
@@ -42,8 +42,8 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -64,6 +64,7 @@ RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
 LOCAL_RESET_ARCHIVE = booler(os.getenv("LOCAL_RESET_ARCHIVE"))
 DRY_RUN = booler(os.getenv("DRY_RUN"))
 FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
+OVERRIDE_OVERLAY_STATUS = booler(os.getenv("OVERRIDE_OVERLAY_STATUS"))
 
 DELAY = 0
 try:
@@ -259,12 +260,29 @@ def track_completion(id_array, status_file, item_id):
     if not DRY_RUN:
         with open(status_file, "a", encoding="utf-8") as sf:
             sf.write(f"{item_id}{os.linesep}")
-    
+
+item_count = 1
+
 for lib in LIB_ARRAY:
     id_array = []
     the_lib = plex.library.section(lib)
     status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
+
+    if get_overlay_status(plex, the_lib) and not OVERRIDE_OVERLAY_STATUS:
+        print("==================== ATTENTION ====================")
+        print(f"Library: {lib}")
+        print("This library appears to have PMM overlays applied.")
+        print("The artwork that this script sets will be overwritten")
+        print("by PMM the next time it runs.")
+        print("This is probably not what you want.")
+        print("You should remove the 'Overlay' label from everything")
+        print("in the library before running PMM again.")
+        print("For safety, the script will ignore this library.")
+        print("==================== ATTENTION ====================")
+        print("To ignore this warning and run this script anyway,")
+        print("add 'OVERRIDE_OVERLAY_STATUS=1' to .env")
+        continue
 
     if status_file.is_file():
         if FLUSH_STATUS_AT_START and not DRY_RUN:
@@ -489,4 +507,4 @@ for lib in LIB_ARRAY:
 
 end = timer()
 elapsed = end - start
-print_and_log(f"{os.linesep}{os.linesep}processing complete in {elapsed:.2f} seconds.")
+print_and_log(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed:.2f} seconds.")

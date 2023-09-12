@@ -67,7 +67,6 @@ def imdb_from_tmdb(tmdb_id, TMDB_KEY):
 
     # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
 
-
 def validate_filename(filename):
     # return filename
     if is_valid_filename(filename):
@@ -220,7 +219,7 @@ def get_size(the_lib, tgt_class=None, filter=None):
         lib_size = len(foo)
 
     return lib_size
-    
+
 def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
     lib_size = the_lib.totalViewSize()
     lib_type = get_type(the_lib.type)
@@ -245,6 +244,13 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
         if len(results) < c_start:
             c_start = lib_size + 1
     return results
+
+def get_overlay_status(plex, the_lib):
+    overlay_items = the_lib.search(label="Overlay")
+
+    ret_val = len(overlay_items) > 0
+
+    return ret_val
 
 def get_xml(plex_url, plex_token, lib_index):
     ssn = requests.Session()
@@ -338,7 +344,6 @@ for c in char_range('a', 'z'):
 
 for c in char_range('0', '9'):
     NUMBERS.append(c)
-
 
 def remove_articles(thing):
     if thing.startswith('The '):
