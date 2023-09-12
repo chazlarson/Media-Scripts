@@ -80,6 +80,27 @@ def get_last_run(uuid, level):
 
     return last_run_date
 
+def reset_last_run():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS last_run_by_library;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = last_artwork_run_table_create_query()
+        cursor.execute(sqlite_create_table_query)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
 # Track media details
 def media_details_table_create_query():
     return '''CREATE TABLE IF NOT EXISTS media_details (
@@ -112,6 +133,27 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
         sqliteConnection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+def reset_media_details():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS media_details;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = media_details_table_create_query()
+        cursor.execute(sqlite_create_table_query)
 
         cursor.close()
 
@@ -190,6 +232,27 @@ def check_url(url, uuid):
 
     return known_url
 
+def reset_url_tracking():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS url_tracking;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = url_tracking_table_create_query()
+        cursor.execute(sqlite_create_table_query)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
 # Track artwork download completion
 def completion_tracking_table_create_query():
     return '''CREATE TABLE IF NOT EXISTS completed_keys (
@@ -258,6 +321,27 @@ def check_key(rating_key, uuid, tracking):
                 sqliteConnection.close()
 
     return known_key
+
+def reset_completion_tracking():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS completed_keys;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = completion_tracking_table_create_query()
+        cursor.execute(sqlite_create_table_query)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
 
 # Track item rematch completion
 def rematch_tracking_table_create_query():
@@ -328,9 +412,30 @@ def check_rematch_key(rating_key, uuid, tracking):
 
     return known_key
 
+def reset_rematch_tracking():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS rematch_completed_keys;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = rematch_tracking_table_create_query()
+        cursor.execute(sqlite_create_table_query)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
 # Track artwork reset completion
-def reset_tracking_table_create_query():
-    return '''CREATE TABLE IF NOT EXISTS rematch_completed_keys (
+def art_reset_tracking_table_create_query():
+    return '''CREATE TABLE IF NOT EXISTS art_reset_completed_keys (
                                         rating_key TEXT,
                                         uuid TEXT,
                                         source TEXT,
@@ -338,7 +443,7 @@ def reset_tracking_table_create_query():
                                         PRIMARY KEY (rating_key, uuid, source)
                                         );'''
 
-def add_reset_key(rating_key, uuid, source, tracking):
+def add_art_reset_key(rating_key, uuid, source, tracking):
     if tracking:
         try:
             sqliteConnection = sqlite3.connect('mediascripts.sqlite',
@@ -351,7 +456,7 @@ def add_reset_key(rating_key, uuid, source, tracking):
             cursor = sqliteConnection.cursor()
             cursor.execute(sqlite_create_table_query)
 
-            sqlite_insert_with_param = """INSERT OR IGNORE INTO 'rematch_completed_keys' ('rating_key', 'uuid', 'source') VALUES (?, ?, ?);"""
+            sqlite_insert_with_param = """INSERT OR IGNORE INTO 'art_reset_completed_keys' ('rating_key', 'uuid', 'source') VALUES (?, ?, ?);"""
 
             data_tuple = (rating_key, uuid, source)
             cursor.execute(sqlite_insert_with_param, data_tuple)
@@ -366,7 +471,7 @@ def add_reset_key(rating_key, uuid, source, tracking):
             if (sqliteConnection):
                 sqliteConnection.close()
 
-def check_reset_key(rating_key, uuid, source, tracking):
+def check_art_reset_key(rating_key, uuid, source, tracking):
     known_key = False
 
     if tracking:
@@ -376,12 +481,12 @@ def check_reset_key(rating_key, uuid, source, tracking):
                                                             sqlite3.PARSE_COLNAMES)
             cursor = sqliteConnection.cursor()
 
-            sqlite_create_table_query = reset_tracking_table_create_query()
+            sqlite_create_table_query = art_reset_tracking_table_create_query()
 
             cursor = sqliteConnection.cursor()
             cursor.execute(sqlite_create_table_query)
 
-            sqlite_select_query = """SELECT rating_key from rematch_completed_keys where rating_key = ? and uuid = ? and source = ?"""
+            sqlite_select_query = """SELECT rating_key from art_reset_completed_keys where rating_key = ? and uuid = ? and source = ?"""
             cursor.execute(sqlite_select_query, (rating_key, uuid, source))
             records = cursor.fetchall()
 
@@ -397,3 +502,24 @@ def check_reset_key(rating_key, uuid, source, tracking):
                 sqliteConnection.close()
 
     return known_key
+
+def reset_art_reset_tracking():
+    try:
+        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+                                           detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_drop_query = """DROP TABLE IF EXISTS art_reset_completed_keys;"""
+        cursor.execute(sqlite_drop_query)
+
+        sqlite_create_table_query = art_reset_tracking_table_create_query()
+        cursor.execute(sqlite_create_table_query)
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
