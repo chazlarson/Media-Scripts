@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import pickle
 import platform
@@ -11,6 +10,7 @@ from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from logs import setup_logger, plogger, blogger, logger
 
 import filetype
 import piexif
@@ -80,61 +80,12 @@ ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
 SUPERCHAT = False
 
-def setup_logger(logger_name, log_file, level=logging.INFO):
-    log_setup = logging.getLogger(logger_name)
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    fileHandler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-    fileHandler.setFormatter(formatter)
-    log_setup.setLevel(level)
-    log_setup.addHandler(fileHandler)
-
-def setup_dual_logger(logger_name, log_file, level=logging.INFO):
-    log_setup = logging.getLogger(logger_name)
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    fileHandler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-    fileHandler.setFormatter(formatter)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setFormatter(formatter)
-    log_setup.setLevel(level)
-    log_setup.addHandler(fileHandler)
-    log_setup.addHandler(streamHandler)
-
-def logger(msg, level, logfile):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-
-def plogger(msg, level, logfile):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-    print(msg)
-
-def blogger(msg, level, logfile, bar):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-    bar.text(msg)
-
 def superchat(msg, level, logfile):
     if SUPERCHAT:
         logger(msg, level, logfile)
 
 setup_logger('activity_log', ACTIVITY_LOG)
 setup_logger('download_log', DOWNLOAD_LOG)
-
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
@@ -1328,7 +1279,6 @@ for lib in LIB_ARRAY:
                                         blogger(f"Starting {item.TYPE}: {item.title}", 'info', 'a', bar)
 
                                         get_posters(lib, item, the_uuid, the_title)
-
 
                                         add_key(item.ratingKey, the_uuid, TRACK_COMPLETION)
                                     else:

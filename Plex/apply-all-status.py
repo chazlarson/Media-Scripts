@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 from plexapi.server import PlexServer
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
+
 from pathlib import Path
 
 from datetime import datetime
@@ -24,15 +25,11 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+setup_logger('activity_log', ACTIVITY_LOG)
+
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()

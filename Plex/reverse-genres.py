@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 
 from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
+
 from pathlib import Path
 from datetime import datetime, timedelta
 # current dateTime
@@ -24,15 +25,10 @@ VERSION = "0.1.0"
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -49,7 +45,7 @@ else:
 
 plex = get_plex()
 
-logging.info("connection success")
+logger(("connection success"), 'info', 'a')
 
 def reverse_genres(item):
     reversed_list = []
@@ -91,11 +87,11 @@ for lib in LIB_ARRAY:
 
         count = plex.library.section(lib).totalSize
         print(f"getting {count} {the_lib.type}s from [{lib}]...")
-        logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
+        logger((f"getting {count} {the_lib.type}s from [{lib}]..."), 'info', 'a')
         items = get_all_from_library(plex, the_lib)
         # items = the_lib.all()
         item_total = len(items)
-        logging.info(f"looping over {item_total} items...")
+        logger((f"looping over {item_total} items..."), 'info', 'a')
         item_count = 1
 
         plex_links = []
@@ -103,15 +99,15 @@ for lib in LIB_ARRAY:
 
         with alive_bar(item_total, dual_line=True, title="Reverse Genres") as bar:
             for item in items:
-                logging.info("================================")
-                logging.info(f"Starting {item.title}")
+                logger(("================================"), 'info', 'a')
+                logger((f"Starting {item.title}"), 'info', 'a')
 
                 reverse_genres(item)
 
                 bar()
 
         progress_str = "COMPLETE"
-        logging.info(progress_str)
+        logger((progress_str), 'info', 'a')
 
         bar.text = progress_str
 
@@ -119,6 +115,6 @@ for lib in LIB_ARRAY:
 
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
-        logging.info(progress_str)
+        logger((progress_str), 'info', 'a')
 
         print(progress_str)

@@ -11,7 +11,8 @@ from requests import ReadTimeout
 from helpers import get_plex, load_and_upgrade_env, get_all_from_library, booler
 from alive_progress import alive_bar, alive_it
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
+
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -27,15 +28,10 @@ VERSION = "0.1.0"
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -75,11 +71,11 @@ def progress(count, total, status=""):
 
 for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
-    logging.info(f"getting items from [{lib}]...")
+    logger(f"getting items from [{lib}]...", 'info', 'a')
     the_lib = plex.library.section(lib)
     items = get_all_from_library(plex, the_lib)
     item_total = len(items)
-    logging.info(f"looping over {item_total} items...")
+    logger(f"looping over {item_total} items...", 'info', 'a')
     item_count = 1
 
     plex_links = []
@@ -99,11 +95,10 @@ for lib in LIB_ARRAY:
                 try:
 
                     progress_str = f"{item.title} - attempt {attempts + 1}"
-                    logging.info(progress_str)
+                    logger(progress_str, 'info', 'a')
 
-                    print(f"{item.title} - {item.originallyAvailableAt}")
-
-                    # item.refresh()
+                    item.refresh()
+                    
                     time.sleep(DELAY)
                     progress_str = f"{item.title} - DONE"
                     progress(item_count, item_total, progress_str)

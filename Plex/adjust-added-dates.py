@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import pickle
 import platform
@@ -12,6 +11,7 @@ from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tmdbapis import TMDbAPIs
+from logs import setup_logger, plogger, blogger, logger
 
 import filetype
 import piexif
@@ -33,7 +33,9 @@ SCRIPT_NAME = Path(__file__).stem
 
 env_file_path = Path(".env")
 
-VERSION = "0.1.0"
+#      0.1.1 Log config details
+
+VERSION = "0.1.1"
 
 # current dateTime
 now = datetime.now()
@@ -42,45 +44,6 @@ now = datetime.now()
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-
-def setup_logger(logger_name, log_file, level=logging.INFO):
-    log_setup = logging.getLogger(logger_name)
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    fileHandler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-    fileHandler.setFormatter(formatter)
-    log_setup.setLevel(level)
-    log_setup.addHandler(fileHandler)
-
-def setup_dual_logger(logger_name, log_file, level=logging.INFO):
-    log_setup = logging.getLogger(logger_name)
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    fileHandler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-    fileHandler.setFormatter(formatter)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setFormatter(formatter)
-    log_setup.setLevel(level)
-    log_setup.addHandler(fileHandler)
-    log_setup.addHandler(streamHandler)
-
-def logger(msg, level, logfile):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-
-def plogger(msg, level, logfile):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-    print(msg)
-
-def blogger(msg, level, logfile, bar):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
-    bar.text(msg)
 
 setup_logger('activity_log', ACTIVITY_LOG)
 
@@ -93,20 +56,20 @@ plex = get_plex()
 
 logger("connection success", 'info', 'a')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 ADJUST_DATE_FUTURES_ONLY = booler(os.getenv("ADJUST_DATE_FUTURES_ONLY"))
+plogger(f"ADJUST_DATE_FUTURES_ONLY: {ADJUST_DATE_FUTURES_ONLY}", 'info', 'a')
+
 ADJUST_DATE_EPOCH_ONLY = booler(os.getenv("ADJUST_DATE_EPOCH_ONLY"))
+plogger(f"ADJUST_DATE_EPOCH_ONLY: {ADJUST_DATE_EPOCH_ONLY}", 'info', 'a')
+
 EPOCH_DATE=datetime(1970,1,1,0,0,0)
-
-if ADJUST_DATE_FUTURES_ONLY and ADJUST_DATE_EPOCH_ONLY:
-    plogger(f"Both ADJUST_DATE_FUTURES_ONLY and ADJUST_DATE_EPOCH_ONLY are set.", 'error', 'a')
-    plogger(f"These are mutually exclusive", 'error', 'a')
-
 
 TMDB_KEY = os.getenv("TMDB_KEY")
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
+
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 
 if LIBRARY_NAMES:
     LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
@@ -119,6 +82,8 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in all_libs:
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
+
+plogger(f"Acting on libraries: {LIB_ARRAY}", 'info', 'a')
 
 def is_epoch(the_date):
     ret_val = False

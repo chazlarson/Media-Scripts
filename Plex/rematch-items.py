@@ -10,7 +10,7 @@ from requests import ReadTimeout
 from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
 from pathlib import Path
 from datetime import datetime, timedelta
 # current dateTime
@@ -28,15 +28,10 @@ VERSION = "0.2.1"
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -77,8 +72,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 
 for lib in LIB_ARRAY:
     the_lib = plex.library.section(lib)
-    print(f"getting items from [{lib}]...")
-    logging.info(f"getting items from [{lib}]...")
+    plogger(f"getting items from [{lib}]...", 'info', 'a')
 
     if UNMATCHED_ONLY:
         print(f"getting UNMATCHED items from [{lib}]...")
@@ -87,8 +81,7 @@ for lib in LIB_ARRAY:
         items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
-    print(f"looping over {item_total} items...")
-    logging.info(f"looping over {item_total} items...")
+    plogger(f"looping over {item_total} items...", 'info', 'a')
     item_count = 0
 
     plex_links = []
