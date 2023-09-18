@@ -21,20 +21,15 @@ def setup_dual_logger(logger_name, log_file, level=logging.INFO):
 
 def logger(msg, level, logfile):
     if logfile == 'a'   : log = logging.getLogger('activity_log')
+    if logfile == 'd'   : log = logging.getLogger('download_log')
     if level == 'info'    : log.info(msg) 
     if level == 'warning' : log.warning(msg)
     if level == 'error'   : log.error(msg)
 
 def plogger(msg, level, logfile):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
+    logger(msg, level, logfile)
     print(msg)
 
 def blogger(msg, level, logfile, bar):
-    if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if level == 'info'    : log.info(msg) 
-    if level == 'warning' : log.warning(msg)
-    if level == 'error'   : log.error(msg)
+    logger(msg, level, logfile)
     bar.text(msg)
