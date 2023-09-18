@@ -61,10 +61,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.5 report libraries found on the server on connect and in "can't find the library" message
 #      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
 #      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
+# FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.6"
+VERSION = "0.7.7"
 
 env_file_path = Path(".env")
 
@@ -245,14 +246,14 @@ RESET_LIBRARIES = os.getenv("RESET_LIBRARIES")
 if RESET_LIBRARIES:
     RESET_ARRAY = [s.strip() for s in RESET_LIBRARIES.split(",")]
 else:
-    RESET_ARRAY = []
+    RESET_ARRAY = ['PLACEHOLDER_VALUE_XYZZY']
 
 RESET_COLLECTIONS = os.getenv("RESET_COLLECTIONS")
 
 if RESET_COLLECTIONS:
     RESET_COLL_ARRAY = [s.strip() for s in RESET_COLLECTIONS.split(",")]
 else:
-    RESET_COLL_ARRAY = []
+    RESET_COLL_ARRAY = ['PLACEHOLDER_VALUE_XYZZY']
 
 
 if LIBRARY_NAMES:
