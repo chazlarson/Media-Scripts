@@ -7,10 +7,10 @@ import logging
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
-from helpers import get_plex, get_all_from_library, load_and_upgrade_env
+from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
 from pathlib import Path
 from datetime import datetime, timedelta
 # current dateTime
@@ -21,26 +21,24 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+# DONE 0.2.0: chattier about where we're getting items
+# DONE 0.2.1: Use booler helper to ensure correct var reading
 
+VERSION = "0.2.1"
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-UNMATCHED_ONLY = os.getenv("UNMATCHED_ONLY")
+UNMATCHED_ONLY = booler(os.getenv("UNMATCHED_ONLY"))
 
 if LIBRARY_NAMES:
     LIB_ARRAY = LIBRARY_NAMES.split(",")
@@ -74,17 +72,16 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 
 for lib in LIB_ARRAY:
     the_lib = plex.library.section(lib)
-    print(f"getting items from [{lib}]...")
-    logging.info(f"getting items from [{lib}]...")
+    plogger(f"getting items from [{lib}]...", 'info', 'a')
 
     if UNMATCHED_ONLY:
+        print(f"getting UNMATCHED items from [{lib}]...")
         items = get_all_from_library(plex, the_lib, None, {'unmatched': True})
     else:
         items = get_all_from_library(plex, the_lib)
 
     item_total = len(items)
-    print(f"looping over {item_total} items...")
-    logging.info(f"looping over {item_total} items...")
+    plogger(f"looping over {item_total} items...", 'info', 'a')
     item_count = 0
 
     plex_links = []
@@ -134,14 +131,12 @@ for lib in LIB_ARRAY:
                         progress_str = f"{item.title} - agent {agt}"
                         bar.text(progress_str)
 
-                        progress(item_count, item_total, progress_str)
-
                         item.fixMatch(auto=True, agent=agt)
 
                         matched_it = True
 
                         progress_str = f"{item.title} - DONE"
-                        progress(item_count, item_total, progress_str)
+                        bar.text(progress_str)
 
                     except urllib3.exceptions.ReadTimeoutError:
                         progress(item_count, item_total, "ReadTimeoutError: " + item.title)

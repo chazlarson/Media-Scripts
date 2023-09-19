@@ -27,11 +27,14 @@ def redact(the_url, str_list):
         ret_val = ret_val.replace(thing, '[REDACTED]')
     return ret_val
     
-def get_plex():
+def get_plex(user_token=None):
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
     try:
-        plex = PlexServer()
+        if user_token is not None:
+            plex = PlexServer(token=user_token)
+        else:
+            plex = PlexServer()
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
         raise Unauthorized
@@ -63,7 +66,6 @@ def imdb_from_tmdb(tmdb_id, TMDB_KEY):
     tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
     # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
-
 
 def validate_filename(filename):
     # return filename
@@ -217,7 +219,7 @@ def get_size(the_lib, tgt_class=None, filter=None):
         lib_size = len(foo)
 
     return lib_size
-    
+
 def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
     lib_size = the_lib.totalViewSize()
     lib_type = get_type(the_lib.type)
@@ -242,6 +244,13 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
         if len(results) < c_start:
             c_start = lib_size + 1
     return results
+
+def get_overlay_status(plex, the_lib):
+    overlay_items = the_lib.search(label="Overlay")
+
+    ret_val = len(overlay_items) > 0
+
+    return ret_val
 
 def get_xml(plex_url, plex_token, lib_index):
     ssn = requests.Session()
@@ -336,7 +345,6 @@ for c in char_range('a', 'z'):
 for c in char_range('0', '9'):
     NUMBERS.append(c)
 
-
 def remove_articles(thing):
     if thing.startswith('The '):
         thing = thing.replace('The ','')
@@ -365,7 +373,7 @@ def get_letter_dir(thing):
     return ret_val
 
 def load_and_upgrade_env(file_path):
-    status = "LOAD"
+    status = 0
     
     if os.path.exists(file_path):
         load_dotenv(dotenv_path=file_path)
@@ -378,7 +386,7 @@ def load_and_upgrade_env(file_path):
             print(f"Please edit .env file to suit and rerun script.")
         else:
             print(f"No example [.env.example] file.  Cannot create base file.")
-        exit()
+        status = -1
 
     PLEX_URL = os.getenv("PLEX_URL")
     PLEX_TOKEN = os.getenv("PLEX_TOKEN")
@@ -399,8 +407,16 @@ def load_and_upgrade_env(file_path):
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_ROTATE_BYTES", value_to_set='512000')
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_SHOW_SECRETS", value_to_set="false")
         
-        # and load the neww file
+        # and load the new file
         load_dotenv(dotenv_path=file_path)
-        status = "UPGRADE"
-    
+        status = 1
+
+    if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
+        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
+        status = -1
+
+    if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
+        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
+        status = -1
+
     return status

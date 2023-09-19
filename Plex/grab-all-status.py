@@ -9,7 +9,7 @@ import textwrap
 
 from helpers import get_all_from_library, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
 from pathlib import Path
 from datetime import datetime, timedelta
 # current dateTime
@@ -22,20 +22,15 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
 
-
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 target_url_var = 'PLEX_URL'
 PLEX_URL = os.getenv(target_url_var)
@@ -50,11 +45,11 @@ if PLEX_TOKEN is None:
     PLEX_TOKEN = os.getenv(target_token_var)
 
 if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    logging.info(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
     exit()
 
 if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    logging.info(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
     exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")

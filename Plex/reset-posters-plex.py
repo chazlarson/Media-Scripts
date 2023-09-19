@@ -1,5 +1,6 @@
 from plexapi.exceptions import Unauthorized
-import logging
+from logs import setup_logger, plogger, blogger, logger
+
 from alive_progress import alive_bar
 from plexapi.server import PlexServer
 from plexapi.exceptions import Unauthorized
@@ -8,7 +9,7 @@ from dotenv import load_dotenv, set_key, unset_key
 
 from timeit import default_timer as timer
 import time
-from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env, get_overlay_status
 from pathlib import Path
 import random
 
@@ -26,37 +27,29 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+# DONE 0.1.1 added a couple booler
+
+VERSION = "0.1.1"
 
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+setup_logger('activity_log', ACTIVITY_LOG)
 
-def bar_and_log(the_bar, msg):
-    logging.info(msg)
-    the_bar.text = msg
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
-def print_and_log(msg):
-    logging.info(msg)
-    print(msg)
-
-print_and_log(f"Starting {SCRIPT_NAME}")
-
-status = load_and_upgrade_env(env_file_path)
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
-TRACK_RESET_STATUS = os.getenv("TRACK_RESET_STATUS")
-RETAIN_RESET_STATUS_FILE = os.getenv("RETAIN_RESET_STATUS_FILE")
+TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
+RETAIN_RESET_STATUS_FILE = booler(os.getenv("RETAIN_RESET_STATUS_FILE"))
 DRY_RUN = booler(os.getenv("DRY_RUN"))
 FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
 RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
+OVERRIDE_OVERLAY_STATUS = booler(os.getenv("OVERRIDE_OVERLAY_STATUS"))
 
 REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
 RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
@@ -79,7 +72,7 @@ else:
     LIB_ARRAY = [LIBRARY_NAME]
 
 plex = get_plex()
-print_and_log("connection success")
+plogger("connection success", 'info', 'a')
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
@@ -106,22 +99,22 @@ def get_log_title(item):
 def pick_poster(poster_list, fallback):
     the_poster = None
     if len(posters) > 0:
-        bar_and_log(bar, f"-> picking the first poster in the list")
+        blogger(f"-> picking the first poster in the list", 'info', 'a', bar)
         the_poster = posters[0]
     else:
         if RESET_SEASONS_WITH_SERIES:
             the_poster = fallback
-            bar_and_log(bar, f"-> empty list, using fallback")
+            blogger(f"-> empty list, using fallback", 'info', 'a', bar)
 
     return the_poster
 
 def apply_poster(item, item_poster):
     if item_poster is not None:
-        bar_and_log(bar, f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}")
+        blogger(f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}", 'info', 'a', bar)
         if not DRY_RUN:
             item.setPoster(item_poster)
     else:
-        bar_and_log(bar, f"-> No poster; no action being taken")
+        blogger(f"-> No poster; no action being taken", 'info', 'a', bar)
 
 
 def track_completion(id_array, status_file, item_id):
@@ -131,12 +124,29 @@ def track_completion(id_array, status_file, item_id):
         with open(status_file, "a", encoding="utf-8") as sf:
             sf.write(f"{item_id}{os.linesep}")
 
+item_count = 1
+
 for lib in LIB_ARRAY:
     id_array = []
     the_lib = plex.library.section(lib)
     the_type = the_lib.type
     status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
+
+    if get_overlay_status(plex, the_lib) and not OVERRIDE_OVERLAY_STATUS:
+        print("==================== ATTENTION ====================")
+        print(f"Library: {lib}")
+        print("This library appears to have PMM overlays applied.")
+        print("The artwork that this script sets will be overwritten")
+        print("by PMM the next time it runs.")
+        print("This is probably not what you want.")
+        print("You should remove the 'Overlay' label from everything")
+        print("in the library before running PMM again.")
+        print("For safety, the script will ignore this library.")
+        print("==================== ATTENTION ====================")
+        print("To ignore this warning and run this script anyway,")
+        print("add 'OVERRIDE_OVERLAY_STATUS=1' to .env")
+        continue
 
     if status_file.is_file():
         if FLUSH_STATUS_AT_START and not DRY_RUN:
@@ -148,16 +158,16 @@ for lib in LIB_ARRAY:
 
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
-            print_and_log(f"getting all items from the {the_type} library [{lib}]...")
+            plogger(f"getting all items from the {the_type} library [{lib}]...", 'info', 'a')
             items = get_all_from_library(plex, the_lib)
             REMOVE_LABELS = False
         else:
-            print_and_log(
-                f"getting items from the {the_type} library [{lib}] with the label [{lbl}]..."
+            plogger(
+                f"getting items from the {the_type} library [{lib}] with the label [{lbl}]...", 'info', 'a'
             )
             items = the_lib.search(label=lbl)
         item_total = len(items)
-        print_and_log(f"{item_total} item(s) retrieved...")
+        plogger(f"{item_total} item(s) retrieved...", 'info', 'a')
         item_count = 1
         with alive_bar(item_total, dual_line=True, title="Poster Reset - Plex") as bar:
             for item in items:
@@ -165,13 +175,13 @@ for lib in LIB_ARRAY:
                 if id_array.count(f"{item.ratingKey}") == 0:
                     item_title = get_log_title(item)
                     try:
-                        bar_and_log(bar, f"-> starting: {item_title}")
+                        blogger(f"-> starting: {item_title}", 'info', 'a', bar)
                         pp = None
                         local_file = None
 
-                        bar_and_log(bar, f"-> getting posters: {item_title}")
+                        blogger(f"-> getting posters: {item_title}", 'info', 'a', bar)
                         posters = item.posters()
-                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
+                        blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                         showPoster = pick_poster(posters, None)
                         
@@ -181,7 +191,7 @@ for lib in LIB_ARRAY:
                         sleep_for_a_while()
 
                         if REMOVE_LABELS:
-                            bar_and_log(bar, f"-> removing label {lbl}: {item_title}")
+                            blogger(f"-> removing label {lbl}: {item_title}", 'info', 'a', bar)
                             item.removeLabel(lbl, True)
 
                         track_completion(id_array, status_file, f"{item.ratingKey}")
@@ -190,17 +200,15 @@ for lib in LIB_ARRAY:
                             if RESET_SEASONS:
                                 # get seasons
                                 seasons = item.seasons()
-                                bar_and_log(bar, f"-> Plex has {len(seasons)} seasons for: {item_title}")
+                                blogger(f"-> Plex has {len(seasons)} seasons for: {item_title}", 'info', 'a', bar)
                                 # loop over all:
                                 for s in seasons:
                                     if id_array.count(f"{s.ratingKey}") == 0:
                                         item_title = get_log_title(s)
                                         # reset artwork
-                                        bar_and_log(bar, 
-                                            f"-> getting season posters: {item_title}"
-                                        )
+                                        blogger(f"-> getting season posters: {item_title}", 'info', 'a', bar)
                                         posters = s.posters()
-                                        bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
+                                        blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                                         seasonPoster = pick_poster(posters, showPoster)
                                         
@@ -219,10 +227,10 @@ for lib in LIB_ARRAY:
                                             if id_array.count(f"{e.ratingKey}") == 0:
                                                 item_title = get_log_title(e)
                                                 # reset artwork
-                                                bar_and_log(bar, f"-> getting episode posters: {item_title}")
+                                                blogger(f"-> getting episode posters: {item_title}", 'info', 'a', bar)
                                                 posters = e.posters()
 
-                                                bar_and_log(bar, f"-> Plex has {len(posters)} posters for: {item_title}")
+                                                blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                                                 episodePoster = pick_poster(posters, None)
 
@@ -234,7 +242,7 @@ for lib in LIB_ARRAY:
                                                 track_completion(id_array, status_file, f"{e.ratingKey}")
 
                     except Exception as ex:
-                        print_and_log(f'Exception processing "{item.title}": {ex}')
+                        plogger(f'Exception processing "{item.title}": {ex}', 'info', 'a')
 
                     bar()
 
@@ -248,4 +256,4 @@ for lib in LIB_ARRAY:
 
 end = timer()
 elapsed = end - start
-print_and_log(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+plogger(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed:.2f} seconds.", 'info', 'a')

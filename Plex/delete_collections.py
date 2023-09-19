@@ -5,30 +5,31 @@ from dotenv import load_dotenv
 import time
 from helpers import get_plex, load_and_upgrade_env
 
-import logging
+from logs import setup_logger, plogger, blogger, logger
+
 from pathlib import Path
 from datetime import datetime
+
+SCRIPT_NAME = Path(__file__).stem
+
+VERSION = "0.1.0"
+
 # current dateTime
 now = datetime.now()
 
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-SCRIPT_NAME = Path(__file__).stem
-
 env_file_path = Path(".env")
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+setup_logger('activity_log', ACTIVITY_LOG)
 
-status = load_and_upgrade_env(env_file_path)
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+
+if load_and_upgrade_env(env_file_path) < 0:
+    exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -42,6 +43,8 @@ if LIBRARY_NAMES:
     LIB_ARRAY = LIBRARY_NAMES.split(",")
 else:
     LIB_ARRAY = [LIBRARY_NAME]
+
+plogger(f"Acting on libraries: {LIB_ARRAY}", 'info', 'a')
 
 if KEEP_COLLECTIONS:
     keeper_array = KEEP_COLLECTIONS.split(",")
