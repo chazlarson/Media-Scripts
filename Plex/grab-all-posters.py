@@ -62,6 +62,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
 #      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
 # FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
+# FIX  0.7.8 missed a couple logging.info calls
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -1054,7 +1055,7 @@ def rename_by_type(target):
                 extension = ".txt"
     else:
         extension = f".{kind.extension}"
-        logging.info(f"changing image extension to {extension} on {target}")
+        logger(f"changing image extension to {extension} on {target}", 'info', 'a')
         
     new_name = p.with_suffix(extension)
     
@@ -1081,10 +1082,10 @@ def rename_by_type(target):
     #     new_name = new_name.replace("None-local", "PMM-local")
 
     if "html" in extension:
-        logging.info(f"deleting html file {p}")
+        logger(f"deleting html file {p}", 'info', 'a')
         p.unlink()
     else:
-        logging.info(f"changing filename to {new_name} on {p}")
+        logger(f"changing filename to {new_name} on {p}", 'info', 'a')
         p.rename(new_name)
 
     return new_name
