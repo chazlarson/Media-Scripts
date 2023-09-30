@@ -19,7 +19,7 @@ import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, get_size, redact, validate_filename, load_and_upgrade_env)
+from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -36,6 +36,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # TODO: download to random number filename, rename at completion
 # possible bruteforce to avoid: 
 # on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
+# TODO: go dig around in the overlay backup folder to find the non-overlaid art
 
 # DONE 0.5.7: allowing skipping a library
 # 0.5.8: QOL, bugfixes
@@ -63,10 +64,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
 # FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
 # FIX  0.7.8 missed a couple logging.info calls
+#      0.7.9 Check for and optionally delete PMM-overlaid images
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.7"
+VERSION = "0.7.9"
 
 env_file_path = Path(".env")
 
@@ -192,6 +194,8 @@ ADD_SOURCE_EXIF_COMMENT = booler(os.getenv("ADD_SOURCE_EXIF_COMMENT"))
 SRC_ARRAY = []
 TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
 IGNORE_SHRINKING_LIBRARIES = booler(os.getenv("IGNORE_SHRINKING_LIBRARIES"))
+RETAIN_OVERLAID_IMAGES = booler(os.getenv("RETAIN_OVERLAID_IMAGES"))
+FIND_OVERLAID_IMAGES = booler(os.getenv("FIND_OVERLAID_IMAGES"))
 
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
@@ -1057,29 +1061,15 @@ def rename_by_type(target):
         extension = f".{kind.extension}"
         logger(f"changing image extension to {extension} on {target}", 'info', 'a')
         
+    # check for overlay exif tag
+    if FIND_OVERLAID_IMAGES:
+        overlaid = has_overlay(target)
+        logger(f"Found overlaid image: {target}", 'info', 'a')
+        if not RETAIN_OVERLAID_IMAGES and overlaid:
+            logger(f"Marking as JUNK: overlaid image: {target}", 'info', 'a')
+            extension = ".del"
+
     new_name = p.with_suffix(extension)
-    
-    # img = Image.open(target)
-    # exif_data = img._getexif()
-    # user_comment = None
-    # has_pmm_overlay = False
-
-    # if exif_data is not None:
-    #     for tag, value in exif_data.items():
-    #         tag_name = TAGS.get(tag, tag)
-
-    #         if isinstance(value, bytes):
-    #             value = value.decode("utf-8", errors="replace")
-
-    #         print(f"{tag_name}: {value}")
-
-    #         has_pmm_overlay = isinstance(value, str) and 'overlay' in value.lower()
-    # else:
-    #     print(f"No EXIF data in {target}")
-
-    # if has_pmm_overlay:
-    #     logging.info(f"changing image source to PMM on {target}")
-    #     new_name = new_name.replace("None-local", "PMM-local")
 
     if "html" in extension:
         logger(f"deleting html file {p}", 'info', 'a')

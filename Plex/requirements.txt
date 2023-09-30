@@ -10,3 +10,4 @@ imdbpy
 alive_progress
 piexif
 filetype
+pillow

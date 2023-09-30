@@ -11,12 +11,17 @@ import json
 import os
 from dotenv import load_dotenv, set_key, unset_key
 import shutil
+from PIL import Image
+
+def has_overlay(image_path):
+    with Image.open(image_path) as image:
+        exif_tags = image.getexif()
+    return (0x04bc in exif_tags and exif_tags[0x04bc] == "overlay")
 
 def booler(thing):
     if type(thing) == str:
         thing = eval(thing)
     return bool(thing)
-
 
 def redact(thing, badthing):
     return thing.replace(badthing, "(REDACTED)")
