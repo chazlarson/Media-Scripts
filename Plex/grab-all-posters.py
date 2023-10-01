@@ -65,10 +65,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
 # FIX  0.7.8 missed a couple logging.info calls
 #      0.7.9 Check for and optionally delete PMM-overlaid images
+#      0.8.0 Use asset naming if only current OR depth = 1
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.7.9"
+VERSION = "0.8.0"
 
 env_file_path = Path(".env")
 
@@ -490,7 +491,7 @@ def get_image_name(params, tgt_ext, background=False):
     safe_name, msg = validate_filename(item_title)
 
     if USE_ASSET_NAMING:
-        if ONLY_CURRENT:
+        if ONLY_CURRENT OR (POSTER_DEPTH == 1):
             base_name = f"{tgt_ext}"
         else:
             base_name = f"-{str(idx).zfill(3)}-{provider}-{source}{tgt_ext}"
