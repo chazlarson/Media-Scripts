@@ -66,10 +66,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # FIX  0.7.8 missed a couple logging.info calls
 #      0.7.9 Check for and optionally delete PMM-overlaid images
 #      0.8.0 Use asset naming if only current OR depth = 1
+#      0.8.1 or not OR
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 
 env_file_path = Path(".env")
 
