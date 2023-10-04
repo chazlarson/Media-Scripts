@@ -491,7 +491,7 @@ def get_image_name(params, tgt_ext, background=False):
     safe_name, msg = validate_filename(item_title)
 
     if USE_ASSET_NAMING:
-        if ONLY_CURRENT OR (POSTER_DEPTH == 1):
+        if ONLY_CURRENT or (POSTER_DEPTH == 1):
             base_name = f"{tgt_ext}"
         else:
             base_name = f"-{str(idx).zfill(3)}-{provider}-{source}{tgt_ext}"
