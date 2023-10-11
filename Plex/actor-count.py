@@ -94,6 +94,11 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in ALL_LIBS:
         LIB_ARRAY.append(lib.title.strip())
 
+def ascii_histogram(data) -> None:
+    """A horizontal frequency-table/histogram plot."""
+    for k in sorted(data):
+        print('{0} {1}'.format(k, '+' * data[k]))
+
 
 for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
@@ -102,6 +107,7 @@ for lib in LIB_ARRAY:
 
     item_total = len(items)
     print(f"looping over {item_total} items...")
+    print(f"tracking gender: {TRACK_GENDER}")
     item_count = 1
     cast_count = 0
     credit_count = 0
@@ -124,7 +130,7 @@ for lib in LIB_ARRAY:
                 cast_size = len(cast)
                 if cast_size < 2:
                     print(f"small cast - {item.title}: {cast_size}")
-                casts[f"{cast_size}"] += 1
+                casts[f"{cast_size:5d}"] += 1
                 total_cast += cast_size
                 average_cast = round(total_cast / item_count)
                 if cast_size > highwater_cast:
@@ -134,7 +140,7 @@ for lib in LIB_ARRAY:
                 bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast size {average_cast}")
                 for actor in cast:
                     # actor points to person
-                    gender = None
+                    gender = "n/a"
                     if TRACK_GENDER:
                         person = tmdb.person(actor.person_id)
                         gender = person.gender
@@ -172,6 +178,7 @@ for lib in LIB_ARRAY:
     print(f"Unique people: {len(actors)}")
     print(f"Unique cast counts: {len(casts)}")
     print(f"Longest cast list: {highwater_cast}")
+    print(f"Averag cast list: {average_cast}")
     print(f"Skipped {skip_count} non-actors")
     print(f"Total {credit_count} credits recorded")
     print(f"Top {TOP_COUNT} listed below")
@@ -181,3 +188,6 @@ for lib in LIB_ARRAY:
         if count < TOP_COUNT:
             print("{}\t{}".format(actor[1], actor[0]))
             count = count + 1
+
+    print("---\ncast sizes with relative frequency\n---")
+    ascii_histogram(casts)
