@@ -20,6 +20,9 @@ TMDB_GENDER_FEMALE = 1
 TMDB_GENDER_MALE = 2
 TMDB_GENDER_NONBINARY = 3
 
+JOB_ACTOR = "Actor"
+JOB_DIRECTOR = "Director"
+
 # DONE 0.1.0: refactoring, added version
 
 start = timer()
@@ -59,7 +62,7 @@ TMDB_KEY = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
-ACTORS_ONLY = booler(os.getenv("ACTORS_ONLY"))
+KNOWN_FOR_ONLY = booler(os.getenv("KNOWN_FOR_ONLY"))
 TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
 
 GENERATE_PMM_YAML = booler(os.getenv("GENERATE_PMM_YAML"))
@@ -70,7 +73,7 @@ MIN_GENDER_MALE = int(os.getenv("MIN_GENDER_MALE"))
 MIN_GENDER_NB = int(os.getenv("MIN_GENDER_NB"))
 
 if (MIN_GENDER_NONE + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB) > NUM_COLLECTIONS:
-    print("minimum geneder req uirements exceed number of collections")
+    print("minimum gender requirements exceed number of collections")
     exit(1)
 
 DELAY = int(os.getenv("DELAY"))
@@ -83,8 +86,8 @@ tmdb = TMDbAPIs(TMDB_KEY, language="en")
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
-actors = Counter()
-casts = Counter()
+people = Counter()
+lists = Counter()
 gender_none = Counter()
 gender_female = Counter()
 gender_male = Counter()
@@ -168,59 +171,64 @@ for lib in LIB_ARRAY:
     print(f"looping over {item_total} items...")
     print(f"tracking gender: {TRACK_GENDER}")
     item_count = 1
-    cast_count = 0
+    list_count = 0
     credit_count = 0
     skip_count = 0
-    highwater_cast = 0
-    total_cast = 0
-    average_cast = 0
+    highwater_list = 0
+    total_list = 0
+    average_list = 0
     with alive_bar(item_total, dual_line=True, title=f"Actor Count: {lib}") as bar:
         for item in items:
             tmpDict = {}
             tmdb_id, tvdb_id = getTID(item.guids)
             item_count = item_count + 1
             try:
-                cast = ""
+                list = ""
                 if item.TYPE == "show":
-                    cast = tmdb.tv_show(tmdb_id).cast
+                    media_item = tmdb.tv_show(tmdb_id)
                 else:
-                    cast = tmdb.movie(tmdb_id).cast
+                    media_item = tmdb.movie(tmdb_id)
+                if JOB_TYPE == JOB_DIRECTOR:
+                    list = media_item.crew
+                else:
+                    list = media_item.cast
+
                 count = 0
-                cast_size = len(cast)
+                list_size = len(list)
 
-                if cast_size < 2:
-                    print(f"small cast - {item.title}: {cast_size}")
-                casts[f"{cast_size:5d}"] += 1
-                total_cast += cast_size
-                average_cast = round(total_cast / item_count)
-                if cast_size > highwater_cast:
-                    highwater_cast = cast_size
-                    print(f"New cast size high water mark - {item.title}: {highwater_cast}")
+                if list_size < 2:
+                    print(f"small list - {item.title}: {list_size}")
+                lists[f"{list_size:5d}"] += 1
+                total_list += list_size
+                average_list = round(total_list / item_count)
+                if list_size > highwater_list:
+                    highwater_list = list_size
+                    print(f"New list size high water mark - {item.title}: {highwater_list}")
 
-                bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast {average_cast} counts: {len(actors)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
-                for actor in cast:
-                    # actor points to person
+                bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
+                for person in list:
+                    # person points to person
 
                     if count < CAST_DEPTH:
                         count = count + 1
-                        cast_count += 1
-                        the_key = f"{actor.name} - {actor.person_id} - {translate_gender(gender)}"
+                        list_count += 1
+                        the_key = f"{person.name} - {person.person_id} - {translate_gender(person.gender)}"
                         count_them = False
-                        if ACTORS_ONLY:
-                            if actor.known_for_department == "Acting":
+                        if KNOWN_FOR_ONLY:
+                            if person.known_for_department == "Acting":
                                 count_them = True
                             else:
                                 skip_count += 1
-                                print(f"Skipping {actor.name}: {actor.known_for_department}")
+                                print(f"Skipping {person.name}: {person.known_for_department}")
                         else:
                             count_them = True
 
                         if count_them:
-                            actors[the_key] += 1
+                            people[the_key] += 1
                             if TRACK_GENDER:
-                                track_gender(the_key, actor.gender)
+                                track_gender(the_key, person.gender)
                             credit_count += 1
-                            bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast {average_cast} counts: {len(actors)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
+                            bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
             except Exception as ex:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
@@ -233,86 +241,86 @@ for lib in LIB_ARRAY:
 
     end = timer()
     elapsed = end - start
-    print(f"Looked at {cast_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds.")
-    print(f"Unique people: {len(actors)}")
+    print(f"Looked at {list_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds.")
+    print(f"Unique people: {len(people)}")
     if TRACK_GENDER:
         print(f"'None' gender': {len(gender_none)}")
         print(f"'Female' gender': {len(gender_female)}")
         print(f"'Male' gender': {len(gender_male)}")
         print(f"'Nonbinary' gender': {len(gender_nonbinary)}")
-    print(f"Unique cast counts: {len(casts)}")
-    print(f"Longest cast list: {highwater_cast}")
-    print(f"Average cast list: {average_cast}")
-    print(f"Skipped {skip_count} non-actors")
+    print(f"Unique list counts: {len(lists)}")
+    print(f"Longest list list: {highwater_list}")
+    print(f"Average list list: {average_list}")
+    print(f"Skipped {skip_count} non-primary")
     print(f"Total {credit_count} credits recorded")
     print(f"Top {TOP_COUNT} listed below")
 
 
     count = 0
-    for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):
+    for person in sorted(people.items(), key=lambda x: x[1], reverse=True):
         if count < TOP_COUNT:
-            print("{}\t{}".format(actor[1], actor[0]))
+            print("{}\t{}".format(person[1], person[0]))
             count = count + 1
 
-    print("--------------------------------\ncast sizes with relative frequency\n--------------------------------")
-    ascii_histogram(casts)
+    print("--------------------------------\nlist sizes with relative frequency\n--------------------------------")
+    ascii_histogram(lists)
     print("--------------------------------\n")
     
     if GENERATE_PMM_YAML:
-        top_actors = Counter()
+        top_people = Counter()
 
         count = 0
         if MIN_GENDER_NONE > 0:
-            for actor in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
                 if count < MIN_GENDER_NONE:
-                    top_actors[actor[0]] = actor[1]
+                    top_people[person[0]] = person[1]
                     count = count + 1
 
         count = 0
         if MIN_GENDER_FEMALE > 0:
-            for actor in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
                 if count < MIN_GENDER_FEMALE:
-                    top_actors[actor[0]] = actor[1]
+                    top_people[person[0]] = person[1]
                     count = count + 1
 
         count = 0
         if MIN_GENDER_MALE > 0:
-            for actor in sorted(gender_male.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(gender_male.items(), key=lambda x: x[1], reverse=True):
                 if count < MIN_GENDER_MALE:
-                    top_actors[actor[0]] = actor[1]
+                    top_people[person[0]] = person[1]
                     count = count + 1
 
         count = 0
         if MIN_GENDER_NB > 0:
-            for actor in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
                 if count < MIN_GENDER_NB:
-                    top_actors[actor[0]] = actor[1]
+                    top_people[person[0]] = person[1]
                     count = count + 1
 
-        if len(top_actors) < NUM_COLLECTIONS:
-            for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):
-                if len(top_actors) == NUM_COLLECTIONS:
+        if len(top_people) < NUM_COLLECTIONS:
+            for person in sorted(people.items(), key=lambda x: x[1], reverse=True):
+                if len(top_people) == NUM_COLLECTIONS:
                     break
-                if actor[0] not in top_actors.keys():
-                    top_actors[actor[0]] = actor[1]
+                if person[0] not in top_people.keys():
+                    top_people[person[0]] = person[1]
 
         print(f"--------------------------------")
         collection_string = "- pmm: actor\n  template_variables:\n    include:\n"
-        print(f"Top {NUM_COLLECTIONS} actors with genders accounted for")
-        for actor in sorted(top_actors.items(), key=lambda x: x[1], reverse=True):
+        print(f"Top {NUM_COLLECTIONS} people with genders accounted for")
+        for person in sorted(top_people.items(), key=lambda x: x[1], reverse=True):
             if count < TOP_COUNT:
-                print("{}\t{}".format(actor[1], actor[0]))
-                bits = actor[0].split(' - ')
+                print("{}\t{}".format(person[1], person[0]))
+                bits = person[0].split(' - ')
                 collection_string = f"{collection_string}        - {bits[0]}\n"
                 count = count + 1
 
         print(f"--------------------------------")
         
         print(f"Creating {NUM_COLLECTIONS} with:")
-        print(f"Minimum {MIN_GENDER_FEMALE} female actors if possible")
-        print(f"Minimum {MIN_GENDER_MALE} male actors if possible")
-        print(f"Minimum {MIN_GENDER_NB} non-binary actors if possible")
-        print(f"Minimum {MIN_GENDER_NONE} no-gender-available actors if possible")
+        print(f"Minimum {MIN_GENDER_FEMALE} female people if possible")
+        print(f"Minimum {MIN_GENDER_MALE} male people if possible")
+        print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
+        print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
         
         print(f"--- YAML FOR PMM config.yml ----")
         
