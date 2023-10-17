@@ -49,6 +49,8 @@ ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve O
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
+FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
+RETAIN_OVERLAID_IMAGES=0                     # keep images that have the PMM overlay EXIF tag 
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
@@ -316,6 +318,8 @@ ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve O
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
+FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
+RETAIN_OVERLAID_IMAGES=0                     # keep images that have the PMM overlay EXIF tag 
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
@@ -358,11 +362,15 @@ If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY 
 
 If "TRACK_URLS" is `1`, the script will track every URL it downloads in a sqlite database.  On future runs, if a given URL is found in that database it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.
 
-If "TRACK_COMPLETION" is `1`, the script record collections/movies/shows/seasons/episodes by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the thing is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all the images for a thing only to determine that it's already downloaded all of them.  HOWEVER, this also means that if you increase `POSTER_DEPTH`, those additional images won't be picked up when you run the script again, since the item will be marked as complete.
+If "TRACK_COMPLETION" is `1`, the script records collections/movies/shows/seasons/episodes by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the thing is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all the images for a thing only to determine that it's already downloaded all of them.  HOWEVER, this also means that if you increase `POSTER_DEPTH`, those additional images won't be picked up when you run the script again, since the item will be marked as complete.
 
 The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script assumes a last run date of today - `DEFAULT_YEARS_BACK`.
 
 You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for a given library.  If you want to reset the whole thing, delete `mediascripts.sqlite`.
+
+If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates PMM created it.  If found, the image is deleted.  You can override the deletiong with `RETAIN_OVERLAID_IMAGES`.
+
+If "RETAIN_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
 
 ### Usage
 1. setup as above
@@ -473,7 +481,7 @@ Use PMM Asset-directory naming, movies and TV in a single directory, split by it
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=0
-ONLY_CURRENT=1
+ONLY_CURRENT=1 OR POSTER_DEPTH=1
 
 assets
 ├── Adam-12 (1968) {tvdb-78686}
@@ -516,7 +524,7 @@ Use PMM Asset-directory naming, split by Plex library name, split by item name:
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=1
+ONLY_CURRENT=1 OR POSTER_DEPTH=1
 
 assets
 ├── One Movie
@@ -540,7 +548,7 @@ Use PMM Asset-directory naming, split by Plex library name, split by first lette
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
 ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=1
+ONLY_CURRENT=1 OR POSTER_DEPTH=1
 USE_ASSET_SUBFOLDERS=1
 
 assets
