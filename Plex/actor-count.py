@@ -64,6 +64,7 @@ CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
 KNOWN_FOR_ONLY = booler(os.getenv("KNOWN_FOR_ONLY"))
 TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
+JOB_TYPE = booler(os.getenv("JOB_TYPE"))
 
 GENERATE_PMM_YAML = booler(os.getenv("GENERATE_PMM_YAML"))
 NUM_COLLECTIONS = int(os.getenv("NUM_COLLECTIONS"))
