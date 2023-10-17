@@ -113,6 +113,13 @@ REFRESH_1970_ONLY=1                          # If 1, only refresh things that ha
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
 ACTORS_ONLY=0                                # ignore cast members who are not primarily known as actors
+TRACK_GENDER=1                               # Pay attention to actor gender [as recorded on TMDB]
+BUILD_COLLECTIONS=0                          # build yaml for PMM config.yml
+NUM_COLLECTIONS=20                           # this many actors in PMM yaml
+MIN_GENDER_NONE = 5                          # include minimum this many "none" gendered actors in the YAML, if possible
+MIN_GENDER_FEMALE = 5                        # include minimum this many "female" gendered actors in the YAML, if possible
+MIN_GENDER_MALE = 5                          # include minimum this many "male" gendered actors in the YAML, if possible
+MIN_GENDER_NB = 5                            # include minimum this many "non-binary" gendered actors in the YAML, if possible
 ```
 
 ## Scripts:
@@ -740,6 +747,12 @@ Script-specific variables in .env:
 CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 ACTORS_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
+BUILD_COLLECTIONS=0             # build yaml for PMM config.yml
+NUM_COLLECTIONS=20              # this many actors in PMM yaml
+MIN_GENDER_NONE = 5             # include minimum this many "none" gendered actors in the YAML, if possible
+MIN_GENDER_FEMALE = 5           # include minimum this many "female" gendered actors in the YAML, if possible
+MIN_GENDER_MALE = 5             # include minimum this many "male" gendered actors in the YAML, if possible
+MIN_GENDER_NB = 5               # include minimum this many "non-binary" gendered actors in the YAML, if possible
 ```
 
 `CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
@@ -748,6 +761,17 @@ ACTORS_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTIN
 
 Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `ACTORS_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
 
+`BUILD_COLLECTIONS` will make the script build some YAML to paste into your Plex-Meta-Manager config file to generate collections.
+
+`NUM_COLLECTIONS` controls the number of collections in that YAML
+
+`TRACK_GENDER` controls whether the script pays attention to actor gender
+
+`MIN_GENDER_*` control the minimum number of that gender [as recorded by TMDB] actor to include in the list [provided `TRACK_GENDER=1`]
+
+Actors are sorted into lists by the four genders recorded at TMDB.  The top `MIN_GENDER_*` for each are added to the final list, then if there is space left over the remainder is filled from the master actor list.
+
+If the four `MIN_GENDER_*` sum to more than `NUM_COLLECTIONS`, the script exists with an error.
 ### Usage
 1. setup as above
 1. Run with `python actor-count.py`
@@ -760,7 +784,7 @@ looping over 1996 items...
 [======----------------------------------] 15.0% ... Captain America: Civil War    
 ```
 
-It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT.
+It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
 
 Sample results for the library above:
 

@@ -235,10 +235,11 @@ for lib in LIB_ARRAY:
     elapsed = end - start
     print(f"Looked at {cast_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds.")
     print(f"Unique people: {len(actors)}")
-    print(f"'None' gender': {len(gender_none)}")
-    print(f"'Female' gender': {len(gender_female)}")
-    print(f"'Male' gender': {len(gender_male)}")
-    print(f"'Nonbinary' gender': {len(gender_nonbinary)}")
+    if TRACK_GENDER:
+        print(f"'None' gender': {len(gender_none)}")
+        print(f"'Female' gender': {len(gender_female)}")
+        print(f"'Male' gender': {len(gender_male)}")
+        print(f"'Nonbinary' gender': {len(gender_nonbinary)}")
     print(f"Unique cast counts: {len(casts)}")
     print(f"Longest cast list: {highwater_cast}")
     print(f"Average cast list: {average_cast}")
