@@ -15,6 +15,11 @@ from tmdbapis import TMDbAPIs
 from helpers import booler, get_size, get_all_from_library, get_ids, get_letter_dir, get_plex, redact, validate_filename, load_and_upgrade_env
 from logs import setup_logger, plogger, blogger, logger
 
+TMDB_GENDER_NOT_SET = 0
+TMDB_GENDER_FEMALE = 1
+TMDB_GENDER_MALE = 2
+TMDB_GENDER_NONBINARY = 3
+
 # DONE 0.1.0: refactoring, added version
 
 start = timer()
@@ -57,6 +62,16 @@ TOP_COUNT = int(os.getenv("TOP_COUNT"))
 ACTORS_ONLY = booler(os.getenv("ACTORS_ONLY"))
 TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
 
+NUM_COLLECTIONS = int(os.getenv("NUM_COLLECTIONS"))
+MIN_GENDER_NONE = int(os.getenv("MIN_GENDER_NONE"))
+MIN_GENDER_FEMALE = int(os.getenv("MIN_GENDER_FEMALE"))
+MIN_GENDER_MALE = int(os.getenv("MIN_GENDER_MALE"))
+MIN_GENDER_NB = int(os.getenv("MIN_GENDER_NB"))
+
+if (MIN_GENDER_NONE + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB) > NUM_COLLECTIONS:
+    print("minimum geneder req uirements exceed number of collections")
+    exit(1)
+
 DELAY = int(os.getenv("DELAY"))
 
 if not DELAY:
@@ -69,6 +84,36 @@ tvdb_str = "tvdb://"
 
 actors = Counter()
 casts = Counter()
+gender_none = Counter()
+gender_female = Counter()
+gender_male = Counter()
+gender_nonbinary = Counter()
+
+def track_gender(the_key, gender):
+    if gender == TMDB_GENDER_NOT_SET:
+        gender_none[the_key] += 1
+        
+    if gender == TMDB_GENDER_FEMALE:
+        gender_female[the_key] += 1
+        
+    if gender == TMDB_GENDER_MALE:
+        gender_male[the_key] += 1
+        
+    if gender == TMDB_GENDER_NONBINARY:
+        gender_nonbinary[the_key] += 1
+
+def translate_gender(gender):
+    if gender == TMDB_GENDER_NOT_SET:
+        return 'Unknown/Not set'
+        
+    if gender == TMDB_GENDER_FEMALE:
+        return 'Female'
+        
+    if gender == TMDB_GENDER_MALE:
+        return 'Male'
+        
+    if gender == TMDB_GENDER_NONBINARY:
+        return 'Non-binary'
 
 def getTID(theList):
     tmid = None
@@ -128,6 +173,7 @@ for lib in LIB_ARRAY:
                     cast = tmdb.movie(tmdb_id).cast
                 count = 0
                 cast_size = len(cast)
+
                 if cast_size < 2:
                     print(f"small cast - {item.title}: {cast_size}")
                 casts[f"{cast_size:5d}"] += 1
@@ -137,18 +183,15 @@ for lib in LIB_ARRAY:
                     highwater_cast = cast_size
                     print(f"New cast size high water mark - {item.title}: {highwater_cast}")
 
-                bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast size {average_cast}")
+                bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast {average_cast} counts: {len(actors)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
                 for actor in cast:
                     # actor points to person
-                    gender = "n/a"
-                    if TRACK_GENDER:
-                        person = tmdb.person(actor.person_id)
-                        gender = person.gender
+                    gender = actor.gender
 
                     if count < CAST_DEPTH:
                         count = count + 1
                         cast_count += 1
-                        the_key = f"{actor.name} - {actor.person_id} - {gender}"
+                        the_key = f"{actor.name} - {actor.person_id} - {translate_gender(gender)}"
                         count_them = False
                         if ACTORS_ONLY:
                             if actor.known_for_department == "Acting":
@@ -161,7 +204,9 @@ for lib in LIB_ARRAY:
 
                         if count_them:
                             actors[the_key] += 1
+                            track_gender(the_key, gender)
                             credit_count += 1
+                            bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < cast_size else cast_size} of {cast_size} from {item.title} - average cast {average_cast} counts: {len(actors)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
             except Exception as ex:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
@@ -176,18 +221,109 @@ for lib in LIB_ARRAY:
     elapsed = end - start
     print(f"Looked at {cast_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds.")
     print(f"Unique people: {len(actors)}")
+    print(f"'None' gender': {len(gender_none)}")
+    print(f"'Female' gender': {len(gender_female)}")
+    print(f"'Male' gender': {len(gender_male)}")
+    print(f"'Nonbinary' gender': {len(gender_nonbinary)}")
     print(f"Unique cast counts: {len(casts)}")
     print(f"Longest cast list: {highwater_cast}")
-    print(f"Averag cast list: {average_cast}")
+    print(f"Average cast list: {average_cast}")
     print(f"Skipped {skip_count} non-actors")
     print(f"Total {credit_count} credits recorded")
     print(f"Top {TOP_COUNT} listed below")
+
 
     count = 0
     for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):
         if count < TOP_COUNT:
             print("{}\t{}".format(actor[1], actor[0]))
             count = count + 1
+
+    top_actors = Counter()
+
+    top_gender_none = Counter()
+    top_gender_female = Counter()
+    top_gender_male = Counter()
+    top_gender_nonbinary = Counter()
+
+    count = 0
+    for actor in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
+        if count < MIN_GENDER_NONE:
+            top_actors[actor[0]] = actor[1]
+            count = count + 1
+
+    count = 0
+    for actor in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
+        if count < MIN_GENDER_FEMALE:
+            top_actors[actor[0]] = actor[1]
+            count = count + 1
+
+    count = 0
+    for actor in sorted(gender_male.items(), key=lambda x: x[1], reverse=True):
+        if count < MIN_GENDER_MALE:
+            top_actors[actor[0]] = actor[1]
+            count = count + 1
+
+    count = 0
+    for actor in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
+        if count < MIN_GENDER_NB:
+            top_actors[actor[0]] = actor[1]
+            count = count + 1
+
+    if len(top_actors) < NUM_COLLECTIONS:
+        for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):
+            if len(top_actors) == NUM_COLLECTIONS:
+                break
+            if actor[0] not in top_actors.keys():
+                top_actors[actor[0]] = actor[1]
+
+    print(f"--------------------------------")
+    collection_string = "- pmm: actor\n  template_variables:\n    include:\n"
+    print(f"Top {NUM_COLLECTIONS} actors with genders accounted for")
+    for actor in sorted(top_actors.items(), key=lambda x: x[1], reverse=True):
+        if count < TOP_COUNT:
+            print("{}\t{}".format(actor[1], actor[0]))
+            bits = actor[0].split(' - ')
+            collection_string = f"{collection_string}        - {bits[0]}\n"
+            count = count + 1
+
+    print(f"--------------------------------")
+    
+    print(f"Creating {NUM_COLLECTIONS} with:")
+    print(f"Minimum {MIN_GENDER_FEMALE} female actors if possible")
+    print(f"Minimum {MIN_GENDER_MALE} male actors if possible")
+    print(f"Minimum {MIN_GENDER_NB} non-binary actors if possible")
+    print(f"Minimum {MIN_GENDER_NONE} no-gender-available actors if possible")
+    
+    print(f"--- YAML FOR PMM config.yml ----")
+    
+    print(collection_string)
+
+    print(f"--- END YAML -------------------")
+    # - pmm: actor
+    #   template_variables:
+    #     include:
+    #         - Evangeline Lilly
+    #         - Abby Ryder Fortson
+    #         - Miranda Cosgrove
+    #         - Dana Gaier
+    #         - Elsie Fisher
+    #         - Paul Rudd
+    #         - Michael Douglas
+    #         - Corey Stoll
+    #         - David Dastmalchian
+    #         - Gregg Turkington
+    #         - Steve Carell
+    #         - Russell Brand
+    #         - Kristen Wiig
+    #         - Pierre Coffin
+    #         - Chris Renaud
+    #         - Micha R. Scholze
+    #         - Birgit Berthold
+    #         - Cyril Čechák
+    #         - Marek Simbersky
+    #         - Erzsebet Foldi
+
 
     print("---\ncast sizes with relative frequency\n---")
     ascii_histogram(casts)
