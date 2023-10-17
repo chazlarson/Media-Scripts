@@ -116,6 +116,19 @@ def translate_gender(gender):
     if gender == TMDB_GENDER_NONBINARY:
         return 'Non-binary'
 
+def reverse_gender(gender_str):
+    if gender_str == 'Unknown/Not set':
+        return TMDB_GENDER_NOT_SET
+        
+    if gender_str == 'Female':
+        return TMDB_GENDER_FEMALE
+        
+    if gender_str == 'Male':
+        return TMDB_GENDER_MALE
+        
+    if gender_str == 'Non-binary':
+        return TMDB_GENDER_NONBINARY
+
 def getTID(theList):
     tmid = None
     tvid = None
@@ -248,28 +261,32 @@ for lib in LIB_ARRAY:
         top_actors = Counter()
 
         count = 0
-        for actor in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
-            if count < MIN_GENDER_NONE:
-                top_actors[actor[0]] = actor[1]
-                count = count + 1
+        if MIN_GENDER_NONE > 0:
+            for actor in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
+                if count < MIN_GENDER_NONE:
+                    top_actors[actor[0]] = actor[1]
+                    count = count + 1
 
         count = 0
-        for actor in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
-            if count < MIN_GENDER_FEMALE:
-                top_actors[actor[0]] = actor[1]
-                count = count + 1
+        if MIN_GENDER_FEMALE > 0:
+            for actor in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
+                if count < MIN_GENDER_FEMALE:
+                    top_actors[actor[0]] = actor[1]
+                    count = count + 1
 
         count = 0
-        for actor in sorted(gender_male.items(), key=lambda x: x[1], reverse=True):
-            if count < MIN_GENDER_MALE:
-                top_actors[actor[0]] = actor[1]
-                count = count + 1
+        if MIN_GENDER_MALE > 0:
+            for actor in sorted(gender_male.items(), key=lambda x: x[1], reverse=True):
+                if count < MIN_GENDER_MALE:
+                    top_actors[actor[0]] = actor[1]
+                    count = count + 1
 
         count = 0
-        for actor in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
-            if count < MIN_GENDER_NB:
-                top_actors[actor[0]] = actor[1]
-                count = count + 1
+        if MIN_GENDER_NB > 0:
+            for actor in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
+                if count < MIN_GENDER_NB:
+                    top_actors[actor[0]] = actor[1]
+                    count = count + 1
 
         if len(top_actors) < NUM_COLLECTIONS:
             for actor in sorted(actors.items(), key=lambda x: x[1], reverse=True):
