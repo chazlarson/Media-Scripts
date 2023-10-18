@@ -67,6 +67,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.7.9 Check for and optionally delete PMM-overlaid images
 #      0.8.0 Use asset naming if only current OR depth = 1
 #      0.8.1 or not OR
+#      0.8.2 look for and handle TCM-overlaid images
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -198,6 +199,13 @@ TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
 IGNORE_SHRINKING_LIBRARIES = booler(os.getenv("IGNORE_SHRINKING_LIBRARIES"))
 RETAIN_OVERLAID_IMAGES = booler(os.getenv("RETAIN_OVERLAID_IMAGES"))
 FIND_OVERLAID_IMAGES = booler(os.getenv("FIND_OVERLAID_IMAGES"))
+RETAIN_PMM_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
+RETAIN_TCM_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
+
+if RETAIN_OVERLAID_IMAGES:
+    RETAIN_PMM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
+    RETAIN_TCM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
+
 
 if not USE_ASSET_NAMING:
     USE_ASSET_FOLDERS = False
@@ -706,7 +714,7 @@ class poster_placeholder:
 def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
     global SCRIPT_STRING
 
-    superchat(f"entering get_art {item}, {artwork_path}, {tmid}, {tvid}, {uuid}, {lib_title}", 'info', 'a')
+    superchat(f"entering get_art {item.title}, {artwork_path}, {tmid}, {tvid}, {uuid}, {lib_title}", 'info', 'a')
 
     attempts = 0
     if ONLY_CURRENT:
@@ -1065,10 +1073,15 @@ def rename_by_type(target):
         
     # check for overlay exif tag
     if FIND_OVERLAID_IMAGES:
-        overlaid = has_overlay(target)
-        logger(f"Found overlaid image: {target}", 'info', 'a')
-        if not RETAIN_OVERLAID_IMAGES and overlaid:
-            logger(f"Marking as JUNK: overlaid image: {target}", 'info', 'a')
+        pmm_overlay, tcm_overlay = has_overlay(target)
+        if pmm_overlay or tcm_overlay:
+            logger(f"pmm_overlay: {pmm_overlay}, tcm_overlay: {tcm_overlay} on image: {target}", 'info', 'a')
+
+        if not RETAIN_PMM_OVERLAID_IMAGES and pmm_overlay:
+            logger(f"Marking as JUNK: PMM-overlaid image: {target}", 'info', 'a')
+            extension = ".del"
+        if not RETAIN_TCM_OVERLAID_IMAGES and tcm_overlay:
+            logger(f"Marking as JUNK: TCM-overlaid image: {target}", 'info', 'a')
             extension = ".del"
 
     new_name = p.with_suffix(extension)
