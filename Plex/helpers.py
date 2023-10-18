@@ -15,8 +15,16 @@ from PIL import Image
 
 def has_overlay(image_path):
     with Image.open(image_path) as image:
-        exif_tags = image.getexif()
-    return (0x04bc in exif_tags and exif_tags[0x04bc] == "overlay")
+        exif_data = image._getexif()  # Use _getexif() to get the raw EXIF data
+
+    if exif_data is None:
+        return False
+
+    # Check if the desired tags exist and have the correct values
+    overlay_tag_present = 0x04bc in exif_data and exif_data[0x04bc] == "overlay"
+    titlecard_tag_present = 0x4242 in exif_data and exif_data[0x4242] == "titlecard"
+
+    return overlay_tag_present or titlecard_tag_present
 
 def booler(thing):
     if type(thing) == str:
