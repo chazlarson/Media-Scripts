@@ -14,9 +14,15 @@ import shutil
 from PIL import Image
 
 def has_overlay(image_path):
+    pmm_overlay = False
+    tcm_overlay = False
+    
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
-    return (0x04bc in exif_tags and exif_tags[0x04bc] == "overlay")
+        pmm_overlay = exif_tags is not None and 0x04bc in exif_tags and exif_tags[0x04bc] == "overlay"
+        tcm_overlay = exif_tags is not None and 0x4242 in exif_tags and exif_tags[0x4242] == "titlecard"
+
+    return pmm_overlay, tcm_overlay
 
 def booler(thing):
     if type(thing) == str:
