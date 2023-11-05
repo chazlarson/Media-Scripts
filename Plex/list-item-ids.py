@@ -225,7 +225,7 @@ for lib in LIB_ARRAY:
                                 try:
                                     imdbid, tmid, tvid = get_ids(item.guids, None)
                                     if the_lib.TYPE == 'movie':
-                                        plogger(f"tem {item_count : >5}/{item_total : >5} | TMDb ID: {tmid : >7}    | IMDb ID: {imdbid : >10}  | {item.title}", 'info', 'a')
+                                        plogger(f"item {item_count : >5}/{item_total : >5} | TMDb ID: {tmid : >7}    | IMDb ID: {imdbid : >10}  | {item.title}", 'info', 'a')
                                     else:
                                         plogger(f"item {item_count : >5}/{item_total : >5} | TVDb ID: {tvid : >6}    | IMDb ID: {imdbid : >10}  | {item.title}", 'info', 'a')
 
