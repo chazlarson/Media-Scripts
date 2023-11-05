@@ -98,6 +98,10 @@ FLUSH_STATUS_AT_START=0                      # Delete the reset progress file at
 RESET_SEASONS_WITH_SERIES=0                  # If there isn't a season poster, use the series poster
 DRY_RUN=0                                    # [currently only works with reset-posters-*]; don't actually do anything, just log
 
+# LIST ITEM IDS ENV VARS
+INCLUDE_COLLECTION_MEMBERS=0
+ONLY_COLLECTION_MEMBERS=0
+
 # DELETE_COLLECTION ENV VARS
 KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
 
@@ -114,7 +118,7 @@ REFRESH_1970_ONLY=1                          # If 1, only refresh things that ha
 # ACTOR ENV VARS
 CAST_DEPTH=20                                # how deep to go into the cast for actor collections
 TOP_COUNT=10                                 # how many actors to export
-ACTORS_ONLY=0                                # ignore cast members who are not primarily known as actors
+KNOWN_FOR_ONLY=0                                # ignore cast members who are not primarily known as actors
 TRACK_GENDER=1                               # Pay attention to actor gender [as recorded on TMDB]
 BUILD_COLLECTIONS=0                          # build yaml for PMM config.yml
 NUM_COLLECTIONS=20                           # this many actors in PMM yaml
@@ -136,6 +140,7 @@ MIN_GENDER_NB = 5                            # include minimum this many "non-bi
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
 1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
+1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 
 ## adjust-added-dates.py
@@ -742,6 +747,37 @@ looping over 2964 items...
 [========================================] 100.0% ... Ōkami Shōnen Ken - DONE
 ```
 
+## list-item-ids.py
+
+Perhaps you want a list of all the IDs of everything in your libraries or collections.
+
+This script wil output this data into its log file:
+```
+on 0: INFO: 11/05/2023 05:03:04 PM This collection is called New Episodes
+on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     1/  125 | TVDb ID: 411029    | IMDb ID: tt15320362  | All the Light We Cannot See
+on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     2/  125 | TVDb ID: 421526    | IMDb ID: tt15475330  | Black Cake
+on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     3/  125 | TVDb ID: 419379    | IMDb ID: tt15384586  | Fellow Travelers
+on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     4/  125 | TVDb ID: 439494    | IMDb ID: tt10270200  | The Vanishing Triangle
+```
+or 
+```
+on 5782: INFO: 11/05/2023 05:07:49 PM tem  5782/ 5786 | TMDb ID:   9398    | IMDb ID:  tt0196229  | Zoolander
+on 5783: INFO: 11/05/2023 05:07:49 PM tem  5783/ 5786 | TMDb ID: 329833    | IMDb ID:  tt1608290  | Zoolander 2
+on 5784: INFO: 11/05/2023 05:07:49 PM tem  5784/ 5786 | TMDb ID: 269149    | IMDb ID:  tt2948356  | Zootopia
+```
+
+env vars are the same as grab-all-posters.py for the most part [where they apply], except for:
+```
+INCLUDE_COLLECTION_MEMBERS=0
+ONLY_COLLECTION_MEMBERS=0
+```
+
+Which probably do about what you'd expect.
+
+### Usage
+1. setup as above
+2. Run with `python list-item-ids.py`
+
 ## actor-count.py
 
 Perhaps you want a list of actors with a count of how many movies from your libraries they have been in.
@@ -754,7 +790,7 @@ Script-specific variables in .env:
 ```
 CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
-ACTORS_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
+KNOWN_FOR_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
 BUILD_COLLECTIONS=0             # build yaml for PMM config.yml
 NUM_COLLECTIONS=20              # this many actors in PMM yaml
 MIN_GENDER_NONE = 5             # include minimum this many "none" gendered actors in the YAML, if possible
@@ -767,7 +803,7 @@ MIN_GENDER_NB = 5               # include minimum this many "non-binary" gendere
 
 `TOP_COUNT` is the number of actors to show in the list at the end.
 
-Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `ACTORS_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
+Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `KNOWN_FOR_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
 
 `BUILD_COLLECTIONS` will make the script build some YAML to paste into your Plex-Meta-Manager config file to generate collections.
 
