@@ -10,6 +10,8 @@
 **/*.sqlite
 
 Plex/movies
+**/Plex-Meta-Manager-Images
+**/Plex-Meta-Manager-Images-Overlaid
 **/assets
 **/config
 **/posters
