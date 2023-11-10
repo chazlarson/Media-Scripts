@@ -34,6 +34,7 @@ POSTER_CONSOLIDATE=1                         # if set to 0, posters are separate
 
 ## Scripts:
 1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
+1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
 1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
 1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
 
@@ -72,7 +73,48 @@ collections:
           - The Good Doctor
 ```
 
-But it can act as a starting point or recovery backup.
+## overlay-default-posters.py
+
+You want to apply an overlay to the default collection posters; perhaps for branding, perhaps you don't like the separators, whatever
+
+Here is a basic script to do that.
+
+### Usage
+1. setup as above
+1. create overlay images in `default_collection_overlays` [see README in that folder for notes.]
+1. Run with `overlay-default-posters.py`
+
+The script will clone or update the `Plex-Meta-Manager-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Plex-Meta-Manager-Images-Overlaid`, ready for you to use with the PMM Asset Directory [after moving them to that directory] or via template variables.
+
+It chooses the overlay by name based on the "group" that each collection is part of: 
+```
+Plex-Meta-Manager-Images
+├── aspect
+├── audio_language
+├── award
+├── based
+├── chart
+├── content_rating
+├── country
+├── decade
+├── franchise
+├── genre
+├── network
+├── playlist
+├── resolution
+├── seasonal
+├── separators
+├── streaming
+├── studio
+├── subtitle_language
+├── universe
+└── year
+```
+
+For example, all the `audio_language` collection posters will be overlaid by `Plex-Meta-Manager/default_collection_overlays/audio_language.png`.
+
+If there isn't a specific image for a "group", then `Plex-Meta-Manager/default_collection_overlays/overlay-template.png` will be used.
+
 
 ## pmm_trakt_auth.py
 

@@ -26,7 +26,7 @@ global_overlay_im = None
 
 if global_overlay.exists():
     print(f"Using {global_overlay} as global overlay")
-    global_overlay_im = Image.open(f"{LOCAL_FOLDER}/overlay.png")
+    global_overlay_im = Image.open(f"{global_overlay}")
     global_overlay_im = global_overlay_im.resize((2000, 3000), Image.Resampling.LANCZOS)
 
 def skip_this(path):
