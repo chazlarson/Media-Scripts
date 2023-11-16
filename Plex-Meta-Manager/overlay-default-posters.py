@@ -1,3 +1,4 @@
+from alive_progress import alive_bar
 import pathlib
 from pathlib import Path
 from git.repo.base import Repo, GitCommandError
@@ -7,6 +8,7 @@ IMAGE_REPO = "https://github.com/meisnate12/Plex-Meta-Manager-Images"
 LOCAL_FOLDER = "Plex-Meta-Manager-Images"
 OVERLAID_FOLDER = "Plex-Meta-Manager-Images-Overlaid"
 OVERLAY_SOURCE_FOLDER = "default_collection_overlays"
+OVERLAY_BASE_IMAGE = "overlay-template.png"
 
 theRepo = None
 theRepoPath = Path(LOCAL_FOLDER)
@@ -21,7 +23,7 @@ else:
     theRepo.remotes.origin.fetch()
     theRepo.remotes.origin.pull()
 
-global_overlay = Path(f"{OVERLAY_SOURCE_FOLDER}/overlay.png")
+global_overlay = Path(f"{OVERLAY_SOURCE_FOLDER}/{OVERLAY_BASE_IMAGE}")
 global_overlay_im = None
 
 if global_overlay.exists():
@@ -51,8 +53,19 @@ def skip_this(path):
 
     return ret_val
 
+target_paths = []
+
+print("building list of targets")
 for path in pathlib.Path(LOCAL_FOLDER).glob('**/*'):
     if not skip_this(path):
+        target_paths.append(path)
+
+item_total = len(target_paths)
+
+with alive_bar(item_total, dual_line=True, title='Applying overlays') as bar:
+    for path in target_paths:
+        bar.text(path)
+
         source_path = Path(path)
         target_path = Path(f"{path}".replace(LOCAL_FOLDER, OVERLAID_FOLDER))
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -63,10 +76,7 @@ for path in pathlib.Path(LOCAL_FOLDER).glob('**/*'):
             local_overlay = f"{OVERLAY_SOURCE_FOLDER}/{target_group}.png"
             local_overlay_im = Image.open(local_overlay)
             local_overlay_im = local_overlay_im.resize((2000, 3000), Image.Resampling.LANCZOS)
-            print(f"Using {local_overlay} as local overlay")
-
         except:
-            print(f"Using {global_overlay} as local overlay")
             local_overlay_im = global_overlay_im
 
         source_image = Image.open(source_path)
@@ -74,4 +84,4 @@ for path in pathlib.Path(LOCAL_FOLDER).glob('**/*'):
         source_image.paste(local_overlay_im, (0,0), local_overlay_im)
         source_image.save(target_path)
 
-        print(source_image.filename)
+        bar()
