@@ -115,6 +115,13 @@ For example, all the `audio_language` collection posters will be overlaid by `Pl
 
 If there isn't a specific image for a "group", then `Plex-Meta-Manager/default_collection_overlays/overlay-template.png` will be used.
 
+```
+Fetch/Pull on Plex-Meta-Manager-Images
+Using default_collection_overlays/overlay-template.png as global overlay
+building list of targets
+Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37) 
+Plex-Meta-Manager-Images/genre/Sword & Sandal.jpg
+```
 
 ## pmm_trakt_auth.py
 
