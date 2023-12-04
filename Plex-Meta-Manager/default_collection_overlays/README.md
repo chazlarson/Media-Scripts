@@ -1,10 +1,11 @@
-The `overlay-default-posters.py` will use images from this directory as overlays on the default collection posters.
+`overlay-default-posters.py` will use images from this directory as overlays on the default collection posters.
 
 The files here are intended as examples and were used during testing.  Most likely, you want to replace them with your own images.
 
 Assumptions:
 1. these images are 2000x3000 pixels [or a 1:1.5 aspect ratio; they are scaled to 2000x3000 at runtime]
 2. these images are named for the "groups" of collections as defined in the images repo [`aspect`, `audio_language`, etc]:
+
 ```
 Plex-Meta-Manager-Images
 ├── aspect
