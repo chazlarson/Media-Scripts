@@ -31,4 +31,6 @@ Plex-Meta-Manager-Images
 
 The image called `overlay-template.png` will be used as the fallback overlay in the event that one is missing.
 
+This means that if you want to apply the same overlay to all the default collections, you should delete all these files except for `overlay-template.png`.
+
 `generator.sh` is an example of a script that will generate the files from a template.
