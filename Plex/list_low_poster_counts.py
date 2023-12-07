@@ -137,7 +137,7 @@ for lib in LIB_ARRAY:
                 plex_links = []
                 external_links = []
 
-                with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
+                with alive_bar(item_total, dual_line=True, title=f"Low poster counts {the_lib.title}") as bar:
                     for item in items:
                         try:
                             all_posters = item.posters()
