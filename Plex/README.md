@@ -126,6 +126,9 @@ MIN_GENDER_NONE = 5                          # include minimum this many "none" 
 MIN_GENDER_FEMALE = 5                        # include minimum this many "female" gendered actors in the YAML, if possible
 MIN_GENDER_MALE = 5                          # include minimum this many "male" gendered actors in the YAML, if possible
 MIN_GENDER_NB = 5                            # include minimum this many "non-binary" gendered actors in the YAML, if possible
+
+# LOW POSTER COUNT
+POSTER_THRESHOLD=10
 ```
 
 ## Scripts:
@@ -142,6 +145,7 @@ MIN_GENDER_NB = 5                            # include minimum this many "non-bi
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
+1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
 
 ## adjust-added-dates.py
 
@@ -864,3 +868,26 @@ TOP_COUNT=10
 
 Note that the top ten changed dramatically due to looking deeper into the cast lists.
 
+## list_low_poster_counts.py
+
+Perhaps you want to know which movies have fewer than 4 posters avaiable in Plex.
+
+Script-specific variables in .env:
+```
+POSTER_THRESHOLD=10  # report items with fewer posters than this
+```
+
+### Usage
+1. setup as above
+2. Run with `python list_low_poster_counts.py`
+
+Starting list_low_poster_counts 0.1.0 at 2023-12-07 09:35:45
+connecting to https://plex.bing.bang...
+Loading Movies ...
+Completed loading 6171 of 6171 movie(s) from Movies
+on 15: 7 Plus Seven has 6 posters
+on 52: 21 Up has 4 posters
+on 77: 63 Up has 7 posters
+on 94: 1962 Halloween Massacre has 8 posters
+on 119: Ace in the Hole has 8 posters
+Grab all posters Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
