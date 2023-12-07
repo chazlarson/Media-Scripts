@@ -21,15 +21,20 @@ All these scripts use the same `.env` and requirements.
 
 ## Plex scripts:
 
+1. adjust-added-dates.py - fix broken added and perhaps originally available dates in your library
 1. user-emails.py - extract user emails from your shares
-2. reset-posters-tmdb.py - reset all artwork in a library to TMDB default
-3. reset-posters-plex.py - reset all artwork in a library to Plex default
-4. grab-all-posters.py - grab some or all of the artwork for a library from plex
-5. grab-all-status.py - grab watch status for all users all libraries from plex
-6. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
-7. show-all-playlists.py - Show contents of all user playlists
-8. delete-collections.py - delete most or all collections from one or more libraries
-9. refresh-metadata.py - Refresh metadata individually on items in a library
+1. reset-posters-tmdb.py - reset all artwork in a library to TMDB default
+1. reset-posters-plex.py - reset all artwork in a library to Plex default
+1. grab-all-IDs.py - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
+1. grab-all-posters.py - grab some or all of the artwork for a library from plex
+1. grab-all-status.py - grab watch status for all users all libraries from plex
+1. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
+1. show-all-playlists.py - Show contents of all user playlists
+1. delete-collections.py - delete most or all collections from one or more libraries
+1. refresh-metadata.py - Refresh metadata individually on items in a library
+1. list-item-ids.py - Generate a list of IDs in libraries and/or collections
+1. actor-count.py - Generate a list of actor credit counts
+1. list_low_poster_counts.py - Generate a list of items that have fewer than some number of posters in Plex
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
