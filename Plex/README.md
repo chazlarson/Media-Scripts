@@ -890,4 +890,4 @@ on 52: 21 Up has 4 posters
 on 77: 63 Up has 7 posters
 on 94: 1962 Halloween Massacre has 8 posters
 on 119: Ace in the Hole has 8 posters
-Grab all posters Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
+Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
