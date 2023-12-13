@@ -12,6 +12,7 @@ def last_artwork_run_table_create_query():
                                         );'''
 
 def add_last_run(uuid, name, level, last_run_date):
+    method_name = "add_last_run"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -44,12 +45,13 @@ def add_last_run(uuid, name, level, last_run_date):
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
 
 def get_last_run(uuid, level):
+    method_name = "get_last_run"
     last_run_date = None
 
     try:
@@ -73,7 +75,7 @@ def get_last_run(uuid, level):
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -81,6 +83,7 @@ def get_last_run(uuid, level):
     return last_run_date
 
 def reset_last_run():
+    method_name = "reset_last_run"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -96,7 +99,7 @@ def reset_last_run():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -114,6 +117,7 @@ def media_details_table_create_query():
                                         );'''
 
 def add_media_details(path, title, type, height, width, aspect_ratio, aspect_ratio_calc):
+    method_name = "add_media_details"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -137,12 +141,13 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
 
 def reset_media_details():
+    method_name = "reset_media_details"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -158,7 +163,7 @@ def reset_media_details():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -174,6 +179,7 @@ def url_tracking_table_create_query():
                                         );'''
 
 def add_url(url, uuid, title):
+    method_name = "add_url"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -196,12 +202,13 @@ def add_url(url, uuid, title):
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
 
 def check_url(url, uuid):
+    method_name = "check_url"
     known_url = False
 
     try:
@@ -225,7 +232,7 @@ def check_url(url, uuid):
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -233,6 +240,7 @@ def check_url(url, uuid):
     return known_url
 
 def reset_url_tracking():
+    method_name = "reset_url_tracking"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -248,7 +256,7 @@ def reset_url_tracking():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -263,6 +271,7 @@ def completion_tracking_table_create_query():
                                         );'''
 
 def add_key(rating_key, uuid, tracking):
+    method_name = "add_key"
     if tracking:
         try:
             sqliteConnection = sqlite3.connect('mediascripts.sqlite',
@@ -285,12 +294,13 @@ def add_key(rating_key, uuid, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
 
 def check_key(rating_key, uuid, tracking):
+    method_name = "check_key"
     known_key = False
 
     if tracking:
@@ -315,7 +325,7 @@ def check_key(rating_key, uuid, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
@@ -323,6 +333,7 @@ def check_key(rating_key, uuid, tracking):
     return known_key
 
 def reset_completion_tracking():
+    method_name = "reset_completion_tracking"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -338,7 +349,7 @@ def reset_completion_tracking():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -353,6 +364,7 @@ def rematch_tracking_table_create_query():
                                         );'''
 
 def add_rematch_key(rating_key, uuid, tracking):
+    method_name = "add_rematch_key"
     if tracking:
         try:
             sqliteConnection = sqlite3.connect('mediascripts.sqlite',
@@ -375,12 +387,13 @@ def add_rematch_key(rating_key, uuid, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
 
 def check_rematch_key(rating_key, uuid, tracking):
+    method_name = "check_rematch_key"
     known_key = False
 
     if tracking:
@@ -405,7 +418,7 @@ def check_rematch_key(rating_key, uuid, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
@@ -413,6 +426,7 @@ def check_rematch_key(rating_key, uuid, tracking):
     return known_key
 
 def reset_rematch_tracking():
+    method_name = "reset_rematch_tracking"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -428,7 +442,7 @@ def reset_rematch_tracking():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
@@ -444,6 +458,7 @@ def art_reset_tracking_table_create_query():
                                         );'''
 
 def add_art_reset_key(rating_key, uuid, source, tracking):
+    method_name = "add_art_reset_key"
     if tracking:
         try:
             sqliteConnection = sqlite3.connect('mediascripts.sqlite',
@@ -466,12 +481,13 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
 
 def check_art_reset_key(rating_key, uuid, source, tracking):
+    method_name = "check_art_reset_key"
     known_key = False
 
     if tracking:
@@ -496,7 +512,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
             cursor.close()
 
         except sqlite3.Error as error:
-            print("Error while working with SQLite", error)
+            print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
             if (sqliteConnection):
                 sqliteConnection.close()
@@ -504,6 +520,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
     return known_key
 
 def reset_art_reset_tracking():
+    method_name = "reset_art_reset_tracking"
     try:
         sqliteConnection = sqlite3.connect('mediascripts.sqlite',
                                            detect_types=sqlite3.PARSE_DECLTYPES |
@@ -519,7 +536,7 @@ def reset_art_reset_tracking():
         cursor.close()
 
     except sqlite3.Error as error:
-        print("Error while working with SQLite", error)
+        print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
