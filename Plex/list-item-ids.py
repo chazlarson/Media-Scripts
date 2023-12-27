@@ -222,12 +222,19 @@ for lib in LIB_ARRAY:
 
                         with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                             for item in items:
+                                if item.title == '90 Day Fiancé: Just Landed':
+                                    item.title = item.title
+                                    
                                 try:
                                     imdbid, tmid, tvid = get_ids(item.guids, None)
+                                    imdbid_format = f"{imdbid : >10}" if imdbid else "       N/A"
+                                    tmid_format = f"{tmid : >7}" if tmid else "    N/A"
+                                    tvid_format = f"{tvid : >6}" if imdbid else "   N/A"
+
                                     if the_lib.TYPE == 'movie':
-                                        plogger(f"item {item_count : >5}/{item_total : >5} | TMDb ID: {tmid : >7}    | IMDb ID: {imdbid : >10}  | {item.title}", 'info', 'a')
+                                        plogger(f"item {item_count : >5}/{item_total : >5} | TMDb ID: {tmid_format}    | IMDb ID: {imdbid_format}  | {item.title}", 'info', 'a')
                                     else:
-                                        plogger(f"item {item_count : >5}/{item_total : >5} | TVDb ID: {tvid : >6}    | IMDb ID: {imdbid : >10}  | {item.title}", 'info', 'a')
+                                        plogger(f"item {item_count : >5}/{item_total : >5} | TVDb ID: {tvid_format}    | IMDb ID: {imdbid_format}  | {item.title}", 'info', 'a')
 
                                     item_count += 1
                                 except Exception as ex:
