@@ -137,9 +137,23 @@ for lib in lib_array:
 
     metadatafile_path = Path(".", config_dir, f"{lib}-existing.yml")
 
-    yaml.round_trip_dump(
-        coll_obj,
-        open(metadatafile_path, "w", encoding="utf-8"),
-        indent=None,
-        block_seq_indent=2,
-    )
+
+    if ruamel.yaml.version_info < (0, 15):
+        # data = yaml.load(istream, Loader=yaml.CSafeLoader)
+        # yaml.round_trip_dump(data, ostream, width=1000, explicit_start=True)
+        yaml.round_trip_dump(
+            coll_obj,
+            open(metadatafile_path, "w", encoding="utf-8"),
+            indent=None,
+            block_seq_indent=2,
+        )
+    else:
+        # yml = ruamel.yaml.YAML(typ='safe')
+        # data = yml.load(istream)
+        ymlo = ruamel.yaml.YAML()   # or yaml.YAML(typ='rt')
+        ymlo.width = 1000
+        ymlo.explicit_start = True
+        ymlo.dump(coll_obj,
+            open(metadatafile_path, "w", encoding="utf-8")
+        )
+
