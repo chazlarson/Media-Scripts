@@ -202,7 +202,7 @@ def add_url(url, uuid, title):
         cursor.close()
 
     except sqlite3.Error as error:
-        print(f"Error while working with SQLite in {method_name}: ", error)
+        print(f"Error while working with SQLite in {method_name} ({url}, {uuid}, {title}): ", error)
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
