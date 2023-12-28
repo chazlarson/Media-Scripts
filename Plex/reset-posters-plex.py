@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from plexapi.exceptions import Unauthorized
 from logs import setup_logger, plogger, blogger, logger
 

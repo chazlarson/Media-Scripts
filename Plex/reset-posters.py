@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from plexapi.server import PlexServer
 import os
 from dotenv import load_dotenv

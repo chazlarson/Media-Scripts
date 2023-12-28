@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import json
 import os
 import pickle
@@ -98,10 +99,11 @@ for lib in LIB_ARRAY:
         plogger(f"Loading {lib} ...", 'info', 'a')
         the_lib = plex.library.section(lib)
         is_movie = the_lib.type == 'movie'
+        is_show = the_lib.type == 'show'
 
         if not is_movie:
             print("the script hasn't been tested with non-movie libraries, skipping.")
-            continue
+            # continue
 
         lib_size = the_lib.totalViewSize()
         
@@ -121,47 +123,77 @@ for lib in LIB_ARRAY:
 
             with alive_bar(item_total, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
                 for item in items:
-                    try:
-                        item_count += 1
-                        imdbid, tmid, tvid = get_ids(item.guids, None)
-                        added_too_far_apart = False
-                        orig_too_far_apart = False
-                        
-                        if is_movie:
-                            tmdb_item = tmdb.movie(tmid)
-                        else:
-                            tmdb_item = tmdb.tv_episode(tmid)
-                        release_date = tmdb_item.release_date
+                    if item.title == "McCloud":
+                        print(f"{item.title}")
 
-                        added_date = item.addedAt
-                        orig_date = item.originallyAvailableAt
-                        
-                        if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
-                            try:
-                                delta = added_date - release_date
-                                added_too_far_apart = abs(delta.days) > 1
-                            except:
-                                added_too_far_apart = added_date is None and release_date is not None
+                        try:
+                            item_count += 1
+                            added_too_far_apart = False
+                            orig_too_far_apart = False
+                            sub_items = [item]
 
-                            try:
-                                delta = orig_date - release_date
-                                orig_too_far_apart = abs(delta.days) > 1
-                            except:
-                                orig_too_far_apart = orig_date is None and release_date is not None
-                            
-                            if added_too_far_apart:
-                                blogger(f"Setting {item.title} added at to {release_date}", 'info', 'a', bar)
-                                item.editAddedAt(release_date)
+                            if is_show:
+                                episodes = item.episodes()
+                                sub_items = sub_items + episodes
+
+                            for sub_item in sub_items:
+                                try:
+                                    imdbid, tmid, tvid = get_ids(sub_item.guids, None)
+                                
+                                    if is_movie:
+                                        tmdb_item = tmdb.movie(tmid)
+                                        release_date = tmdb_item.release_date
+                                    else:
+                                        if sub_item.type == 'show':
+                                            tmdb_item = tmdb.tv_show(tmid)
+                                            release_date = tmdb_item.first_air_date
+                                        else:
+                                            parent_show = sub_item.show()
+                                            imdbid, tmid, tvid = get_ids(parent_show.guids, None)
+                                            season_num = sub_item.seasonNumber
+                                            episode_num = sub_item.episodeNumber
+                                
+                                            tmdb_item = tmdb.tv_episode(tmid, season_num, episode_num)
+                                            release_date = tmdb_item.air_date
+
+                                    added_date = item.addedAt
+                                    orig_date = item.originallyAvailableAt
+                                    
+                                    if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
+                                        try:
+                                            delta = added_date - release_date
+                                            added_too_far_apart = abs(delta.days) > 1
+                                        except:
+                                            added_too_far_apart = added_date is None and release_date is not None
+
+                                        try:
+                                            delta = orig_date - release_date
+                                            orig_too_far_apart = abs(delta.days) > 1
+                                        except:
+                                            orig_too_far_apart = orig_date is None and release_date is not None
+                                        
+                                        if added_too_far_apart:
+                                            try:
+                                                item.addedAt = release_date
+                                                blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
+                                            except Exception as ex:
+                                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                
+                                        if orig_too_far_apart:
+                                            try:
+                                                item.originallyAvailableAt = release_date
+                                                blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
+                                            except Exception as ex:
+                                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
         
-                            if orig_too_far_apart:
-                                blogger(f"Setting {item.title} originally available at to {release_date}", 'info', 'a', bar)
-                                item.editOriginallyAvailable(release_date)
-                        else:
-                            blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
+                                    else:
+                                        blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
 
+                                except Exception as ex:
+                                    plogger(f"Problem processing sub_item {item.title}; {ex}", 'info', 'a')
 
-                    except Exception as ex:
-                        plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                        except Exception as ex:
+                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                     bar()
                     

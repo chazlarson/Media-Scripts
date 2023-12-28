@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json
 import os
 import pickle
@@ -1116,7 +1118,7 @@ for lib in LIB_ARRAY:
             the_uuid = the_lib.uuid
             superchat(f"{the_lib} uuid {the_uuid}", 'info', 'a')
 
-            if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] != 'ALL_LIBRARIES':
+            if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == 'ALL_LIBRARIES':
                 plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
                 last_run_lib = fallback_date
             else:

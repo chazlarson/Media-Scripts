@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from alive_progress import alive_bar
 from plexapi.server import PlexServer
 from plexapi.exceptions import Unauthorized
