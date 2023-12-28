@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from plexapi.server import PlexServer
 from plexapi.exceptions import Unauthorized
 import os

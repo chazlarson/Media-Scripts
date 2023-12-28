@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 from alive_progress import alive_bar
 from plexapi.server import PlexServer
