@@ -16,3 +16,4 @@ filetype
 sqlalchemy<2.0
 tabulate
 validators
+pillow
