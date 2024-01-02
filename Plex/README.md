@@ -69,7 +69,7 @@ TRACK_COMPLETION=1                           # If set to 1, movies/shows are tra
 TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
 
 ## general
-POSTER_DOWNLOAD=1                            # if true, generate a script rather than downloading
+POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
                                              # 0 means "grab everything"
@@ -347,7 +347,7 @@ TRACK_COMPLETION=1                           # If set to 1, movies/shows are tra
 TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
 
 ## general
-POSTER_DOWNLOAD=1                            # if true, generate a script rather than downloading
+POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
                                              # 0 means "grab everything"
