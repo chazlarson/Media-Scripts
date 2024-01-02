@@ -29,8 +29,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 SCRIPT_NAME = Path(__file__).stem
 
 # DONE 0.1.1 added a couple booler
+# DONE 0.1.2 Require a meaningful value for TARGET_LABELS
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 env_file_path = Path(".env")
 
@@ -45,6 +46,11 @@ if load_and_upgrade_env(env_file_path) < 0:
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
+
+if TARGET_LABELS == 'this label, that label':
+    print(f"TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
+    exit()
+
 TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
 RETAIN_RESET_STATUS_FILE = booler(os.getenv("RETAIN_RESET_STATUS_FILE"))
 DRY_RUN = booler(os.getenv("DRY_RUN"))
