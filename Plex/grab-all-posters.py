@@ -576,6 +576,7 @@ executor = ThreadPoolExecutor()
 my_futures = []
 
 def process_the_thing(params):
+    global SCRIPT_STRING
 
     tmid = params['tmid']
     tvid = params['tvid']
