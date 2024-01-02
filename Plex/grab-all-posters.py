@@ -73,7 +73,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.1"
+VERSION = "0.8.2"
 
 env_file_path = Path(".env")
 
