@@ -31,7 +31,7 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 env_file_path = Path(".env")
 
@@ -48,6 +48,11 @@ LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TMDB_KEY = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
+
+if TARGET_LABELS == 'this label, that label':
+    print(f"TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
+    exit()
+
 TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
 CLEAR_RESET_STATUS = booler(os.getenv("CLEAR_RESET_STATUS", ))
 
