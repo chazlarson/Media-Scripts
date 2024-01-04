@@ -1221,12 +1221,12 @@ for lib in LIB_ARRAY:
                     if coll == 'placeholder_collection_name':
                         if last_run_lib is None:
                             plogger(f"Loading {the_lib.TYPE}s  ...", 'info', 'a')
-                            items = get_all_from_library(plex, the_lib, None, None)
+                            item_count, items = get_all_from_library(the_lib, None, None)
                         else:
                             plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
-                            items = get_all_from_library(plex, the_lib, None, {"addedAt>>": last_run_lib})
+                            item_count, items = get_all_from_library(the_lib, None, {"addedAt>>": last_run_lib})
                             last_run_lib = datetime.now()
-                        plogger(f"Completed loading {len(items)} of {the_lib.totalViewSize()} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
+                        plogger(f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
 
                         if the_lib.TYPE == "show" and GRAB_SEASONS:
                             if the_lib.title in RESET_ARRAY:
@@ -1240,12 +1240,12 @@ for lib in LIB_ARRAY:
         
                             if last_run_season is None:
                                 plogger(f"Loading seasons ...", 'info', 'a')
-                                seasons = get_all_from_library(plex, the_lib, 'season', None)
+                                season_count, seasons = get_all_from_library(the_lib, 'season', None)
                             else:
                                 plogger(f"Loading seasons new since {last_run_season} ...", 'info', 'a')
-                                seasons = get_all_from_library(plex, the_lib, 'season', {"addedAt>>": last_run_season})
+                                season_count, seasons = get_all_from_library(the_lib, 'season', {"addedAt>>": last_run_season})
                                 last_run_season = datetime.now()
-                            plogger(f"Completed loading {len(seasons)} of {the_lib.totalViewSize(libtype='season')} season(s) from {the_lib.title}", 'info', 'a')
+                            plogger(f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}", 'info', 'a')
                             items.extend(seasons)
                             superchat(f"{len(items)} items to examine", 'info', 'a')
 
@@ -1262,18 +1262,18 @@ for lib in LIB_ARRAY:
         
                             if last_run_episode is None:
                                 plogger(f"Loading episodes ...", 'info', 'a')
-                                episodes = get_all_from_library(plex, the_lib, 'episode', None)
+                                episode_count, episodes = get_all_from_library(the_lib, 'episode', None)
                             else:
                                 plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
-                                episodes = get_all_from_library(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+                                episode_count, episodes = get_all_from_library(the_lib, 'episode', {"addedAt>>": last_run_episode})
                                 last_run_episode = datetime.now()
-                            plogger(f"Completed loading {len(episodes)} of {the_lib.totalViewSize(libtype='episode')} episode(s) from {the_lib.title}", 'info', 'a')
+                            plogger(f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}", 'info', 'a')
                             items.extend(episodes)
                             superchat(f"{len(items)} items to examine", 'info', 'a')
 
                     else:
                         plogger(f"Loading everything in collection {coll} ...", 'info', 'a')
-                        items = get_all_from_library(plex, the_lib, None, {'collection': coll})
+                        item_count, items = get_all_from_library(the_lib, None, {'collection': coll})
                         plogger(f"Completed loading {len(items)} from collection {coll}", 'info', 'a')
                     item_total = len(items)
                     if item_total > 0:
