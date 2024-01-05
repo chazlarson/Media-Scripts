@@ -72,10 +72,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.2 look for and handle TCM-overlaid images
 #      0.8.2a add a 'global SCRIPT_STRING' to try to get rid of a "local variable 'SCRIPT_STRING' referenced before assignment A Knife and No Coin"
 #      0.8.3 refactor and remove totalViewSize()
+#      0.8.4 simplify logic around fallback_date
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.3"
+VERSION = "0.8.4"
 
 env_file_path = Path(".env")
 
