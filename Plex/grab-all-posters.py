@@ -120,7 +120,11 @@ except:
 
 WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
 
-fallback_date = now - timedelta(weeks = WEEKS_BACK)
+fallback_date = None
+
+if DEFAULT_YEARS_BACK > 0:
+    fallback_date = now - timedelta(weeks = WEEKS_BACK)
+
 epoch = datetime(1970,1,1)
 if IS_WINDOWS and fallback_date < epoch:
     fallback_date = None
@@ -1121,19 +1125,15 @@ for lib in LIB_ARRAY:
             the_uuid = the_lib.uuid
             superchat(f"{the_lib} uuid {the_uuid}", 'info', 'a')
 
-            if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == 'ALL_LIBRARIES':
+            if (the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == 'ALL_LIBRARIES'):
                 plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
                 last_run_lib = fallback_date
             else:
                 last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
-            if last_run_lib is None and DEFAULT_YEARS_BACK != 0:
-                superchat(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
-                last_run_lib = fallback_date
-
-            if DEFAULT_YEARS_BACK == 0:
-                superchat(f"DEFAULT_YEARS_BACK == 0, using None as last run", 'info', 'a')
-                last_run_lib = None
+                if last_run_lib is None:
+                    plogger(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
+                    last_run_lib = fallback_date
 
             superchat(f"{the_lib} last run date: {last_run_lib}", 'info', 'a')
 
@@ -1276,6 +1276,7 @@ for lib in LIB_ARRAY:
                         plogger(f"Loading everything in collection {coll} ...", 'info', 'a')
                         item_count, items = get_all_from_library(the_lib, None, {'collection': coll})
                         plogger(f"Completed loading {len(items)} from collection {coll}", 'info', 'a')
+
                     item_total = len(items)
                     if item_total > 0:
                         logger(f"looping over {item_total} items...", 'info', 'a')
