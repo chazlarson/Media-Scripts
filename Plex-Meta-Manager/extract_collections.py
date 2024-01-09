@@ -10,7 +10,9 @@ from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.0.1"
+# 0.0.3 : handle some errors better
+
+VERSION = "0.0.3"
 
 env_file_path = Path(".env")
 
