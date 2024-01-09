@@ -78,7 +78,12 @@ def get_sort_text(argument):
 
 
 for lib in lib_array:
-    the_lib = plex.library.section(lib)
+    try:
+        the_lib = plex.library.section(lib)
+    except:
+        print(f"error loading library: {lib}")
+        print(f"This server has: {plex.library.sections()}")
+        
     collections = the_lib.collections()
     item_total = len(collections)
     with alive_bar(item_total, dual_line=True, title=f"Extract collections: {the_lib.title}") as bar:
