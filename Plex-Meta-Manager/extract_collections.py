@@ -80,93 +80,93 @@ def get_sort_text(argument):
 for lib in lib_array:
     try:
         the_lib = plex.library.section(lib)
+        
+        collections = the_lib.collections()
+        item_total = len(collections)
+        with alive_bar(item_total, dual_line=True, title=f"Extract collections: {the_lib.title}") as bar:
+            for collection in collections:
+
+                if collection.smart:
+                    filters = collection.filters()
+
+                title = collection.title
+
+                print(f"title - {title}")
+
+                artwork_path = Path(".", config_dir, f"{lib}-{artwork_dir}")
+                artwork_path.mkdir(mode=511, parents=True, exist_ok=True)
+
+                background_path = Path(".", config_dir, f"{lib}-{background_dir}")
+                background_path.mkdir(mode=511, parents=True, exist_ok=True)
+
+                thumbPath = None
+                artPath = None
+
+                try:
+                    thumbPath = download(
+                        f"{PLEX_URL}{collection.thumb}",
+                        PLEX_TOKEN,
+                        filename=f"{collection.title}.png",
+                        savepath=artwork_path,
+                    )
+                except Exception as ex:
+                    print(f"Continuing without image - {ex}")
+
+                if collection.art is not None:
+                    artPath = download(
+                        f"{PLEX_URL}{collection.art}",
+                        PLEX_TOKEN,
+                        filename=f"{collection.title}.png",
+                        savepath=background_path,
+                    )
+
+                this_coll = {}
+                this_coll["sort_title"] = collection.titleSort
+                if thumbPath is not None:
+                    this_coll["url_poster"] = f"./{thumbPath}"
+                if artPath is not None:
+                    this_coll["url_background"] = f"./{artPath}"
+
+                if len(collection.summary) > 0:
+                    this_coll["summary"] = collection.summary
+
+                this_coll["collection_order"] = get_sort_text(collection.collectionSort)
+
+                this_coll["plex_search"] = {}
+                this_coll["plex_search"]["any"] = {}
+                titlearray = []
+                items = collection.items()
+                for item in items:
+                    titlearray.append(item.title)
+                this_coll["plex_search"]["any"]["title.is"] = titlearray
+
+                if len(this_coll) > 0:
+                    coll_obj["collections"][collection.title] = this_coll
+
+                bar()
+
+        metadatafile_path = Path(".", config_dir, f"{lib}-existing.yml")
+
+
+        if yaml.version_info < (0, 15):
+            # data = yaml.load(istream, Loader=yaml.CSafeLoader)
+            # yaml.round_trip_dump(data, ostream, width=1000, explicit_start=True)
+            yaml.round_trip_dump(
+                coll_obj,
+                open(metadatafile_path, "w", encoding="utf-8"),
+                indent=None,
+                block_seq_indent=2,
+            )
+        else:
+            # yml = ruamel.yaml.YAML(typ='safe')
+            # data = yml.load(istream)
+            ymlo = yaml.YAML()   # or yaml.YAML(typ='rt')
+            ymlo.width = 1000
+            ymlo.explicit_start = True
+            ymlo.dump(coll_obj,
+                open(metadatafile_path, "w", encoding="utf-8")
+            )
     except:
         print(f"error loading library: {lib}")
         print(f"This server has: {plex.library.sections()}")
-        
-    collections = the_lib.collections()
-    item_total = len(collections)
-    with alive_bar(item_total, dual_line=True, title=f"Extract collections: {the_lib.title}") as bar:
-        for collection in collections:
-
-            if collection.smart:
-                filters = collection.filters()
-
-            title = collection.title
-
-            print(f"title - {title}")
-
-            artwork_path = Path(".", config_dir, f"{lib}-{artwork_dir}")
-            artwork_path.mkdir(mode=511, parents=True, exist_ok=True)
-
-            background_path = Path(".", config_dir, f"{lib}-{background_dir}")
-            background_path.mkdir(mode=511, parents=True, exist_ok=True)
-
-            thumbPath = None
-            artPath = None
-
-            try:
-                thumbPath = download(
-                    f"{PLEX_URL}{collection.thumb}",
-                    PLEX_TOKEN,
-                    filename=f"{collection.title}.png",
-                    savepath=artwork_path,
-                )
-            except Exception as ex:
-                print(f"Continuing without image - {ex}")
-
-            if collection.art is not None:
-                artPath = download(
-                    f"{PLEX_URL}{collection.art}",
-                    PLEX_TOKEN,
-                    filename=f"{collection.title}.png",
-                    savepath=background_path,
-                )
-
-            this_coll = {}
-            this_coll["sort_title"] = collection.titleSort
-            if thumbPath is not None:
-                this_coll["url_poster"] = f"./{thumbPath}"
-            if artPath is not None:
-                this_coll["url_background"] = f"./{artPath}"
-
-            if len(collection.summary) > 0:
-                this_coll["summary"] = collection.summary
-
-            this_coll["collection_order"] = get_sort_text(collection.collectionSort)
-
-            this_coll["plex_search"] = {}
-            this_coll["plex_search"]["any"] = {}
-            titlearray = []
-            items = collection.items()
-            for item in items:
-                titlearray.append(item.title)
-            this_coll["plex_search"]["any"]["title.is"] = titlearray
-
-            if len(this_coll) > 0:
-                coll_obj["collections"][collection.title] = this_coll
-
-            bar()
-
-    metadatafile_path = Path(".", config_dir, f"{lib}-existing.yml")
-
-
-    if yaml.version_info < (0, 15):
-        # data = yaml.load(istream, Loader=yaml.CSafeLoader)
-        # yaml.round_trip_dump(data, ostream, width=1000, explicit_start=True)
-        yaml.round_trip_dump(
-            coll_obj,
-            open(metadatafile_path, "w", encoding="utf-8"),
-            indent=None,
-            block_seq_indent=2,
-        )
-    else:
-        # yml = ruamel.yaml.YAML(typ='safe')
-        # data = yml.load(istream)
-        ymlo = yaml.YAML()   # or yaml.YAML(typ='rt')
-        ymlo.width = 1000
-        ymlo.explicit_start = True
-        ymlo.dump(coll_obj,
-            open(metadatafile_path, "w", encoding="utf-8")
-        )
 
