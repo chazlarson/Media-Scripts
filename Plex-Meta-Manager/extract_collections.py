@@ -13,8 +13,9 @@ SCRIPT_NAME = Path(__file__).stem
 
 # 0.0.3 : handle some errors better
 # 0.0.4 : deal with invalid filenames
+# 0.0.5 : file_poster not url_poster
 
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 
 env_file_path = Path(".env")
 
@@ -132,9 +133,9 @@ for lib in lib_array:
                 this_coll = {}
                 this_coll["sort_title"] = collection.titleSort
                 if thumbPath is not None:
-                    this_coll["url_poster"] = f"./{thumbPath}"
+                    this_coll["file_poster"] = f"./{thumbPath}"
                 if artPath is not None:
-                    this_coll["url_background"] = f"./{artPath}"
+                    this_coll["file_background"] = f"./{artPath}"
 
                 if len(collection.summary) > 0:
                     this_coll["summary"] = collection.summary
