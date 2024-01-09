@@ -97,12 +97,18 @@ for lib in lib_array:
             background_path = Path(".", config_dir, f"{lib}-{background_dir}")
             background_path.mkdir(mode=511, parents=True, exist_ok=True)
 
-            thumbPath = download(
-                f"{PLEX_URL}{collection.thumb}",
-                PLEX_TOKEN,
-                filename=f"{collection.title}.png",
-                savepath=artwork_path,
-            )
+            thumbPath = None
+            artPath = None
+
+            try:
+                thumbPath = download(
+                    f"{PLEX_URL}{collection.thumb}",
+                    PLEX_TOKEN,
+                    filename=f"{collection.title}.png",
+                    savepath=artwork_path,
+                )
+            except Exception as ex:
+                print(f"Continuing without image - {ex}")
 
             if collection.art is not None:
                 artPath = download(
@@ -111,12 +117,11 @@ for lib in lib_array:
                     filename=f"{collection.title}.png",
                     savepath=background_path,
                 )
-            else:
-                artPath = None
 
             this_coll = {}
             this_coll["sort_title"] = collection.titleSort
-            this_coll["url_poster"] = f"./{thumbPath}"
+            if thumbPath is not None:
+                this_coll["url_poster"] = f"./{thumbPath}"
             if artPath is not None:
                 this_coll["url_background"] = f"./{artPath}"
 
