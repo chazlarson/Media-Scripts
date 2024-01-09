@@ -3,6 +3,7 @@ from ruamel import yaml
 from datetime import datetime, timedelta
 import os
 import platform
+import re
 from pathlib import Path
 from plexapi.utils import download
 from logs import setup_logger, plogger, blogger, logger
@@ -11,8 +12,9 @@ from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_
 SCRIPT_NAME = Path(__file__).stem
 
 # 0.0.3 : handle some errors better
+# 0.0.4 : deal with invalid filenames
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 env_file_path = Path(".env")
 
@@ -80,9 +82,12 @@ def get_sort_text(argument):
 
 
 for lib in lib_array:
+    lib = lib.lstrip()
+    safe_lib = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", lib)
+    print(f"Processing: [{lib}] | safe: [{safe_lib}]")
     try:
         the_lib = plex.library.section(lib)
-        
+
         collections = the_lib.collections()
         item_total = len(collections)
         with alive_bar(item_total, dual_line=True, title=f"Extract collections: {the_lib.title}") as bar:
@@ -93,12 +98,14 @@ for lib in lib_array:
 
                 title = collection.title
 
-                print(f"title - {title}")
+                safe_title = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", title)
 
-                artwork_path = Path(".", config_dir, f"{lib}-{artwork_dir}")
+                print(f"title - {title} | safe - {safe_title}")
+
+                artwork_path = Path(".", config_dir, f"{safe_lib}-{artwork_dir}")
                 artwork_path.mkdir(mode=511, parents=True, exist_ok=True)
 
-                background_path = Path(".", config_dir, f"{lib}-{background_dir}")
+                background_path = Path(".", config_dir, f"{safe_lib}-{background_dir}")
                 background_path.mkdir(mode=511, parents=True, exist_ok=True)
 
                 thumbPath = None
@@ -108,7 +115,7 @@ for lib in lib_array:
                     thumbPath = download(
                         f"{PLEX_URL}{collection.thumb}",
                         PLEX_TOKEN,
-                        filename=f"{collection.title}.png",
+                        filename=f"{safe_title}.png",
                         savepath=artwork_path,
                     )
                 except Exception as ex:
@@ -118,7 +125,7 @@ for lib in lib_array:
                     artPath = download(
                         f"{PLEX_URL}{collection.art}",
                         PLEX_TOKEN,
-                        filename=f"{collection.title}.png",
+                        filename=f"{safe_title}.png",
                         savepath=background_path,
                     )
 
@@ -147,7 +154,7 @@ for lib in lib_array:
 
                 bar()
 
-        metadatafile_path = Path(".", config_dir, f"{lib}-existing.yml")
+        metadatafile_path = Path(".", config_dir, f"{safe_lib}-existing.yml")
 
 
         if yaml.version_info < (0, 15):
