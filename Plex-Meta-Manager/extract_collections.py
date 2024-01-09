@@ -48,6 +48,9 @@ if PLEX_URL is None:
     target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
     PLEX_URL = os.getenv(target_url_var)
 
+if PLEX_URL.endswith('/'):
+    PLEX_URL = PLEX_URL[:-1]
+
 target_token_var = 'PLEX_TOKEN'
 PLEX_TOKEN = os.getenv(target_token_var)
 if PLEX_TOKEN is None:
