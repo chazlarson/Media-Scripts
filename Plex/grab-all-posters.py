@@ -73,10 +73,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.2a add a 'global SCRIPT_STRING' to try to get rid of a "local variable 'SCRIPT_STRING' referenced before assignment A Knife and No Coin"
 #      0.8.3 refactor and remove totalViewSize()
 #      0.8.4 simplify logic around fallback_date
+#      0.8.5 fix None fallback_date on Windows
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.4"
+VERSION = "0.8.5"
 
 env_file_path = Path(".env")
 
@@ -127,7 +128,7 @@ if DEFAULT_YEARS_BACK > 0:
     fallback_date = now - timedelta(weeks = WEEKS_BACK)
 
 epoch = datetime(1970,1,1)
-if IS_WINDOWS and fallback_date < epoch:
+if IS_WINDOWS and fallback_date is not None and fallback_date < epoch:
     fallback_date = None
 
 target_url_var = 'PLEX_URL'
