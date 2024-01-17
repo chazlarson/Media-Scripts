@@ -74,10 +74,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.3 refactor and remove totalViewSize()
 #      0.8.4 simplify logic around fallback_date
 #      0.8.5 fix None fallback_date on Windows
+#      0.8.6 strip trailing slash on Plex URL
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.5"
+VERSION = "0.8.6"
 
 env_file_path = Path(".env")
 
@@ -136,6 +137,9 @@ PLEX_URL = os.getenv(target_url_var)
 if PLEX_URL is None:
     target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
     PLEX_URL = os.getenv(target_url_var)
+
+# strip a trailing slash
+PLEX_URL = PLEX_URL.rstrip("/")
 
 target_token_var = 'PLEX_TOKEN'
 PLEX_TOKEN = os.getenv(target_token_var)
