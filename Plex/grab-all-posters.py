@@ -75,10 +75,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.4 simplify logic around fallback_date
 #      0.8.5 fix None fallback_date on Windows
 #      0.8.6 strip trailing slash on Plex URL
+#      0.8.7 suboptimal solution to names containing slashes
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.6"
+VERSION = "0.8.7"
 
 env_file_path = Path(".env")
 
@@ -448,6 +449,7 @@ def get_subdir(item):
     # collection-Adam-12 Collection
     # for assets we would want:
     # Adam-12 Collection
+    # but don't forget to deal with Alien / Predator
 
     if USE_ASSET_NAMING:
         superchat(f"about to get asset names {item}", 'info', 'a')
@@ -929,8 +931,16 @@ def get_posters(lib, item, uuid, title):
         # collection-Adam-12 Collection
         # for assets we would want:
         # Adam-12 Collection
+        
+        new_path = item_path.replace('/', '-')
+        new_path = new_path.replace('\\', '-')
+
+        if new_path != item_path and USE_ASSET_NAMING:
+            plogger(f"modified '{item_path}' to '{new_path}'; this will need to be renamed for asset use", 'info', 'a')
+
         artwork_path = Path(tgt_dir, item_path)
         logger(f"final artwork_path: {artwork_path}", 'info', 'a')
+        
         # current_posters/all_libraries/collection-Adam-12 Collection'
         # for assets this should be:
         # assets/One Show/Adam-12 Collection
