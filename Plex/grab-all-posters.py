@@ -76,10 +76,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.5 fix None fallback_date on Windows
 #      0.8.6 strip trailing slash on Plex URL
 #      0.8.7 suboptimal solution to names containing slashes
+#      0.8.8 more logging about why we're skipping collections
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.7"
+VERSION = "0.8.8"
 
 env_file_path = Path(".env")
 
@@ -1222,6 +1223,8 @@ for lib in LIB_ARRAY:
                                     blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
                             else:
                                 blogger(f"SKIPPING {item.title}; not in a targeted collection", 'info', 'a', bar)
+                                blogger(f"either len(COLLECTION_ARRAY) == 0: {len(COLLECTION_ARRAY)} or {item.title} is not in {COLLECTION_ARRAY}", 'info', 'a', bar)
+                                
             else:
                 plogger(f"Skipping collection artwork ...", 'info', 'a')
 
