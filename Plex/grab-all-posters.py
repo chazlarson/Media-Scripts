@@ -77,10 +77,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.6 strip trailing slash on Plex URL
 #      0.8.7 suboptimal solution to names containing slashes
 #      0.8.8 more logging about why we're skipping collections
+#      0.8.9 handle season and episode backgrounds corectly
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.8"
+VERSION = "0.8.9"
 
 env_file_path = Path(".env")
 
@@ -335,7 +336,7 @@ def get_asset_names(item):
     ret_val = {}
     item_file = None
     
-    superchat(f"entering get_asset_names {item}", 'info', 'a')
+    superchat(f"entering get_asset_names {item.title}", 'info', 'a')
 
     ret_val['poster'] = f"poster"
     ret_val['background'] = f"background"
@@ -418,12 +419,14 @@ def get_asset_names(item):
     return ret_val
 
 def get_SE_str(item):
-    superchat(f"entering get_SE_str {item}", 'info', 'a')
     if item.TYPE == "season":
+        superchat(f"get_SE_str {item.title} S{item.seasonNumber}", 'info', 'a')
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
     elif item.TYPE == "episode":
+        superchat(f"get_SE_str {item.title} S{item.seasonNumber}E{item.episodeNumber}", 'info', 'a')
         ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
     else:
+        superchat(f"get_SE_str {item.title}", 'info', 'a')
         ret_val = f""
 
     superchat(f"returning {ret_val}", 'info', 'a')
@@ -440,7 +443,7 @@ def get_lib_setting(the_lib, the_setting):
 
 def get_subdir(item):
     global TOPLEVEL_TMID
-    superchat(f"entering get_subdir {item}", 'info', 'a')
+    superchat(f"entering get_subdir {item.title}", 'info', 'a')
     ret_val = ""
     se_str = get_SE_str(item)
     superchat(f"se_str {se_str}", 'info', 'a')
@@ -453,7 +456,7 @@ def get_subdir(item):
     # but don't forget to deal with Alien / Predator
 
     if USE_ASSET_NAMING:
-        superchat(f"about to get asset names {item}", 'info', 'a')
+        superchat(f"about to get asset names {item.title}", 'info', 'a')
         asset_details = get_asset_names(item)
         superchat(f"asset_details {asset_details}", 'info', 'a')
         return asset_details['asset']
@@ -503,7 +506,7 @@ def get_progress_string(item):
 
     return ret_val
 
-def get_image_name(params, tgt_ext, background=False):
+def get_image_name(params, tgt_ext):
     ret_val = ""
 
     item_type = params['type']
@@ -522,33 +525,33 @@ def get_image_name(params, tgt_ext, background=False):
         else:
             base_name = f"-{str(idx).zfill(3)}-{provider}-{source}{tgt_ext}"
 
-        if background:
-            ret_val = f"_background{base_name}"
+        if params['background']:
+            base_name = f"-background{base_name}"
+
+        if item_type == "season":
+            # _Season##.ext
+            # _Season##_background.ext
+            ret_val = f"_Season{str(item_season).zfill(2)}{base_name}"
+        elif item_type == "episode":
+            # _S##E##.ext
+            # _S##E##_background.ext
+            ret_val = f"_{item_se_str}{base_name}"
         else:
-            if item_type == "season":
-                # _Season##.ext
-                # _Season##_background.ext
-                ret_val = f"_Season{str(item_season).zfill(2)}{base_name}"
-            elif item_type == "episode":
-                # _S##E##.ext
-                # _S##E##_background.ext
-                ret_val = f"_{item_se_str}{base_name}"
+            if USE_ASSET_FOLDERS:
+                ret_val = f"_poster{base_name}"
             else:
-                if USE_ASSET_FOLDERS:
-                    ret_val = f"_poster{base_name}"
-                else:
-                    ret_val = f"{base_name}"
+                ret_val = f"{base_name}"
 
     else:
         base_name = f"{str(idx).zfill(3)}-{provider}-{source}{tgt_ext}"
 
-        if background:
-            ret_val = f"background-{base_name}"
+        if params['background']:
+            base_name = f"background-{base_name}"
+
+        if item_type == "season" or item_type == "episode":
+            ret_val = f"{item_se_str}-{safe_name}-{base_name}"
         else:
-            if item_type == "season" or item_type == "episode":
-                ret_val = f"{item_se_str}-{safe_name}-{base_name}"
-            else:
-                ret_val = f"{safe_name}-{base_name}"
+            ret_val = f"{safe_name}-{base_name}"
 
     ret_val = ret_val.replace("--", "-")
     return ret_val
@@ -619,7 +622,10 @@ def process_the_thing(params):
     result['status'] = 'Nothing happened'
 
     tgt_ext = ".dat" if ID_FILES else ".jpg"
-    tgt_filename = get_image_name(params, tgt_ext, background)
+    tgt_filename = get_image_name(params, tgt_ext)
+
+    tgt_filename = tgt_filename.replace("poster-background", "background")
+
     # in asset case, I have '_poster.ext'
     superchat(f"target filename {tgt_filename}", 'info', 'a')
 
@@ -640,7 +646,7 @@ def process_the_thing(params):
         # strip leading _ 
         if tgt_filename[0] == '_':
             tgt_filename = tgt_filename[1:]
-        # then
+
         final_file_path = os.path.join(
             folder_path, tgt_filename
         )
@@ -857,7 +863,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 def get_posters(lib, item, uuid, title):
     global SCRIPT_STRING
 
-    superchat(f"entering get_posters {lib}, {item}, {uuid}, {title}", 'info', 'a')
+    superchat(f"entering get_posters {lib}, {item.title}, {uuid}, {title}", 'info', 'a')
 
     imdbid = None
     tmid = None
@@ -923,7 +929,7 @@ def get_posters(lib, item, uuid, title):
 
     attempts = 0
 
-    superchat(f"about to get the subdir for {item}", 'info', 'a')
+    superchat(f"about to get the subdir for {item.title}", 'info', 'a')
 
     item_path= get_subdir(item)
 
@@ -1140,7 +1146,7 @@ for lib in LIB_ARRAY:
             plogger(f"Loading {lib} ...", 'info', 'a')
             the_lib = plex.library.section(lib)
             the_uuid = the_lib.uuid
-            superchat(f"{the_lib} uuid {the_uuid}", 'info', 'a')
+            superchat(f"{lib} uuid {the_uuid}", 'info', 'a')
 
             if (the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == 'ALL_LIBRARIES'):
                 plogger(f"Resetting rundate for {the_lib.title} to {fallback_date}...", 'info', 'a')
@@ -1149,7 +1155,7 @@ for lib in LIB_ARRAY:
                 last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
                 if last_run_lib is None:
-                    plogger(f"no last run date for {the_lib}, using {fallback_date}", 'info', 'a')
+                    plogger(f"no last run date for {the_lib.title}, using {fallback_date}", 'info', 'a')
                     last_run_lib = fallback_date
 
             superchat(f"{the_lib} last run date: {last_run_lib}", 'info', 'a')
