@@ -50,7 +50,8 @@ ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these colle
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
-RETAIN_OVERLAID_IMAGES=0                     # keep images that have the PMM overlay EXIF tag 
+RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
@@ -72,9 +73,9 @@ TRACK_IMAGE_SOURCES=1                        # keep a file containing file names
 POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
-                                             # 0 means "grab everything"
+                                             # 0 sets the fallback date to the beginning of time
 THREADED_DOWNLOADS=0                         # should downloads be done in the background in threads?
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to the fallback date for these libraries
 RESET_COLLECTIONS=Bing,Bang,Boing            # CURRENTLY UNUSED
 ADD_SOURCE_EXIF_COMMENT=1                    # CURRENTLY UNUSED
 
@@ -328,7 +329,8 @@ ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these colle
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
-RETAIN_OVERLAID_IMAGES=0                     # keep images that have the PMM overlay EXIF tag 
+RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
@@ -350,9 +352,9 @@ TRACK_IMAGE_SOURCES=1                        # keep a file containing file names
 POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
 FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
 DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
-                                             # 0 means "grab everything"
+                                             # 0 sets the fallback date to the beginning of time
 THREADED_DOWNLOADS=0                         # should downloads be done in the background in threads?
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to 0 for these libraries
+RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to the fallback date for these libraries
 RESET_COLLECTIONS=Bing,Bang,Boing            # CURRENTLY UNUSED
 ADD_SOURCE_EXIF_COMMENT=1                    # CURRENTLY UNUSED
 ```
@@ -373,13 +375,37 @@ If "TRACK_URLS" is `1`, the script will track every URL it downloads in a sqlite
 
 If "TRACK_COMPLETION" is `1`, the script records collections/movies/shows/seasons/episodes by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the thing is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all the images for a thing only to determine that it's already downloaded all of them.  HOWEVER, this also means that if you increase `POSTER_DEPTH`, those additional images won't be picked up when you run the script again, since the item will be marked as complete.
 
-The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script assumes a last run date of today - `DEFAULT_YEARS_BACK`.
+The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script uses a fallback "last run" date of today - `DEFAULT_YEARS_BACK`.
 
-You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for a given library.  If you want to reset the whole thing, delete `mediascripts.sqlite`.
+If `DEFAULT_YEARS_BACK` = 0, the fallback date is "the beginning of time".  There is one other circumstance that will result in a fallback date of "the beginning of time".
 
-If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates PMM created it.  If found, the image is deleted.  You can override the deletiong with `RETAIN_OVERLAID_IMAGES`.
+If:
+1. You are running Windows
+2. `DEFAULT_YEARS_BACK` is > 0
+3. the calculated fallback date is before 01/01/1970
 
-If "RETAIN_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
+Then the "beginning of time" fallback date will be used.  This is a Windows issue.
+
+Normally, this fallback date is used *only* if there is no last-run date stored, for example the first time you run the script.  This means that if you run the script once with `DEFAULT_YEARS_BACK=2` then change that to `DEFAULT_YEARS_BACK=0`, nothing new will be downloaded.  The script will read the last run date from its database and will never look at the new fallback date.
+
+You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.  
+
+If you want to reset all libraries and clear all history, delete `mediascripts.sqlite`.
+
+For example:
+
+You run `grab-all-posters` with `DEFAULT_YEARS_BACK=2`; it downloads posters for half your "Movies" library.  Now you want to grab all the rest.  You change that to `DEFAULT_YEARS_BACK=0` and run `grab-all-posters` again.  Nothing new will be downloaded since the last run date is now the time of that first run, and nothing has been added to Plex since then.  If you want to grab all posters from the beginning of time for that library, set:
+```
+DEFAULT_YEARS_BACK=0
+RESET_LIBRARIES=Movies
+```
+That will set the fallback date to "the beginning of time" and apply that new fallback date to the "Movies" library only.
+ 
+If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates PMM created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_PMM_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
+
+If "RETAIN_PMM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
+
+If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
 
 ### Usage
 1. setup as above
