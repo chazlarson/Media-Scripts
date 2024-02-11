@@ -50,6 +50,7 @@ ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these colle
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
+# RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
 RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
@@ -329,6 +330,7 @@ ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these colle
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
+# RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
 RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
@@ -406,6 +408,8 @@ If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads fo
 If "RETAIN_PMM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
 
 If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
+
+If "RETAIN_OVERLAID_IMAGES" is `1`, the previous two settings will be forced to `0` and all overlaid images will be retained.  This is a older deprecated setting.
 
 ### Usage
 1. setup as above
