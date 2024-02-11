@@ -411,6 +411,21 @@ If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are *
 
 If "RETAIN_OVERLAID_IMAGES" is `1`, the previous two settings will be forced to `0` and all overlaid images will be retained.  This is a older deprecated setting.
 
+NOTE: `ONLY_CURRENT` and `POSTER_DEPTH` do not take these images into account, meaning that if you have:
+```
+ONLY_CURRENT=1
+RETAIN_PMM_OVERLAID_IMAGES=0
+```
+Then nothing will be retained for items with overlaid posters.  `grab-all-posters` will download the current art, find that it has an overlay, delete it, then go to the next movie/show.
+
+Similarly:
+```
+ONLY_CURRENT=0
+POSTER_DEPTH=20
+RETAIN_PMM_OVERLAID_IMAGES=0
+```
+This won't grab images until you have 20 downloaded.  It will grab 20 images, and if ten are found to have overlays, those ten will be deleted and you will end up with 10.
+
 ### Usage
 1. setup as above
 2. Run with `python grab-all-posters.py`
