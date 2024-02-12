@@ -7,8 +7,9 @@ import re
 
 # TODO: Store stuff in the mediascripts.sqlite
 # TODO: Make it prettier
-# TODO: Show/hide season/episode checkboxes
+# TODO: Show/hide season/episode checkboxes on movies
 # TODO: Support flat asset directories
+# TODO: Allow filtering by image type
 
 # 0.1.0: Initial release
 
