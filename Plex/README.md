@@ -148,7 +148,7 @@ POSTER_THRESHOLD=10
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
-1. [image_picker.py](#image_pickerpy) - Flask app to make choosing asset are simpler
+1. [image_picker.py](#image_pickerpy) - simple web app to make choosing asset art simpler
 
 ## adjust-added-dates.py
 
