@@ -140,6 +140,7 @@ POSTER_THRESHOLD=10
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
 1. [grab-all-IDs.py](#grab-all-IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
+1. [image_picker.py](#image_pickerpy) - simple web app to make choosing active art from the images downloaded by grab-all-posters simpler
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
@@ -148,7 +149,6 @@ POSTER_THRESHOLD=10
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
-1. [image_picker.py](#image_pickerpy) - simple web app to make choosing asset art simpler
 
 ## adjust-added-dates.py
 
@@ -626,6 +626,84 @@ assets
             └── poster.jpg
 ```
 
+## image_picker.py
+
+You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
+
+This script does not use anything from the `.env`, but it does make some assumptions:
+
+It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
+
+When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the PMM asset directory.
+
+You can then copy that `active_assets` directory to the PMM config dir ready for use.
+
+It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
+
+### Assumptions:
+1. You are working with a directory of images produced by `grab-all-posters`
+2. That directory is named `assets` and is in this directory next to this script.
+3. You can run a web server on the machine that listens on port 5001
+
+### Usage
+1. setup as above
+2. Run with `python image_picker.py`
+3. Go to one of the URLs presented.
+
+In this case I'm running it on a server in my home:
+```
+python image-picker.py
+ * Serving Flask app 'image-picker'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.11:5001
+ ```
+Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
+
+I see a list of my libraries along with a reminder of where images are being read from and copied to:
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f5a0da28-7fef-4e6a-88da-c3778d97726d)
+
+Clicking into the library shows the next level of folders [I have mine split by letter here]:
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/08a7747e-dd10-43e9-a63f-b31ff8b4e2b1)
+
+Drilling in displays the movies/shows
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/e75be969-0d60-40f0-af91-e595e2199fe1)
+
+Drilling into an individual thing shows the posters for this item, with the filename and image size:
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/162ebff9-9aff-4ea4-8c8f-913ff8cb2ec5)
+
+Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
+
+Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f08a76ef-42e4-4af4-93d2-9bc7dfd72c5d)
+
+Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/93b5bbcf-6676-46a9-adc5-4955737d7e8f)
+
+And again, clicking on the image selects and copies.
+
+![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f95cebd8-e5f3-499b-bfcf-ac2a1f36def4)
+
+
+At this point if you go look in the file system you'll see:
+```
+active_assets/Movies/
+└── 3
+    └── 300 (2007) {imdb-tt0416449} {tmdb-1271}
+        ├── background.jpg
+        └── poster.jpg
+```
+
+TV works the same way except that there are also Season and Episode images.
+
 ## grab-all-status.py
 
 Perhaps you want to move or restore watch status from one server to another [or to a rebuild]
@@ -937,83 +1015,3 @@ on 77: 63 Up has 7 posters
 on 94: 1962 Halloween Massacre has 8 posters
 on 119: Ace in the Hole has 8 posters
 Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
-
-
-
-## image_picker.py
-
-You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
-
-This script does not use anything from the `.env`, but it does make some assumptions:
-
-It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
-
-When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the PMM asset directory.
-
-You can then copy that `active_assets` directory to the PMM config dir ready for use.
-
-It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
-
-### Assumptions:
-1. You are working with a directory of images produced by `grab-all-posters`
-2. That directory is named `assets` and is in this directory next to this script.
-3. You can run a web server on the machine that listens on port 5001
-
-### Usage
-1. setup as above
-2. Run with `python image_picker.py`
-3. Go to one of the URLs presented.
-
-In this case I'm running it on a server in my home:
-```
-python image-picker.py
- * Serving Flask app 'image-picker'
- * Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5001
- * Running on http://192.168.1.11:5001
- ```
-Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
-
-I see a list of my libraries along with a reminder of where images are being read from and copied to:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f5a0da28-7fef-4e6a-88da-c3778d97726d)
-
-Clicking into the library shows the next level of folders [I have mine split by letter here]:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/08a7747e-dd10-43e9-a63f-b31ff8b4e2b1)
-
-Drilling in displays the movies/shows
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/e75be969-0d60-40f0-af91-e595e2199fe1)
-
-Drilling into an individual thing shows the posters for this item, with the filename and image size:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/162ebff9-9aff-4ea4-8c8f-913ff8cb2ec5)
-
-Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
-
-Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f08a76ef-42e4-4af4-93d2-9bc7dfd72c5d)
-
-Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/93b5bbcf-6676-46a9-adc5-4955737d7e8f)
-
-And again, clicking on the image selects and copies.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f95cebd8-e5f3-499b-bfcf-ac2a1f36def4)
-
-
-At this point if you go look in the file system you'll see:
-```
-active_assets/Movies/
-└── 3
-    └── 300 (2007) {imdb-tt0416449} {tmdb-1271}
-        ├── background.jpg
-        └── poster.jpg
-```
-
-TV works the same way except that there are also Season and Episode images.
