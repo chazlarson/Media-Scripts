@@ -977,26 +977,33 @@ WARNING: This is a development server. Do not use it in a production deployment.
 Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
 
 I see a list of my libraries along with a reminder of where images are being read from and copied to:
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f5a0da28-7fef-4e6a-88da-c3778d97726d)
 
 Clicking into the library shows the next level of folders [I have mine split by letter here]:
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/08a7747e-dd10-43e9-a63f-b31ff8b4e2b1)
 
 Drilling in displays the movies/shows
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/e75be969-0d60-40f0-af91-e595e2199fe1)
 
 Drilling into an individual thing shows the posters for this item, with the filename and image size:
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/162ebff9-9aff-4ea4-8c8f-913ff8cb2ec5)
 
 Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
 
 Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f08a76ef-42e4-4af4-93d2-9bc7dfd72c5d)
 
 Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/93b5bbcf-6676-46a9-adc5-4955737d7e8f)
 
 And again, clicking on the image selects and copies.
+
 ![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f95cebd8-e5f3-499b-bfcf-ac2a1f36def4)
 
 
