@@ -17,3 +17,8 @@ sqlalchemy<2.0
 tabulate
 validators
 pillow
+
+Flask
+GitPython
+num2words
+retrying

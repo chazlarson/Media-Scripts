@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Gallery</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .img-item {
+            margin: 10px;
+            border: 2px solid #f0f0f0; /* Default border */
+        }
+        .img-item.last-copied {
+            border-color: #808080; /* Grey border for the last copied item */
+        }
+        .folder-icon {
+            width: 100px;
+            height: 100px;
+            background: url('/static/folder.png') no-repeat center;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Image Gallery</h1>
+    <div class="row">
+        {% for item in items %}
+            {% if item.endswith('/') %}
+                <div class="col-md-3">
+                    <div class="folder-icon"></div>
+                    <a href="{{ url_for('browse', subpath=item) }}">{{ item }}</a>
+                </div>
+            {% else %}
+                <div class="col-md-3">
+                    <a href="{{ url_for('handle_image', filepath=subpath + '/' + item) }}">
+                        <img src="{{ url_for('static', filename='images/' + item) }}" class="img-fluid img-item {{ 'last-copied' if item == last_copied else '' }}">
+                    </a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

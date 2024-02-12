@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Media Libraries</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item active" aria-current="page">Home</li>
+        </ol>
+      </nav>
+    <h1 class="mt-5">Media Libraries</h1>
+    Reading from: <p class="text-monospace">{{ asset_dir }}</p>
+    Copying to: <p class="text-monospace">{{ active_dir }}</p>
+    <ul class="list-group mt-3">
+        {% for library in libraries %}
+            <li class="list-group-item">
+                <a href="{{ url_for('library', library_name=library) }}">{{ library }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>

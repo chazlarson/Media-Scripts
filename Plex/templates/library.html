@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ library_name }} Library</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ library_name }}</li>
+        </ol>
+      </nav>
+    <h1 class="mt-5">{{ library_name }}</h1>
+    <ul class="list-group mt-3">
+        {% for item in categories %}
+            <li class="list-group-item">
+                <a href="{{ url_for('category', library_name=library_name, category_name=item) }}">{{ item }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>

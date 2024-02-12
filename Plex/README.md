@@ -148,6 +148,7 @@ POSTER_THRESHOLD=10
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
+1. [image_picker.py](#image_pickerpy) - Flask app to make choosing asset are simpler
 
 ## adjust-added-dates.py
 
@@ -936,3 +937,75 @@ on 77: 63 Up has 7 posters
 on 94: 1962 Halloween Massacre has 8 posters
 on 119: Ace in the Hole has 8 posters
 Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
+
+
+
+## image_picker.py
+
+You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
+
+This script does not use anything from the `.env`, but it does make some assumptions:
+
+It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
+
+When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the PMM asset directory.
+
+You can then copy that `active_assets` directory to the PMM config dir ready for use.
+
+It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
+
+### Assumptions:
+1. You are working with a directory of images produced by `grab-all-posters`
+2. That directory is named `assets` and is in this directory next to this script.
+3. You can run a web server on the machine that listens on port 5001
+
+### Usage
+1. setup as above
+2. Run with `python image_picker.py`
+3. Go to one of the URLs presented.
+
+In this case I'm running it on a server in my home:
+```
+python image-picker.py
+ * Serving Flask app 'image-picker'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.11:5001
+ ```
+Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
+
+I see a list of my libraries along with a reminder of where images are being read from and copied to:
+[](images/home.png)
+
+Clicking into the library shows the next level of folders [I have mine split by letter here]:
+[](images/level-01.png)
+
+Drilling in displays the movies/shows
+[](images/level-02.png)
+
+Drilling into an individual thing shows the posters for this item, with the filename and image size:
+[](images/level-03.png)
+
+Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
+
+Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
+[](images/choose-background.png)
+
+Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
+[](images/show-posters.png)
+
+And again, clicking on the image selects and copies.
+[](images/choose-poster.png)
+
+At this point if you go look in the file system you'll see:
+```
+active_assets/Movies/
+└── 3
+    └── 300 (2007) {imdb-tt0416449} {tmdb-1271}
+        ├── background.jpg
+        └── poster.jpg
+```
+
+TV works the same way except that there are also Season and Episode images.

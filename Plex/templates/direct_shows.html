@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ library_name }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">Shows/Movies in {{ library_name }}</h1>
+    <ul class="list-group mt-3">
+        {% for show in shows %}
+            <li class="list-group-item">
+                <a href="{{ url_for('show', library_name=library_name, category_name='NA', show_name=show) }}">{{ show }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>

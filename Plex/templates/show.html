@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ show_name }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .navigation-link {
+            cursor: pointer;
+            font-size: 24px;
+            user-select: none;
+        }
+        .highlighted {
+            border: 4px solid blue; /* Highlight style */
+        }
+        .shaded {
+            background: gray; /* Highlight style */
+        }
+        .image-container img {
+            width: 50%; /* Default image size */
+            cursor: pointer; /* Change cursor on hover over images */
+            transition: width 0.5s ease; /* Smooth transition for resizing */
+        }
+        
+    </style>
+    <script type="text/javascript">
+        function doHighlight(imageElement, libraryName, categoryName, showName, filename) {
+            fetch(`/active_images/${libraryName}/${categoryName}/${showName}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        // Highlight images that are in the saved list
+                        document.querySelectorAll('.image-container img').forEach(img => {
+                            if (Object.values(data.images)[0].includes(img.alt)) {
+                                img.parentElement.classList.add('shaded')
+                                img.classList.add('highlighted');
+                            } else {
+                                img.parentElement.classList.remove('shaded')
+                                img.classList.remove('highlighted');
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Error copying the image:', error));
+        }
+
+        function copyAndHighlight(imageElement, libraryName, categoryName, showName, filename) {
+            // Perform the copy operation
+            fetch(`/copy_image/${libraryName}/${categoryName}/${showName}/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        // Highlight images that are in the saved list
+                        document.querySelectorAll('.image-container img').forEach(img => {
+                            if (Object.values(data.images)[0].includes(img.alt)) {
+                                img.parentElement.classList.add('shaded')
+                                img.classList.add('highlighted');
+                            } else {
+                                img.parentElement.classList.remove('shaded')
+                                img.classList.remove('highlighted');
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Error copying the image:', error));
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('library', library_name=library_name) }}">{{ library_name }}</a></li>
+          {% if category_name != 'NA' %}
+          <li class="breadcrumb-item"><a href="{{ url_for('category', library_name=library_name, category_name=category_name) }}">{{ category_name }}</a></li>
+          {% endif %}
+          <li class="breadcrumb-item active" aria-current="page">{{ show_name }}</li>
+        </ol>
+    </nav>
+    <h1 class="mt-5">{{ show_name }}</h1>
+
+    <div>
+        <!-- Checkboxes to filter image types -->
+        Show:
+        <label><input type="checkbox" class="image-type-checkbox" value="item" checked>Posters</label>
+        <label><input type="checkbox" class="image-type-checkbox" value="background" checked> Backgrounds</label>
+        <label><input type="checkbox" class="image-type-checkbox" value="season" checked> Seasons</label>
+        <label><input type="checkbox" class="image-type-checkbox" value="episode" checked> Episodes</label>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <!-- Slider for adjusting image scale -->
+        <label for="imageScaleSlider">Adjust Image Size:</label>
+        <input type="range" id="imageScaleSlider" min="10" max="100" value="50" class="slider"> <!-- Default value set to 50% -->
+    </div>
+    
+    
+    <div class="text-center">
+        {% if prev_show %}
+            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=prev_show) }}"  class="previous">&laquo; Previous</a>
+        {% endif %}
+        {% if next_show %}
+            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=next_show) }}" class="next">Next &raquo;</a>
+        {% endif %}
+    </div>
+    <div class="row">
+        {% for image_info in images_info %}
+        <div class="col-md-4 mb-4 text-center image-container" data-image-type="{{ image_info.type }}">
+            <img src="{{ url_for('image', library_name=library_name, category_name=category_name, show_name=show_name, filename=image_info.name) }}" 
+                    alt="{{ image_info.name }}" 
+                    title="{{ image_info.name }}" 
+                    onclick="copyAndHighlight(this, '{{ library_name }}', '{{ category_name }}', '{{ show_name }}', '{{ image_info.name }}')"
+                    onload="doHighlight(this, '{{ library_name }}', '{{ category_name }}', '{{ show_name }}', '{{ image_info.name }}')">
+            <p>{{ image_info.name }}<br />{{ image_info.width }} x {{ image_info.height }} px</p>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+<script type="text/javascript">    
+    document.getElementById('imageScaleSlider').oninput = function() {
+        var scaleValue = this.value;
+        document.querySelectorAll('.image-container img').forEach(function(img) {
+            img.style.width = scaleValue + '%';
+        });
+    };
+    document.querySelectorAll('.image-type-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            var checkedTypes = Array.from(document.querySelectorAll('.image-type-checkbox:checked')).map(el => el.value);
+            document.querySelectorAll('.image-container').forEach(function(container) {
+                var type = container.getAttribute('data-image-type');
+                if (checkedTypes.includes(type)) {
+                    container.style.display = '';
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
