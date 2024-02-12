@@ -35,7 +35,7 @@ All these scripts use the same `.env` and requirements.
 1. list-item-ids.py - Generate a list of IDs in libraries and/or collections
 1. actor-count.py - Generate a list of actor credit counts
 1. list_low_poster_counts.py - Generate a list of items that have fewer than some number of posters in Plex
-1. image_picker.py - Flask app to make choosing asset are simpler
+1. image_picker.py - simple web app to make choosing asset art simpler
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
