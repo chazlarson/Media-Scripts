@@ -977,27 +977,27 @@ WARNING: This is a development server. Do not use it in a production deployment.
 Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
 
 I see a list of my libraries along with a reminder of where images are being read from and copied to:
-[](images/home.png)
+[](readme-images/home.png)
 
 Clicking into the library shows the next level of folders [I have mine split by letter here]:
-[](images/level-01.png)
+[](readme-images/level-01.png)
 
 Drilling in displays the movies/shows
-[](images/level-02.png)
+[](readme-images/level-02.png)
 
 Drilling into an individual thing shows the posters for this item, with the filename and image size:
-[](images/level-03.png)
+[](readme-images/level-03.png)
 
 Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
 
 Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
-[](images/choose-background.png)
+[](readme-images/choose-background.png)
 
 Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
-[](images/show-posters.png)
+[](readme-images/show-posters.png)
 
 And again, clicking on the image selects and copies.
-[](images/choose-poster.png)
+[](readme-images/choose-poster.png)
 
 At this point if you go look in the file system you'll see:
 ```
