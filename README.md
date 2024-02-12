@@ -27,6 +27,7 @@ All these scripts use the same `.env` and requirements.
 1. reset-posters-plex.py - reset all artwork in a library to Plex default
 1. grab-all-IDs.py - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. grab-all-posters.py - grab some or all of the artwork for a library from plex
+1. image_picker.py - simple web app to make choosing active art from the images downloaded by grab-all-posters simpler
 1. grab-all-status.py - grab watch status for all users all libraries from plex
 1. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. show-all-playlists.py - Show contents of all user playlists
@@ -35,7 +36,6 @@ All these scripts use the same `.env` and requirements.
 1. list-item-ids.py - Generate a list of IDs in libraries and/or collections
 1. actor-count.py - Generate a list of actor credit counts
 1. list_low_poster_counts.py - Generate a list of items that have fewer than some number of posters in Plex
-1. image_picker.py - simple web app to make choosing asset art simpler
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
