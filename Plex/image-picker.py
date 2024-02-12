@@ -10,6 +10,7 @@ import re
 # TODO: Show/hide season/episode checkboxes on movies
 # TODO: Support flat asset directories
 # TODO: Allow filtering by image type
+# TODO: parameterize asset directories
 
 # 0.1.0: Initial release
 
