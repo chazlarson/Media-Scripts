@@ -30,9 +30,11 @@ POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
+PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config directory
 ```
 
 ## Scripts:
+1. [clean-overlay-backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
 1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
 1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
@@ -40,6 +42,34 @@ POSTER_CONSOLIDATE=1                         # if set to 0, posters are separate
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
+
+## clean-overlay-backup.py
+
+You've deleted stuff from PLex and want to clean up the leftover backup art that PMM saved when it applied overlays
+
+### Usage
+1. setup as above
+2. Run with `python clean-overlay-backup.py`
+
+The script will catalog the backup files and current Plex contents for each library listed in the `.env`.
+
+It then compares the two lists, and any files in the backup dir that do not correspond to current items in Plkex are deleted.
+
+```
+Starting clean-overlay-backup 0.1.0 at 2024-02-13 17:52:31
+connecting to https://plex.bing.bang...
+6686 images in the Movies overlay backup directory ...
+Loading Movies ...
+Loading movies from Movies  ...
+Completed loading 6965 of 6965 movie(s) from Movies
+Clean Overlay Backup Movies |████████████████████████████████████████| 6965/6965 [100%] in 11.0s (633.23/s) 
+Processed 6965 of 6965
+0 items to delete
+279 items in Plex with no backup art
+These might be items added to Plex since the last overlay run
+They might be items that are not intended to have overlays
+...
+```
 
 ## extract_collections.py
 
@@ -131,6 +161,8 @@ This little script will generate the trakt section for your PMM config file.  Mo
 
 You can run this on a completely separate machine to where PMM is running.
 
+There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
+
 ### Usage
 1. Run with `python pmm_trakt_auth.py`
 
@@ -175,6 +207,8 @@ trakt:
 This little script will generate the `mal` section for your PMM config file.  Most of this code is pulled from PMM's own MAL authentication; it's just been simplified to do the one thing.
 
 You can run this on a completely separate machine to where PMM is running.
+
+There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
 
 ### Usage
 1. `python3 -m pip install pyopenssl`
