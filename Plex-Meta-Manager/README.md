@@ -47,6 +47,17 @@ PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config 
 
 You've deleted stuff from PLex and want to clean up the leftover backup art that PMM saved when it applied overlays
 
+### Settings
+
+The script uses these settings from the `.env`:
+```
+PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
+PLEX_TOKEN=PLEX-TOKEN
+LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
+DELAY=1                                      # optional delay between items
+PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config directory
+```
+
 ### Usage
 1. setup as above
 2. Run with `python clean-overlay-backup.py`
