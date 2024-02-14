@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{{ show_name }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         .navigation-link {
             cursor: pointer;
@@ -14,14 +15,21 @@
             border: 4px solid blue; /* Highlight style */
         }
         .shaded {
-            background: gray; /* Highlight style */
+            background: rgb(192, 192, 192); /* Highlight style */
+            border: 2px solid blue; /* Highlight style */
         }
         .image-container img {
             width: 50%; /* Default image size */
             cursor: pointer; /* Change cursor on hover over images */
             transition: width 0.5s ease; /* Smooth transition for resizing */
         }
-        
+        #load{
+            width:100%;
+            height:100%;
+            position:fixed;
+            z-index:9999;
+            background:url("/loader") no-repeat center center rgba(0,0,0,0.25)
+        }
     </style>
     <script type="text/javascript">
         function doHighlight(imageElement, libraryName, categoryName, showName, filename) {
@@ -33,10 +41,8 @@
                         document.querySelectorAll('.image-container img').forEach(img => {
                             if (Object.values(data.images)[0].includes(img.alt)) {
                                 img.parentElement.classList.add('shaded')
-                                img.classList.add('highlighted');
                             } else {
                                 img.parentElement.classList.remove('shaded')
-                                img.classList.remove('highlighted');
                             }
                         });
                     }
@@ -54,10 +60,8 @@
                         document.querySelectorAll('.image-container img').forEach(img => {
                             if (Object.values(data.images)[0].includes(img.alt)) {
                                 img.parentElement.classList.add('shaded')
-                                img.classList.add('highlighted');
                             } else {
                                 img.parentElement.classList.remove('shaded')
-                                img.classList.remove('highlighted');
                             }
                         });
                     }
@@ -66,8 +70,9 @@
         }
     </script>
 </head>
-<body>
-<div class="container">
+<body onload="setZoom()">
+    <div id="load"></div>
+    <div id="contents" class="container">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -93,39 +98,83 @@
         <input type="range" id="imageScaleSlider" min="10" max="100" value="50" class="slider"> <!-- Default value set to 50% -->
     </div>
     
-    
-    <div class="text-center">
-        {% if prev_show %}
-            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=prev_show) }}"  class="previous">&laquo; Previous</a>
-        {% endif %}
-        {% if next_show %}
-            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=next_show) }}" class="next">Next &raquo;</a>
-        {% endif %}
+
+    <div class="row m-3">
+        <div class="col d-flex justify-content-between">
+            {% if prev_show %}
+            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=prev_show) }}" class="btn btn-info float-left" role="button">Previous</a>
+            {% else %}
+            <a href="#" class="btn btn-info float-left disabled" role="button">Previous</a>
+            {% endif %}
+            {% if next_show %}
+            <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=next_show) }}" class="btn btn-info float-right" role="button">Next</a>
+            {% else %}
+            <a href="#" class="btn btn-info float-right disabled" role="button">Next</a>
+            {% endif %}
+        </div>
     </div>
     <div class="row">
         {% for image_info in images_info %}
-        <div class="col-md-4 mb-4 text-center image-container" data-image-type="{{ image_info.type }}">
+        <div class="col-md-4 mb-4 p-4 text-center image-container" data-image-type="{{ image_info.type }}">
             <img src="{{ url_for('image', library_name=library_name, category_name=category_name, show_name=show_name, filename=image_info.name) }}" 
                     alt="{{ image_info.name }}" 
                     title="{{ image_info.name }}" 
-                    onclick="copyAndHighlight(this, '{{ library_name }}', '{{ category_name }}', '{{ show_name }}', '{{ image_info.name }}')"
-                    onload="doHighlight(this, '{{ library_name }}', '{{ category_name }}', '{{ show_name }}', '{{ image_info.name }}')">
+                    onclick='copyAndHighlight(this, "{{ library_name }}", "{{ category_name }}", "{{ show_name }}", "{{ image_info.name }}")'
+                    onload='doHighlight(this, "{{ library_name }}", "{{ category_name }}", "{{ show_name }}", "{{ image_info.name }}")'>
             <p>{{ image_info.name }}<br />{{ image_info.width }} x {{ image_info.height }} px</p>
         </div>
         {% endfor %}
 
     </div>
 </div>
-<script type="text/javascript">    
+<script type="text/javascript">
+    document.onreadystatechange = function () {
+        var state = document.readyState
+        if (state == 'interactive') {
+            document.getElementById('contents').style.visibility="hidden";
+        } else if (state == 'complete') {
+            var scaleValue = localStorage.getItem('scaleValue');
+            
+            document.getElementById('imageScaleSlider').value = scaleValue
+            document.querySelectorAll('.image-container img').forEach(function(img) {
+                img.style.width = scaleValue + '%';
+            });
+            
+            var chks = document.querySelectorAll("input[class='image-type-checkbox']");
+            for (let i = 0; i < chks.length; i++) {
+                chks[i].checked = false;
+            }
+
+            var checkedTypes = JSON.parse(localStorage['checkedTypes'] || '{}');
+
+            for (let i = 0; i < checkedTypes.length; i++) {
+                console.log(checkedTypes[i]);
+                document.querySelectorAll("input[type='checkbox'][value='"+ checkedTypes[i] + "']")[0].checked = true;
+            }
+
+            setTimeout(function(){
+                document.getElementById('interactive');
+                document.getElementById('load').style.visibility="hidden";
+                document.getElementById('contents').style.visibility="visible";
+            },1000);
+        }
+    }
+    
+    function setZoom() {
+    }
+
     document.getElementById('imageScaleSlider').oninput = function() {
         var scaleValue = this.value;
         document.querySelectorAll('.image-container img').forEach(function(img) {
             img.style.width = scaleValue + '%';
+            localStorage.setItem('scaleValue', scaleValue);
         });
     };
+
     document.querySelectorAll('.image-type-checkbox').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
             var checkedTypes = Array.from(document.querySelectorAll('.image-type-checkbox:checked')).map(el => el.value);
+            localStorage.setItem('checkedTypes', JSON.stringify(checkedTypes))
             document.querySelectorAll('.image-container').forEach(function(container) {
                 var type = container.getAttribute('data-image-type');
                 if (checkedTypes.includes(type)) {

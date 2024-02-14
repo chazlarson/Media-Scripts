@@ -11,10 +11,13 @@ import re
 # TODO: Support flat asset directories
 # TODO: Allow filtering by image type
 # TODO: parameterize asset directories
+# TODO: deal with no library folders
 
 # 0.1.0: Initial release
+# 0.1.1: Use os.path to build paths
+#        Deal with NA category as appropriate
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 app = Flask(__name__    )
 
@@ -22,8 +25,8 @@ app = Flask(__name__    )
 ASSETS_DIR = 'assets'
 ACTIVE_ASSETS_DIR = 'active_assets'
 
-asset_path = f"{app.root_path}/{ASSETS_DIR}"
-active_path = f"{app.root_path}/{ACTIVE_ASSETS_DIR}"
+asset_path = os.path.join(app.root_path, ASSETS_DIR)
+active_path = os.path.join(app.root_path, ACTIVE_ASSETS_DIR)
 
 # JSON file for storing copied images information
 TRACKING_FILE = 'copied_images.json'
@@ -227,6 +230,10 @@ def copy_image(library_name, category_name, show_name, filename):
 
     source_path = os.path.join(ASSETS_DIR, library_name, category_name, show_name, filename)
     target_dir = os.path.join(ACTIVE_ASSETS_DIR, library_name, category_name, show_name)
+    if category_name == 'NA':
+        source_path = os.path.join(ASSETS_DIR, library_name, show_name, filename)
+        target_dir = os.path.join(ACTIVE_ASSETS_DIR, library_name, show_name)
+    
     os.makedirs(target_dir, exist_ok=True)
     target_path = os.path.join(target_dir, new_filename)
 
@@ -250,9 +257,15 @@ def get_copied_image(library_name, category_name, show_name):
     return copied_images.get(key)
 
 @app.route('/show/<library_name>/<category_name>/<show_name>/')
-def show(library_name, category_name, show_name):    
+def show(library_name, category_name, show_name):
     show_path = os.path.join(ASSETS_DIR, library_name, category_name, show_name)
-
+    category_path = os.path.join(ASSETS_DIR, library_name, category_name)
+    image_url = f"{library_name}/{category_name}/{show_name}"
+    if category_name == 'NA':
+        show_path = os.path.join(ASSETS_DIR, library_name, show_name)
+        category_path = os.path.join(ASSETS_DIR, library_name)
+        image_url = f"{library_name}/{show_name}"
+    
     images_info = []
     for img in os.listdir(show_path):
         if img.endswith(('png', 'jpg', 'jpeg')):
@@ -264,18 +277,27 @@ def show(library_name, category_name, show_name):
 
     new_images_info = sorted(images_info, key=lambda x: x['name'])
 
-    category_path = os.path.join(ASSETS_DIR, library_name, category_name)
     shows = sorted(os.listdir(category_path))  # Ensure shows are sorted alphabetically
     current_index = shows.index(show_name)
     prev_show = shows[current_index - 1] if current_index > 0 else None
+
     next_show = shows[current_index + 1] if current_index < len(shows) - 1 else None
 
-    return render_template('show.html', library_name=library_name, category_name=category_name, show_name=show_name, images_info=new_images_info, prev_show=prev_show, next_show=next_show)
+    return render_template('show.html', library_name=library_name, category_name=category_name, show_name=show_name, images_info=new_images_info, prev_show=prev_show, next_show=next_show, image_url=image_url)
 
 @app.route('/images/<library_name>/<category_name>/<show_name>/<filename>')
 def image(library_name, category_name, show_name, filename):
     image_path = os.path.join(ASSETS_DIR, library_name, category_name, show_name)
+    if category_name == 'NA':
+        image_path = os.path.join(ASSETS_DIR, library_name, show_name)
+
     return send_from_directory(image_path, filename)
+
+@app.route('/loader')
+def loader():
+    image_path = os.path.join(".")
+
+    return send_from_directory(image_path, "loading.gif")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)

@@ -7,6 +7,12 @@
 </head>
 <body>
 <div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ library_name }}</li>
+        </ol>
+      </nav>
     <h1 class="mt-5">Shows/Movies in {{ library_name }}</h1>
     <ul class="list-group mt-3">
         {% for show in shows %}
