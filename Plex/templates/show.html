@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <title>{{ show_name }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.2.13/dist/semantic.min.css">
+<style>
         .navigation-link {
             cursor: pointer;
             font-size: 24px;
@@ -29,6 +31,25 @@
             position:fixed;
             z-index:9999;
             background:url("/loader") no-repeat center center rgba(0,0,0,0.25)
+        }
+        #myBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 99;
+            font-size: 18px;
+            border: none;
+            outline: none;
+            background-color: red;
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        #myBtn:hover {
+            background-color: #555;
         }
     </style>
     <script type="text/javascript">
@@ -71,6 +92,8 @@
     </script>
 </head>
 <body onload="setZoom()">
+    <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+
     <div id="load"></div>
     <div id="contents" class="container">
     <nav aria-label="breadcrumb">
@@ -85,21 +108,28 @@
     </nav>
     <h1 class="mt-5">{{ show_name }}</h1>
 
-    <div>
+    <div class="row">
+        <div class="col d-flex justify-content-between">
         <!-- Checkboxes to filter image types -->
-        Show:
-        <label><input type="checkbox" class="image-type-checkbox" value="item" checked>Posters</label>
-        <label><input type="checkbox" class="image-type-checkbox" value="background" checked> Backgrounds</label>
-        <label><input type="checkbox" class="image-type-checkbox" value="season" checked> Seasons</label>
-        <label><input type="checkbox" class="image-type-checkbox" value="episode" checked> Episodes</label>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <!-- Slider for adjusting image scale -->
-        <label for="imageScaleSlider">Zoom:</label>
-        <input type="range" id="imageScaleSlider" min="10" max="100" value="50" class="slider"> <!-- Default value set to 50% -->
+            <div class="float-left">
+                Show:
+                <label><input type="checkbox" class="image-type-checkbox" value="item" checked> Posters</label>
+                <label><input type="checkbox" class="image-type-checkbox" value="background" checked> Backgrounds</label>
+                <label><input type="checkbox" class="image-type-checkbox" value="season" checked> Seasons</label>
+                <label><input type="checkbox" class="image-type-checkbox" value="season_background" checked> Season Backgrounds</label>
+                <label><input type="checkbox" class="image-type-checkbox" value="episode" checked> Episodes</label>
+                <label><input type="checkbox" class="image-type-checkbox" value="episode_background" checked> Episode Backgrounds</label>
+            </div>
+            <div class="float-right">
+                <!-- Slider for adjusting image scale -->
+                <label for="imageScaleSlider">Zoom:</label>
+                <input type="range" id="imageScaleSlider" min="10" max="100" value="50" class="slider"> <!-- Default value set to 50% -->
+            </div>
+        </div>
     </div>
     
 
-    <div class="row m-3">
+    <div class="row">
         <div class="col d-flex justify-content-between">
             {% if prev_show %}
             <a href="{{ url_for('show', library_name=library_name, category_name=category_name, show_name=prev_show) }}" class="btn btn-info float-left" role="button">Previous</a>
@@ -143,6 +173,7 @@
             var chks = document.querySelectorAll("input[class='image-type-checkbox']");
             for (let i = 0; i < chks.length; i++) {
                 chks[i].checked = false;
+                chks[i].parentElement.style.visibility="hidden";
             }
 
             var checkedTypes = JSON.parse(localStorage['checkedTypes'] || '{}');
@@ -151,6 +182,16 @@
                 console.log(checkedTypes[i]);
                 document.querySelectorAll("input[type='checkbox'][value='"+ checkedTypes[i] + "']")[0].checked = true;
             }
+
+            document.querySelectorAll('.image-container').forEach(function(container) {
+                var type = container.getAttribute('data-image-type');
+                document.querySelectorAll("input[type='checkbox'][value='"+ type + "']")[0].parentElement.style.visibility="visible";
+                if (checkedTypes.includes(type)) {
+                    container.style.display = '';
+                } else {
+                    container.style.display = 'none';
+                }
+            });
 
             setTimeout(function(){
                 document.getElementById('interactive');
@@ -185,6 +226,26 @@
             });
         });
     });
+
+    // Get the button
+    let mybutton = document.getElementById("myBtn");
+
+    // When the user scrolls down 20px from the top of the document, show the button
+    window.onscroll = function() {scrollFunction()};
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            mybutton.style.display = "block";
+        } else {
+            mybutton.style.display = "none";
+        }
+    }
+
+    // When the user clicks on the button, scroll to the top of the document
+    function topFunction() {
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+    }
 </script>
 </body>
 </html>
