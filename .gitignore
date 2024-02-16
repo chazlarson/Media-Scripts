@@ -1,5 +1,6 @@
 **/.env
 **/.direnv
+**/*.cache
 **/*.csv
 **/*.db
 **/*.png
@@ -12,6 +13,7 @@
 Plex/movies
 Plex/shows
 Plex/active_assets
+Plex/active_assets*
 Plex/assets*
 **/Plex-Meta-Manager-Images
 **/Plex-Meta-Manager-Images-Overlaid

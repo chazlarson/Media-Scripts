@@ -216,27 +216,23 @@ def get_type(type):
     return None
 
 def get_size(the_lib, tgt_class=None, filter=None):
-    lib_size = the_lib.totalSize()
-    item_class = the_lib.type
+    lib_size = 0
+    foo = []
 
-    if tgt_class is not None:
-        item_class = tgt_class
-    
     if filter is not None:
-        foo = the_lib.search(libtype=item_class, filters=filter)
-        lib_size = len(foo)
-    elif tgt_class is not None:
-        foo = the_lib.search(libtype=item_class)
-        lib_size = len(foo)
+        foo = the_lib.search(libtype=tgt_class, filters=filter)
+    else:
+        foo = the_lib.search(libtype=tgt_class)
+    
+    lib_size = len(foo)
 
     return lib_size
 
 def get_all_from_library(the_lib, tgt_class=None, filter=None):
+    if tgt_class is None:
+        tgt_class = the_lib.type
+
     lib_size = get_size(the_lib, tgt_class, filter)
-    item_class = the_lib.type
-    
-    if tgt_class is not None:
-        item_class = tgt_class
     
     key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
     c_start = 0
@@ -244,15 +240,15 @@ def get_all_from_library(the_lib, tgt_class=None, filter=None):
     results = []
     while lib_size is None or c_start <= lib_size:
         if filter is not None:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
+            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
         else:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
+            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
         
         print(f"Loaded: {len(results)}/{lib_size}", end='\r')
         c_start += c_size
         if len(results) < c_start:
             c_start = lib_size + 1
-    return results
+    return lib_size, results
 
 def get_overlay_status(the_lib):
     overlay_items = the_lib.search(label="Overlay")

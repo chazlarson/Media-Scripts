@@ -5,8 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "media_scripts.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "media_scripts.py",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "args": [
+                "--run"
+            ],
+            "justMyCode": true
+        }, {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
