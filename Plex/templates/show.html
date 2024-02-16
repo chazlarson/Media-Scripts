@@ -186,7 +186,9 @@
             document.querySelectorAll('.image-container').forEach(function(container) {
                 var type = container.getAttribute('data-image-type');
                 document.querySelectorAll("input[type='checkbox'][value='"+ type + "']")[0].parentElement.style.visibility="visible";
-                if (checkedTypes.includes(type)) {
+                var checkedTypes = JSON.parse(localStorage['checkedTypes'] || '{}');
+                var isEmpty = JSON.stringify(checkedTypes) === "{}";
+                if (!isEmpty && checkedTypes.includes(type)) {
                     container.style.display = '';
                 } else {
                     container.style.display = 'none';
