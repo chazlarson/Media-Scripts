@@ -45,7 +45,7 @@ PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config 
 
 ## clean-overlay-backup.py
 
-You've deleted stuff from PLex and want to clean up the leftover backup art that PMM saved when it applied overlays
+You've deleted stuff from Plex and want to clean up the leftover backup art that PMM saved when it applied overlays
 
 ### Settings
 
