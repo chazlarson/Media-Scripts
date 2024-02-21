@@ -156,8 +156,6 @@ You have things in your library that show up added in the future, or way in the 
 
 This script will set the "added at" date and "originally available" date to match the thing's release date as found on TMDB, if the values set in Plex are more than a day or so off the TMDB release date.
 
-Movies only at this time.
-
 Script-specific variables in .env:
 ```
 ADJUST_DATE_FUTURES_ONLY=0      # Only look at items that show up as added in the future
