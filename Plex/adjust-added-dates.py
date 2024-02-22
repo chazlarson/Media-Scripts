@@ -35,8 +35,9 @@ SCRIPT_NAME = Path(__file__).stem
 env_file_path = Path(".env")
 
 #      0.1.1 Log config details
+#      0.1.2 incorporate helper changes, remove testing code
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 # current dateTime
 now = datetime.now()
@@ -109,95 +110,91 @@ for lib in LIB_ARRAY:
         
         if ADJUST_DATE_FUTURES_ONLY:
             TODAY_STR = now.strftime("%Y-%m-%d")
-            items = get_all_from_library(plex, the_lib, None, {"addedAt>>": TODAY_STR})
+            item_count, items = get_all_from_library(the_lib, None, {"addedAt>>": TODAY_STR})
         else:
-            items = get_all_from_library(plex, the_lib)
+            item_count, items = get_all_from_library(the_lib)
 
-        item_total = len(items)
-        if item_total > 0:
-            logger(f"looping over {item_total} items...", 'info', 'a')
-            item_count = 0
+        if item_count > 0:
+            logger(f"looping over {item_count} items...", 'info', 'a')
+            items_processed = 0
 
             plex_links = []
             external_links = []
 
-            with alive_bar(item_total, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
+            with alive_bar(item_count, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
                 for item in items:
-                    if item.title == "McCloud":
-                        print(f"{item.title}")
+                    try:
+                        items_processed += 1
+                        added_too_far_apart = False
+                        orig_too_far_apart = False
+                        sub_items = [item]
 
-                        try:
-                            item_count += 1
-                            added_too_far_apart = False
-                            orig_too_far_apart = False
-                            sub_items = [item]
+                        if is_show:
+                            episodes = item.episodes()
+                            sub_items = sub_items + episodes
 
-                            if is_show:
-                                episodes = item.episodes()
-                                sub_items = sub_items + episodes
-
-                            for sub_item in sub_items:
-                                try:
-                                    imdbid, tmid, tvid = get_ids(sub_item.guids, None)
-                                
-                                    if is_movie:
-                                        tmdb_item = tmdb.movie(tmid)
-                                        release_date = tmdb_item.release_date
+                        for sub_item in sub_items:
+                            try:
+                                imdbid, tmid, tvid = get_ids(sub_item.guids, None)
+                            
+                                if is_movie:
+                                    tmdb_item = tmdb.movie(tmid)
+                                    release_date = tmdb_item.release_date
+                                else:
+                                    if sub_item.type == 'show':
+                                        tmdb_item = tmdb.tv_show(tmid)
+                                        release_date = tmdb_item.first_air_date
                                     else:
-                                        if sub_item.type == 'show':
-                                            tmdb_item = tmdb.tv_show(tmid)
-                                            release_date = tmdb_item.first_air_date
-                                        else:
-                                            parent_show = sub_item.show()
-                                            imdbid, tmid, tvid = get_ids(parent_show.guids, None)
-                                            season_num = sub_item.seasonNumber
-                                            episode_num = sub_item.episodeNumber
-                                
-                                            tmdb_item = tmdb.tv_episode(tmid, season_num, episode_num)
-                                            release_date = tmdb_item.air_date
+                                        parent_show = sub_item.show()
+                                        imdbid, tmid, tvid = get_ids(parent_show.guids, None)
+                                        season_num = sub_item.seasonNumber
+                                        episode_num = sub_item.episodeNumber
+                            
+                                        tmdb_item = tmdb.tv_episode(tmid, season_num, episode_num)
+                                        release_date = tmdb_item.air_date
 
-                                    added_date = item.addedAt
-                                    orig_date = item.originallyAvailableAt
+                                added_date = item.addedAt
+                                orig_date = item.originallyAvailableAt
+                                
+                                if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
+                                    try:
+                                        delta = added_date - release_date
+                                        added_too_far_apart = abs(delta.days) > 1
+                                    except:
+                                        added_too_far_apart = added_date is None and release_date is not None
+
+                                    try:
+                                        delta = orig_date - release_date
+                                        orig_too_far_apart = abs(delta.days) > 1
+                                    except:
+                                        orig_too_far_apart = orig_date is None and release_date is not None
                                     
-                                    if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
+                                    if added_too_far_apart:
                                         try:
-                                            delta = added_date - release_date
-                                            added_too_far_apart = abs(delta.days) > 1
-                                        except:
-                                            added_too_far_apart = added_date is None and release_date is not None
-
+                                            item.addedAt = release_date
+                                            blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
+                                        except Exception as ex:
+                                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+            
+                                    if orig_too_far_apart:
                                         try:
-                                            delta = orig_date - release_date
-                                            orig_too_far_apart = abs(delta.days) > 1
-                                        except:
-                                            orig_too_far_apart = orig_date is None and release_date is not None
-                                        
-                                        if added_too_far_apart:
-                                            try:
-                                                item.addedAt = release_date
-                                                blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
-                                            except Exception as ex:
-                                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
-                
-                                        if orig_too_far_apart:
-                                            try:
-                                                item.originallyAvailableAt = release_date
-                                                blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
-                                            except Exception as ex:
-                                                plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
-        
-                                    else:
-                                        blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
+                                            item.originallyAvailableAt = release_date
+                                            blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
+                                        except Exception as ex:
+                                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+    
+                                else:
+                                    blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
 
-                                except Exception as ex:
-                                    plogger(f"Problem processing sub_item {item.title}; {ex}", 'info', 'a')
+                            except Exception as ex:
+                                plogger(f"Problem processing sub_item {item.title}; {ex}", 'info', 'a')
 
-                        except Exception as ex:
-                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                    except Exception as ex:
+                        plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                     bar()
                     
-            plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
+            plogger(f"Processed {items_processed} of {item_count}", 'info', 'a')
 
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
