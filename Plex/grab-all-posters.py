@@ -78,10 +78,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.7 suboptimal solution to names containing slashes
 #      0.8.8 more logging about why we're skipping collections
 #      0.8.9 fix logic error on string replace
+#      0.8.9a don't report a spurious error due to missing collection
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.9"
+VERSION = "0.8.9a"
 
 env_file_path = Path(".env")
 
@@ -1337,10 +1338,13 @@ for lib in LIB_ARRAY:
             if last_run_lib is not None:
                 add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
             if the_lib.TYPE == "show":
-                if GRAB_SEASONS and last_run_season is not None:
-                    add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
-                if GRAB_EPISODES and last_run_episode is not None:
-                    add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
+                try:
+                    if GRAB_SEASONS and last_run_season is not None:
+                        add_last_run(the_uuid, the_lib.title, 'season', last_run_season)
+                    if GRAB_EPISODES and last_run_episode is not None:
+                        add_last_run(the_uuid, the_lib.title, 'episode', last_run_episode)
+                except NameError:
+                    logger('no last run date to record', 'info', 'a')
 
             end_queue_length = len(my_futures)
 
