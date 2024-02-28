@@ -77,10 +77,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.6 strip trailing slash on Plex URL
 #      0.8.7 suboptimal solution to names containing slashes
 #      0.8.8 more logging about why we're skipping collections
+#      0.8.9 fix logic error on string replace
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.8"
+VERSION = "0.8.9"
 
 env_file_path = Path(".env")
 
@@ -491,7 +492,7 @@ def get_subdir(item):
     if level_03:
         ret_val = Path(ret_val, level_03)
 
-    return ret_val
+    return str(ret_val)
 
 def get_progress_string(item):
     if item.TYPE == "season":
