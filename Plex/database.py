@@ -1,6 +1,13 @@
 import datetime
 import sqlite3
 
+def get_connection():
+    sqliteConnection = sqlite3.connect('mediascripts.sqlite', timeout=10,
+                                       detect_types=sqlite3.PARSE_DECLTYPES |
+                                                    sqlite3.PARSE_COLNAMES)
+
+    return sqliteConnection
+
 # Track artwork download runs
 def last_artwork_run_table_create_query():
     return '''CREATE TABLE IF NOT EXISTS last_run_by_library (
@@ -14,9 +21,8 @@ def last_artwork_run_table_create_query():
 def add_last_run(uuid, name, level, last_run_date):
     method_name = "add_last_run"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_create_table_query = last_artwork_run_table_create_query()
@@ -55,9 +61,8 @@ def get_last_run(uuid, level):
     last_run_date = None
 
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_create_table_query = last_artwork_run_table_create_query()
@@ -85,9 +90,8 @@ def get_last_run(uuid, level):
 def reset_last_run():
     method_name = "reset_last_run"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS last_run_by_library;"""
@@ -119,9 +123,8 @@ def media_details_table_create_query():
 def add_media_details(path, title, type, height, width, aspect_ratio, aspect_ratio_calc):
     method_name = "add_media_details"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_create_table_query = media_details_table_create_query()
@@ -149,9 +152,8 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
 def reset_media_details():
     method_name = "reset_media_details"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS media_details;"""
@@ -181,9 +183,8 @@ def url_tracking_table_create_query():
 def add_url(url, uuid, title):
     method_name = "add_url"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_create_table_query = url_tracking_table_create_query()
@@ -212,9 +213,8 @@ def check_url(url, uuid):
     known_url = False
 
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_create_table_query = url_tracking_table_create_query()
@@ -242,9 +242,8 @@ def check_url(url, uuid):
 def reset_url_tracking():
     method_name = "reset_url_tracking"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS url_tracking;"""
@@ -335,9 +334,8 @@ def check_key(rating_key, uuid, tracking):
 def reset_completion_tracking():
     method_name = "reset_completion_tracking"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS completed_keys;"""
@@ -428,9 +426,8 @@ def check_rematch_key(rating_key, uuid, tracking):
 def reset_rematch_tracking():
     method_name = "reset_rematch_tracking"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS rematch_completed_keys;"""
@@ -522,9 +519,8 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
 def reset_art_reset_tracking():
     method_name = "reset_art_reset_tracking"
     try:
-        sqliteConnection = sqlite3.connect('mediascripts.sqlite',
-                                           detect_types=sqlite3.PARSE_DECLTYPES |
-                                                        sqlite3.PARSE_COLNAMES)
+        sqliteConnection = get_connection()
+
         cursor = sqliteConnection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS art_reset_completed_keys;"""
