@@ -31,7 +31,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.1"
+# DONE 0.1.2 Batch remove labels 
+
+VERSION = "0.1.2"
 
 env_file_path = Path(".env")
 
@@ -491,6 +493,11 @@ for lib in LIB_ARRAY:
                 bar()
 
                 logger((f'COMPLETE processing on {item_title}'), 'info', 'a')
+
+        if REMOVE_LABELS:
+            the_lib.batchMultiEdits(library_items)
+            the_lib.removeLabel(lbl)
+            the_lib.saveMultiEdits()
 
     # delete the status file
     if not RETAIN_RESET_STATUS_FILE and not DRY_RUN:

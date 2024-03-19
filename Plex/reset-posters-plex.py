@@ -30,8 +30,9 @@ SCRIPT_NAME = Path(__file__).stem
 
 # DONE 0.1.1 added a couple booler
 # DONE 0.1.2 Require a meaningful value for TARGET_LABELS
+# DONE 0.1.3 Batch remove labels 
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 env_file_path = Path(".env")
 
@@ -255,6 +256,11 @@ for lib in LIB_ARRAY:
 
                     # Wait between items in case hammering the Plex server turns out badly.
                     sleep_for_a_while()
+
+        if REMOVE_LABELS:
+            the_lib.batchMultiEdits(items)
+            the_lib.removeLabel(lbl)
+            the_lib.saveMultiEdits()
 
     # delete the status file
     if not RETAIN_RESET_STATUS_FILE and not DRY_RUN:
