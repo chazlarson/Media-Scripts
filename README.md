@@ -11,9 +11,22 @@ One of the requirements of these scripts is alive-progress 2.4.1, which requires
 
 ## Setup
 
+## if you use [`direnv`](https://github.com/direnv/direnv):
+1. clone the repo
+1. cd into the repo dir
+1. run `direnv allow` as the prompt will tell you to
+1. direnv will build the virtual env and keep requirements up to date
+
+## if you don't use [`direnv`](https://github.com/direnv/direnv):
+1. install direnv
+2. go to the previous section
+   
+ok no
+
 1. clone repo
+1. cd to repo directory
 1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-1. cd to desired directory
+1. cd to script directory [`Plex`, `Plex-Meta-Manager`, `TMDB`, etc]
 1. Copy `.env.example` to `.env`
 1. Edit .env to suit
 
