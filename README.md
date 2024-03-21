@@ -23,12 +23,39 @@ One of the requirements of these scripts is alive-progress 2.4.1, which requires
    
 ok no
 
-1. clone repo
-1. cd to repo directory
 1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-1. cd to script directory [`Plex`, `Plex-Meta-Manager`, `TMDB`, etc]
 1. Copy `.env.example` to `.env`
 1. Edit .env to suit
+
+1. clone repo
+   ```
+   git clone https://github.com/chazlarson/Media-Scripts.git
+   ```
+1. cd to repo directory
+   ```
+   cd Media-Scripts
+   ```
+1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
+   
+   Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Plex-Meta-Manager wiki.
+1. cd to script directory [`Plex`, `Plex-Meta-Manager`, `TMDB`, etc]
+   for example:
+   ```
+   cd Plex
+   ```
+1. Copy `.env.example` to `.env`
+   Linux or Mac:
+   ```
+   cp .env.example .env
+   ```
+   Windows:
+   ```
+   copy .env.example .env
+   ```  
+1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
+   Edit the file with whatever text editor you wish.
+1. Run the desired script.
+
 
 All these scripts use the same `.env` and requirements.
 
