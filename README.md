@@ -84,6 +84,7 @@ See the [Plex Scripts README](Plex/README.md) for details.
 1. extract_collections.py - extract collections from a library
 2. pmm_trakt_auth.py - generate trakt auth block for PMM config.yml
 3. pmm_mal_auth.py - generate mal auth block for PMM config.yml
+4. original-to-assets.py - Copy image files from an "Original Posters" directory to an asset directory
 
 See the [Plex-Meta-Manager Scripts README](Plex-Meta-Manager/README.md) for details.
 
