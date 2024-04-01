@@ -30,7 +30,12 @@ POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config directory
+PMM_CONFIG_DIR=/opt/pmm/Plex-Meta-Manager/config/ # path to Plex-Meta-Manager config directory
+
+# ORIGINAL TO ASSETS
+USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
+ASSETS_BY_LIBRARIES=1                        # should those asset folders be sorted into library folders?
+ASSET_DIR=assets                             # top-level directory for those assets
 ```
 
 ## Scripts:
@@ -39,6 +44,7 @@ PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config 
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
 1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
 1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
+1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
@@ -266,6 +272,47 @@ mal:
 ############################################
 
 ```
+
+## original-to-assets.py
+
+You've applied overlays to a library and want to seed an asset directory with the "Original Posters".
+
+Here is a basic script to do that.
+
+### Usage
+1. setup as above
+1. Run with `original-to-assets.py`
+
+The script will copy the contents of the "Original Posters" directory to an asset directory.
+
+```
+# ORIGINAL TO ASSETS
+USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
+ASSET_DIR=assets                             # top-level directory for those assets
+```
+The asset file system will be rooted at the directory in the `ASSET_DIR` setting, and `USE_ASSET_FOLDERS` controls whether the images are stored as:
+
+`USE_ASSET_FOLDERS=1`
+```
+Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}.jpg
+```
+or `USE_ASSET_FOLDERS=0`
+```
+Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}/poster.jpg
+```
+
+example output:
+```
+Starting originals-to-assets 0.0.1 at 2024-04-01 17:13:30
+connecting to https://test-plex.DOMAIN.TLD...
+Loading Test-Movies ...
+Loading movies  ...
+Completed loading 35 of 35 movie(s) from Test-Movies
+Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s) 
+Processed 35 of 35
+Complete!
+```
+
 ## OBSOLETE SCRIPTS
 
 ## top-n-actor-coll.py
