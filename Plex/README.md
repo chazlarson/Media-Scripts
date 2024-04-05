@@ -166,12 +166,12 @@ POSTER_THRESHOLD=10
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
-1. [delete-collections.py](#delete_collectionspy) - delete most or all collections from one or more libraries
+1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 1. [crew-count.py](#crew-countpy) - Generate a list of crew credit counts
-1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
+1. [list-low-poster-counts.py](#list-low-poster-countspy) - Generate a list of items that have fewer than some number of posters in Plex
 
 
 ## adjust-added-dates.py
@@ -853,7 +853,7 @@ movie   - Ace Ventura: When Nature Calls
 ...
 ```
 
-## delete_collections.py
+## delete-collections.py
 
 Perhaps you want to delete all the collections in one or more libraries
 
@@ -866,7 +866,7 @@ KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collec
 ****
 ### Usage
 1. setup as above
-2. Run with `python delete_collections.py`
+2. Run with `python delete-collections.py`
 
 ```shell
 39 collection(s) retrieved...****
@@ -1114,7 +1114,7 @@ Top 22 Director in [Test-Movies]:
 
 Note that the list changed due to the different depth.
 
-## list_low_poster_counts.py
+## list-low-poster-counts.py
 
 Perhaps you want to know which movies have fewer than 4 posters avaiable in Plex.
 
@@ -1125,9 +1125,9 @@ POSTER_THRESHOLD=10  # report items with fewer posters than this
 
 ### Usage
 1. setup as above
-2. Run with `python list_low_poster_counts.py`
+2. Run with `python list-low-poster-counts.py`
 
-Starting list_low_poster_counts 0.1.0 at 2023-12-07 09:35:45
+Starting list-low-poster-counts 0.1.0 at 2023-12-07 09:35:45
 connecting to https://plex.bing.bang...
 Loading Movies ...
 Completed loading 6171 of 6171 movie(s) from Movies

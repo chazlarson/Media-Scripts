@@ -40,10 +40,10 @@ ASSET_DIR=assets                             # top-level directory for those ass
 
 ## Scripts:
 1. [clean-overlay-backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
-1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
+1. [extract-collections.py](#extract-collectionspy) - extract collections from a library
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
-1. [pmm_trakt_auth.py](#pmm_trakt_authpy) - generate trakt auth block for PMM config.yml
-1. [pmm_mal_auth.py](#pmm_mal_authpy) - generate mal auth block for PMM config.yml
+1. [pmm-trakt-auth.py](#pmm-trakt-authpy) - generate trakt auth block for PMM config.yml
+1. [pmm-mal-auth.py](#pmm-mal-authpy) - generate mal auth block for PMM config.yml
 1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
 
 ### OBSOLETE
@@ -88,7 +88,7 @@ They might be items that are not intended to have overlays
 ...
 ```
 
-## extract_collections.py
+## extract-collections.py
 
 You're getting started with Plex-Meta-Manager and you want to export your existing collections
 
@@ -96,7 +96,7 @@ Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
 ### Usage
 1. setup as above
-2. Run with `python extract_collections.py`
+2. Run with `python extract-collections.py`
 
 The script will grab some details from each collection and write a metadata file that you could use with PMM.  It also grabs artwork and background.
 
@@ -170,7 +170,7 @@ Applying overlays |████████████████████�
 Plex-Meta-Manager-Images/genre/Sword & Sandal.jpg
 ```
 
-## pmm_trakt_auth.py
+## pmm-trakt-auth.py
 
 Perhaps you're running PMM in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
 
@@ -181,7 +181,7 @@ You can run this on a completely separate machine to where PMM is running.
 There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
 
 ### Usage
-1. Run with `python pmm_trakt_auth.py`
+1. Run with `python pmm-trakt-auth.py`
 
 
 You'll be asked for your trakt Client ID and Client Secret then taken to a trakt web page.
@@ -219,7 +219,7 @@ trakt:
 ############################################
 ```
 
-## pmm_mal_auth.py
+## pmm-mal-auth.py
 
 This little script will generate the `mal` section for your PMM config file.  Most of this code is pulled from PMM's own MAL authentication; it's just been simplified to do the one thing.
 
@@ -230,7 +230,7 @@ There is an online version available [here](https://metamanager.wiki/en/latest/c
 ### Usage
 1. `python3 -m pip install pyopenssl`
 1. `python3 -m pip install requests secrets`
-1. Run it with `python3 pmm_mal_auth.py`.
+1. Run it with `python3 pmm-mal-auth.py`.
 
 You'll be asked for your MyAnimeList Client ID and Client Secret then taken to a MyAnimeList web page.
 

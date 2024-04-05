@@ -4,7 +4,7 @@
 #
 # You can run this on a completely separate machine to where PMM is running.
 #
-# Download it somewhere, "python3 -m pip install requests" and run it with "python3 pmm_trakt_auth.py".
+# Download it somewhere, "python3 -m pip install requests" and run it with "python3 pmm-trakt-auth.py".
 #
 # You'll be asked for your trakt Client ID and Client Secret
 # Then taken to a trakt web page

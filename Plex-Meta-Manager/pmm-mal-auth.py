@@ -7,8 +7,8 @@
 # Download it somewhere,
 # python3 -m pip install pyopenssl
 # python3 -m pip install requests secrets
-# python3 pmm_mal_auth.py
-# then run it with "python3 pmm_mal_auth.py".
+# python3 pmm-mal-auth.py
+# then run it with "python3 pmm-mal-auth.py".
 #
 # If you're running PMM locally, just copy it into the PMM directory and run in the PMM environment.  All teh requirements are already there.
 #
