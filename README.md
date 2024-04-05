@@ -75,6 +75,7 @@ All these scripts use the same `.env` and requirements.
 1. refresh-metadata.py - Refresh metadata individually on items in a library
 1. list-item-ids.py - Generate a list of IDs in libraries and/or collections
 1. actor-count.py - Generate a list of actor credit counts
+1. crew-count.py - Generate a list of crew credit counts
 1. list_low_poster_counts.py - Generate a list of items that have fewer than some number of posters in Plex
 
 See the [Plex Scripts README](Plex/README.md) for details.

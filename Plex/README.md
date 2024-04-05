@@ -163,7 +163,9 @@ POSTER_THRESHOLD=10
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
+1. [crew-count.py](#crew-countpy) - Generate a list of crew credit counts
 1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
+
 
 ## adjust-added-dates.py
 
@@ -1006,6 +1008,104 @@ TOP_COUNT=10
 ```
 
 Note that the top ten changed dramatically due to looking deeper into the cast lists.
+
+## crew-count.py
+
+Perhaps you want a list of crew members with a count of how many movies from your libraries they have been credited in.
+
+This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.  
+At the end, it produces a list of a configurable size in descending order of number of appearances.
+
+Script-specific variables in .env:
+```
+CREW_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CREW
+CREW_COUNT=100                  ### HOW MANY INDIVIDUALS TO REPORT AT THE END
+TARGET_JOB=Director             ### WHAT JOB TO TRACK
+```
+
+`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
+
+`TOP_COUNT` is the number of individuals to show in the list at the end.
+
+### Usage
+1. setup as above
+1. Run with `python crew-count.py`
+
+```shell
+connecting to Plex...
+getting items from [Test-Movies]...
+looping over 35 items...
+[=========================================] 102.9% ... Wild Gals of the Naked West   
+```
+
+It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
+
+Sample results for the library above:
+
+CREW_DEPTH=20
+CREW_COUNT=100
+TARGET_JOB=Director
+```shell
+Top 27 Director in [Test-Movies]:
+3       Jules Bass - 16410
+3       Arthur Rankin, Jr. - 16411
+2       Peyton Reed - 59026
+2       Pierre Coffin - 124747
+2       Chris Renaud - 124748
+2       Robert Wise - 1744
+2       Nicholas Meyer - 1788
+2       Leonard Nimoy - 1749
+2       Jonathan Frakes - 2388
+1       Ed Herzog - 219492
+1       Zack Snyder - 15217
+1       Noam Murro - 78914
+1       Edward Berger - 221522
+1       Bob Fosse - 66777
+1       Jean-Pierre Jeunet - 2419
+1       Dario Argento - 4955
+1       Hideaki Anno - 77921
+1       George Miller - 20629
+1       Larry Roemer - 144977
+1       Søren Fauli - 110047
+1       William Shatner - 1748
+1       David Carson - 2380
+1       Stuart Baird - 2523
+1       Richard Marquand - 19800
+1       Jūzō Itami - 69167
+1       Michael Boyle - 2754307
+1       Russ Meyer - 4590
+```
+
+CREW_DEPTH=5
+CREW_COUNT=100
+TARGET_JOB=Director
+```shell
+Top 22 Director in [Test-Movies]:
+3       Jules Bass - 16410
+3       Arthur Rankin, Jr. - 16411
+2       Peyton Reed - 59026
+2       Pierre Coffin - 124747
+2       Chris Renaud - 124748
+2       Leonard Nimoy - 1749
+1       Ed Herzog - 219492
+1       Zack Snyder - 15217
+1       Noam Murro - 78914
+1       Bob Fosse - 66777
+1       Dario Argento - 4955
+1       Hideaki Anno - 77921
+1       George Miller - 20629
+1       Larry Roemer - 144977
+1       Søren Fauli - 110047
+1       Nicholas Meyer - 1788
+1       Jonathan Frakes - 2388
+1       Stuart Baird - 2523
+1       Richard Marquand - 19800
+1       Jūzō Itami - 69167
+1       Michael Boyle - 2754307
+1       Russ Meyer - 4590
+```
+
+Note that the list changed due to the different depth.
 
 ## list_low_poster_counts.py
 
