@@ -1025,7 +1025,7 @@ TARGET_JOB=Director             ### WHAT JOB TO TRACK
 
 `CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
 
-`TOP_COUNT` is the number of individuals to show in the list at the end.
+`CREW_COUNT` is the number of individuals to show in the list at the end.
 
 ### Usage
 1. setup as above
