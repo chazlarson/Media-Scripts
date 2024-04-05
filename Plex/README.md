@@ -166,7 +166,7 @@ POSTER_THRESHOLD=10
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
-1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
+1. [delete-collections.py](#delete_collectionspy) - delete most or all collections from one or more libraries
 1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
 1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
