@@ -6,7 +6,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 1. clone repo
    ```
-   git clone https://github.com/chazlarson/Media-Scripts.git
+   git clone https://github.com/chazlarson/Media-Scripts.git && cd Media-Scripts
    ```
 1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
    
@@ -16,11 +16,17 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
    cd Plex
    ```
 1. Copy `.env.example` to `.env`
+   
+   linux-alike:
    ```
    cp .env.example .env
    ```
+   Windows:
+   ```
+   copy .env.example .env
+   ```
 1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed below.
-   Edit the file with whatever text editor you wish.
+   Edit the file with whatever **text** editor you wish [i.e. not MS Word or other word processor].
 1. Run the desired script as shown below.
 
 
