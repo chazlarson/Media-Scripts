@@ -26,6 +26,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
    copy .env.example .env
    ```
 1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed below.
+   
    Edit the file with whatever **text** editor you wish [i.e. not MS Word or other word processor].
 1. Run the desired script as shown below.
 
