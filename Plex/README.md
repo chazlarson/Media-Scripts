@@ -153,6 +153,12 @@ MIN_GENDER_NB = 5                            # include minimum this many "non-bi
 
 # LOW POSTER COUNT
 POSTER_THRESHOLD=10
+
+# CREW COUNT
+CREW_DEPTH=20
+CREW_COUNT=100
+TARGET_JOB=Director
+SHOW_JOBS=0
 ```
 
 ## Scripts:
@@ -1028,11 +1034,14 @@ Script-specific variables in .env:
 CREW_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CREW
 CREW_COUNT=100                  ### HOW MANY INDIVIDUALS TO REPORT AT THE END
 TARGET_JOB=Director             ### WHAT JOB TO TRACK
+SHOW_JOBS=0                     ### Display a list of all the jobs the script saw
 ```
 
-`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
+`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.  
 
 `CREW_COUNT` is the number of individuals to show in the list at the end.
+
+If `SHOW_JOBS` is set to 1, the script will also output a list of all the jobs it saw, if you want a reference to what may be available.
 
 ### Usage
 1. setup as above
@@ -1112,7 +1121,7 @@ Top 22 Director in [Test-Movies]:
 1       Russ Meyer - 4590
 ```
 
-Note that the list changed due to the different depth.
+Note that the list changed due to the different depth; apparently Robert Wise's Director credit is more than 5 entries into the list.
 
 ## list-low-poster-counts.py
 

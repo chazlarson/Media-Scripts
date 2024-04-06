@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import sys
 import textwrap
 from tmdbapis import TMDbAPIs
+from helpers import booler
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ CREW_DEPTH = int(os.getenv("CREW_DEPTH"))
 CREW_COUNT = int(os.getenv("CREW_COUNT"))
 TARGET_JOB = os.getenv("TARGET_JOB")
 DELAY = int(os.getenv("DELAY"))
+SHOW_JOBS = booler(os.getenv("SHOW_JOBS"))
 
 if not DELAY:
     DELAY = 0
@@ -33,6 +35,7 @@ tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
 individuals = Counter()
+jobs = Counter()
 
 YAML_STR = ""
 COLL_TMPL = ""
@@ -60,7 +63,6 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
 
-
 print(f"connecting to Plex...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
@@ -70,6 +72,7 @@ for lib in lib_array:
     print(f"looping over {item_total} items...")
     item_count = 1
     for item in items:
+        jobDict = {}
         tmpDict = {}
         tmdb_id, tvdb_id = getTID(item.guids)
         item_count = item_count + 1
@@ -86,7 +89,11 @@ for lib in lib_array:
                     count = count + 1
                     if individual.job == TARGET_JOB:
                         tmpDict[f"{individual.name} - {individual.person_id}"] = 1
+                    if SHOW_JOBS:
+                        jobDict[f"{individual.job}"] = 1
+
             individuals.update(tmpDict)
+            jobs.update(jobDict)
         except Exception as ex:
             progress(item_count, item_total, "EX: " + item.title)
 
@@ -99,3 +106,9 @@ for lib in lib_array:
         if count < CREW_COUNT:
             print("{}\t{}".format(individual[1], individual[0]))
             count = count + 1
+
+    JOB_COUNT = len(jobs.items())
+    count = 0
+    print(f"{JOB_COUNT} defined [{lib}]:")
+    for job in sorted(jobs.items(), key=lambda x: x[1], reverse=True):
+        print("{}\t{}".format(job[1], job[0]))
