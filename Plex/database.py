@@ -1,12 +1,13 @@
 import datetime
 import sqlite3
 
-def get_connection():
-    sqliteConnection = sqlite3.connect('mediascripts.sqlite', timeout=10,
+def get_connection(db_name='mediascripts.sqlite'):
+    sqliteConnection = sqlite3.connect(db_name, timeout=10,
                                        detect_types=sqlite3.PARSE_DECLTYPES |
                                                     sqlite3.PARSE_COLNAMES)
 
     return sqliteConnection
+
 
 # Track artwork download runs
 def last_artwork_run_table_create_query():
@@ -536,3 +537,196 @@ def reset_art_reset_tracking():
     finally:
         if (sqliteConnection):
             sqliteConnection.close()
+
+# grab-all-ids
+def media_keys_table_create_query():
+    return '''CREATE TABLE IF NOT EXISTS keys (
+                                        guid TEXT,
+                                        imdb TEXT,
+                                        tmdb TEXT,
+                                        tvdb TEXT,
+                                        title TEXT,
+                                        year INTEGER,
+                                        source INTEGER,
+                                        type TEXT,
+                                        complete BOOLEAN,
+                                        PRIMARY KEY (guid)
+                                        );'''
+
+def get_completed():
+    method_name = "get_completed"
+    records = None
+
+    try:
+        sqliteConnection = get_connection(db_name='ids.sqlite')
+
+        cursor = sqliteConnection.cursor()
+
+        sqlite_create_table_query = media_keys_table_create_query()
+
+        cursor = sqliteConnection.cursor()
+        cursor.execute(sqlite_create_table_query)
+
+        sqlite_select_query = """SELECT * from keys where complete = ?"""
+        cursor.execute(sqlite_select_query, (True, ))
+        records = cursor.fetchall()
+    
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print(f"Error while working with SQLite in {method_name}: ", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+    return records
+
+def get_count():
+    method_name = "get_count"
+    record_count = 0
+    
+    try:
+        sqliteConnection = get_connection(db_name='ids.sqlite')
+
+        cursor = sqliteConnection.cursor()
+
+        sqlite_create_table_query = media_keys_table_create_query()
+
+        cursor = sqliteConnection.cursor()
+        cursor.execute(sqlite_create_table_query)
+
+        sqlite_select_query = """SELECT COUNT(guid) from keys"""
+        cursor.execute(sqlite_select_query)
+        records = cursor.fetchall()
+
+        for row in records:
+            record_count = row[0]
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print(f"Error while working with SQLite in {method_name}: ", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+    return record_count
+
+def get_media_key(target_guid):
+    method_name = "check_media_key"
+    result = None
+
+    try:
+        sqliteConnection = get_connection(db_name='ids.sqlite')
+
+        cursor = sqliteConnection.cursor()
+
+        sqlite_create_table_query = media_keys_table_create_query()
+
+        cursor = sqliteConnection.cursor()
+        cursor.execute(sqlite_create_table_query)
+
+        sqlite_select_query = """SELECT * from keys where guid = ? """
+        cursor.execute(sqlite_select_query, (target_guid, ))
+        records = cursor.fetchall()
+
+        for row in records:
+            result = row
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print(f"Error while working with SQLite in {method_name}: ", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+    return result
+
+def insert_record(payload):
+    method_name = "insert_record"
+
+    try:
+        sqliteConnection = sqlite3.connect('ids.sqlite',
+                                        detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_create_table_query = media_keys_table_create_query()
+
+        cursor = sqliteConnection.cursor()
+        cursor.execute(sqlite_create_table_query)
+
+        sqlite_insert_with_param = """INSERT OR IGNORE INTO 'keys' ('guid','imdb','tmdb','tvdb','title','year','type','complete') VALUES (?, ?, ?, ?, ?, ?, ?, ?);"""
+
+        data_tuple = (payload['guid'], payload['imdb'], payload['tmdb'], payload['tvdb'], payload['title'], payload['year'], payload['type'], payload['complete'])
+        cursor.execute(sqlite_insert_with_param, data_tuple)
+
+        sqliteConnection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print(f"Error while working with SQLite in {method_name}: ", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+def update_record(payload):
+    method_name = "update_record"
+
+    try:
+        sqliteConnection = sqlite3.connect('ids.sqlite',
+                                        detect_types=sqlite3.PARSE_DECLTYPES |
+                                                        sqlite3.PARSE_COLNAMES)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_create_table_query = media_keys_table_create_query()
+
+        cursor = sqliteConnection.cursor()
+        cursor.execute(sqlite_create_table_query)
+
+        sqlite_update_with_param = 'UPDATE keys SET imdb=?,tmdb=?,tvdb=?,title=?,year=?,type=?,complete=? WHERE guid=?'
+
+        update_tuple = (payload['imdb'], payload['tmdb'], payload['tvdb'], payload['title'], payload['year'], payload['type'], payload['complete'], payload['guid'])
+        cursor.execute(sqlite_update_with_param, update_tuple)
+
+        sqliteConnection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print(f"Error while working with SQLite in {method_name}: ", error)
+    finally:
+        if (sqliteConnection):
+            sqliteConnection.close()
+
+def get_diffs(payload):
+    
+    diffs = {
+        'new': False,
+        'updated': False,
+        'changes': {}
+    }
+
+    current = get_media_key(payload['guid'])
+
+    if current is not None and len(current) > 0:
+        if current[1] != payload['imdb']:
+            diffs['changes']['imdb']= payload['imdb']
+        if current[2] != payload['tmdb']:
+            diffs['changes']['tmdb']= payload['tmdb']
+        if current[3] != payload['tvdb']:
+            diffs['changes']['tvdb']= payload['tvdb']
+        if current[5] != payload['year']:
+            diffs['changes']['year']= payload['year']
+        diffs['updated'] = len(diffs['changes']) > 0
+    else:
+        diffs['new'] = True
+        diffs['changes']['imdb']= payload['imdb']
+        diffs['changes']['tmdb']= payload['tmdb']
+        diffs['changes']['tmdb']= payload['tmdb']
+        diffs['changes']['year']= payload['year']
+    
+    return diffs
+

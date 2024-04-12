@@ -1,35 +1,18 @@
 #!/usr/bin/env python
-import json
 import logging
 import os
-import platform
-import re
-import sys
-import time
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
-import sqlalchemy as db
 from alive_progress import alive_bar
-from dotenv import load_dotenv
-from pathvalidate import ValidationError, validate_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from sqlalchemy.dialects.sqlite import insert
 
-from helpers import booler, get_all_from_library, get_ids, get_plex, validate_filename, load_and_upgrade_env
+from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from database import get_completed, get_count, insert_record, update_record, get_diffs
+
 # current dateTime
 now = datetime.now()
 
@@ -41,6 +24,7 @@ SCRIPT_NAME = Path(__file__).stem
 VERSION = "0.1.1"
 
 # 0.1.1 refactoring changes
+# 0.2.0 get rid of sqlalchemy, use the same database module as the others
 
 env_file_path = Path(".env")
 
@@ -73,106 +57,6 @@ change_file = Path(CHANGE_FILE_NAME)
 # Delete any existing change file
 if change_file.is_file():
     change_file.unlink()
-
-def get_connection():
-    engine = db.create_engine('sqlite:///ids.sqlite')
-    metadata = db.MetaData()
-
-    connection = engine.connect()
-        
-    try:
-        ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    except db.exc.NoSuchTableError as nste:
-        defaultitem = db.Table('keys', metadata,
-                db.Column('guid', db.String(25), primary_key=True),
-                db.Column('imdb', db.String(25), nullable=True),
-                db.Column('tmdb', db.String(25), nullable=True),
-                db.Column('tvdb', db.String(25), nullable=True),
-                db.Column('title', db.String(255), nullable=False),
-                db.Column('year', db.Integer),
-                db.Column('source', db.Integer),
-                db.Column('type', db.String(25), nullable=False),
-                db.Column('complete', db.Boolean),
-                )
-        metadata.create_all(engine)
-
-    return engine, metadata, connection
-
-def get_completed():
-    engine, metadata, connection = get_connection()
-    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-
-    query = db.select(keys).where(keys.columns.complete == True)
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
-
-    connection.close()
-
-    return ResultSet
-
-def get_count():
-    engine, metadata, connection = get_connection()
-    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-
-    query = db.select(keys)
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
-    count = len(ResultSet)
-    
-    connection.close()
-
-    return count
-
-def insert_record(payload):
-    engine, metadata, connection = get_connection()
-    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'], 
-                                    imdb=payload['imdb'], 
-                                    tmdb=payload['tmdb'], 
-                                    tvdb=payload['tvdb'], 
-                                    title=payload['title'], 
-                                    year=payload['year'], 
-                                    type=payload['type'], 
-                                    complete=payload['complete'])
-    do_update_stmt = stmt.on_conflict_do_update(
-        index_elements=['guid'],
-        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], year=payload['year'], type=payload['type'], complete=payload['complete'])
-    )
-
-    result = connection.execute(do_update_stmt)
-
-    connection.close()
-
-def get_diffs(payload):
-    engine, metadata, connection = get_connection()
-    keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-
-    query = db.select(keys).where(keys.columns.guid == payload['guid'])
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
-    diffs = {
-        'new': False,
-        'updated': False,
-        'changes': {}
-    }
-    if len(ResultSet) > 0:
-        if ResultSet[0]['imdb'] != payload['imdb']:
-            diffs['changes']['imdb']= payload['imdb']
-        if ResultSet[0]['tmdb'] != payload['tmdb']:
-            diffs['changes']['tmdb']= payload['tmdb']
-        if ResultSet[0]['tmdb'] != payload['tmdb']:
-            diffs['changes']['tmdb']= payload['tmdb']
-        if ResultSet[0]['year'] != payload['year']:
-            diffs['changes']['year']= payload['year']
-        diffs['updated'] = len(diffs['changes']) > 0
-    else:
-        diffs['new'] = True
-        diffs['changes']['imdb']= payload['imdb']
-        diffs['changes']['tmdb']= payload['tmdb']
-        diffs['changes']['tmdb']= payload['tmdb']
-        diffs['changes']['year']= payload['year']
-    
-    return diffs
 
 plex = get_plex()
 
@@ -214,14 +98,16 @@ def get_IDs(type, item):
                             if diffs['new']:
                                 action = 'new'
                                 NEW.append(guid)
+                                insert_record(payload)
                             else:
                                 action = 'updated'
                                 UPDATED.append(guid)
+                                update_record(payload)
 
                             with open(change_file, "a", encoding="utf-8") as cf:
                                 cf.write(f"{action} - {payload} {os.linesep}")
 
-                            insert_record(payload)
+                            
                 except Exception as ex:
                     print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
@@ -246,7 +132,7 @@ for lib in LIB_ARRAY:
     completed_things = get_completed()
 
     for thing in completed_things:
-        COMPLETE_ARRAY.append(thing['guid'])
+        COMPLETE_ARRAY.append(thing[0])
 
     try:
         the_lib = plex.library.section(lib)
