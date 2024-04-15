@@ -23,10 +23,6 @@ One of the requirements of these scripts is alive-progress 2.4.1, which requires
    
 ok no
 
-1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-1. Copy `.env.example` to `.env`
-1. Edit .env to suit
-
 1. clone repo
    ```
    git clone https://github.com/chazlarson/Media-Scripts.git
