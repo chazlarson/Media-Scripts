@@ -13,13 +13,13 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 ## Setup
 
-## if you use [`direnv`](https://github.com/direnv/direnv):
+### if you use [`direnv`](https://github.com/direnv/direnv):
 1. clone the repo
 1. cd into the repo dir
 1. run `direnv allow` as the prompt will tell you to
 1. direnv will build the virtual env and keep requirements up to date
 
-## if you don't use [`direnv`](https://github.com/direnv/direnv):
+### if you don't use [`direnv`](https://github.com/direnv/direnv):
 1. install direnv
 2. go to the previous section
    
@@ -36,12 +36,17 @@ ok no
 1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
    
    Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Plex-Meta-Manager wiki.
+
+### After you've done one of the above:
+Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
+
 1. cd to script directory [`Plex`, `Plex-Meta-Manager`, `TMDB`, etc]
    for example:
    ```
    cd Plex
    ```
 1. Copy `.env.example` to `.env`
+   
    Linux or Mac:
    ```
    cp .env.example .env
@@ -51,6 +56,7 @@ ok no
    copy .env.example .env
    ```  
 1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
+
    Edit the file with whatever text editor you wish.
 1. Run the desired script.
 
