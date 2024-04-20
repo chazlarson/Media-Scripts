@@ -4,10 +4,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 ## Setup
 
-1. clone repo
-1. Install requirements with `pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-1. Copy `.env.example` to `.env`
-1. Edit .env to suit
+See the top-level [README](../README.md) for setup instructions.
 
 All these scripts use the same `.env` and requirements.
 
