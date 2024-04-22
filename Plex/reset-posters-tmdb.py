@@ -218,7 +218,6 @@ def set_or_upload_image(bar, item, plex_poster, local_source):
     
     sleep_for_a_while()
             
-
 def get_art_source(bar, item, local_file, poster_path, dl_URL):
     art_source = None
 

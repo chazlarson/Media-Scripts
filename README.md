@@ -80,14 +80,14 @@ All these scripts use the same `.env` and requirements.
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
-## Plex-Meta Manager scripts
+## Kometa scripts
 
 1. extract-collections.py - extract collections from a library
-2. pmm-trakt-auth.py - generate trakt auth block for PMM config.yml
-3. pmm-mal-auth.py - generate mal auth block for PMM config.yml
+2. pmm-trakt-auth.py - generate trakt auth block for Kometa config.yml
+3. pmm-mal-auth.py - generate mal auth block for Kometa config.yml
 4. original-to-assets.py - Copy image files from an "Original Posters" directory to an asset directory
 
-See the [Plex-Meta-Manager Scripts README](Plex-Meta-Manager/README.md) for details.
+See the [Kometa Scripts README](Kometa/README.md) for details.
 
 # TMDB scripts
 
