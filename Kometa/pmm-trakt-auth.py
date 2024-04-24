@@ -1,8 +1,8 @@
-# This little script needs only Python 3.9 and requests, and will generate the trakt section for your PMM config file.
-# Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do
-# the one thing and not rely on any PMM code.
+# This little script needs only Python 3.9 and requests, and will generate the trakt section for your KOMETA config file.
+# Most of this code is pulled from KOMETA's own trakt authentication; it's just been simplified to do
+# the one thing and not rely on any KOMETA code.
 #
-# You can run this on a completely separate machine to where PMM is running.
+# You can run this on a completely separate machine to where KOMETA is running.
 #
 # Download it somewhere, "python3 -m pip install requests" and run it with "python3 pmm-trakt-auth.py".
 #
@@ -10,7 +10,7 @@
 # Then taken to a trakt web page
 # copy the PIN and paste it at the prompt.
 #
-# Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+# Some yaml will be printed, ready to copy-paste into your KOMETA config.yml.
 
 import requests
 import webbrowser
@@ -59,7 +59,7 @@ else:
     if validation_response.status_code == 423:
         print("Trakt Error: Account is locked; please contact Trakt Support")
     else:
-        print("Copy the following into your PMM config.yml:")
+        print("Copy the following into your KOMETA config.yml:")
         print("############################################")
         print("trakt:")
         print(f"  client_id: {client_id}")

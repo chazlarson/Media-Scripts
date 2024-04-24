@@ -79,10 +79,10 @@ if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 
-PMM_CONFIG_DIR = os.getenv("PMM_CONFIG_DIR")
+KOMETA_CONFIG_DIR = os.getenv("KOMETA_CONFIG_DIR")
 
-if PMM_CONFIG_DIR is None:
-    plogger(f"You must specify PMM_CONFIG_DIR in the .env file.", 'info', 'a')
+if KOMETA_CONFIG_DIR is None:
+    plogger(f"You must specify KOMETA_CONFIG_DIR in the .env file.", 'info', 'a')
     exit()
 
 DELAY = int(os.getenv("DELAY"))
@@ -141,7 +141,7 @@ for lib in LIB_ARRAY:
         try:
             highwater = 0
 
-            LIBRARY_BACKUP=f"{PMM_CONFIG_DIR}overlays/{lib} Original Posters"
+            LIBRARY_BACKUP=f"{KOMETA_CONFIG_DIR}overlays/{lib} Original Posters"
 
             all_backup_files = [f for f in listdir(LIBRARY_BACKUP) if isfile(join(LIBRARY_BACKUP, f))]
             backup_dict = {}

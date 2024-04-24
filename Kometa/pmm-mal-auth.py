@@ -1,8 +1,8 @@
-# This little script needs only Python 3.9 and a couple requirements, and will generate the MAL section for your PMM config file.
-# Most of this code is pulled from PMM's own MAL authentication; it's just been simplified to do
-# the one thing and not rely on any PMM code.
+# This little script needs only Python 3.9 and a couple requirements, and will generate the MAL section for your KOMETA config file.
+# Most of this code is pulled from KOMETA's own MAL authentication; it's just been simplified to do
+# the one thing and not rely on any KOMETA code.
 #
-# You can run this on a completely separate machine to where PMM is running.
+# You can run this on a completely separate machine to where KOMETA is running.
 #
 # Download it somewhere,
 # python3 -m pip install pyopenssl
@@ -10,7 +10,7 @@
 # python3 pmm-mal-auth.py
 # then run it with "python3 pmm-mal-auth.py".
 #
-# If you're running PMM locally, just copy it into the PMM directory and run in the PMM environment.  All teh requirements are already there.
+# If you're running KOMETA locally, just copy it into the KOMETA directory and run in the KOMETA environment.  All teh requirements are already there.
 #
 # You'll be asked for your MyAnimeList Client ID and Client Secret
 # Then taken to a MyAnimeList web page
@@ -18,7 +18,7 @@
 # You'll be taken to a local URL that won't load.
 # Copy that localhost URL and paste it at the prompt.
 #
-# Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+# Some yaml will be printed, ready to copy-paste into your KOMETA config.yml.
 
 import requests
 import webbrowser
@@ -73,7 +73,7 @@ if "error" in new_authorization:
     print(f"ERROR: invalid code.{os.linesep}")
     exit()
 
-print(f"{os.linesep}{os.linesep}Copy the following into your PMM config.yml:")
+print(f"{os.linesep}{os.linesep}Copy the following into your KOMETA config.yml:")
 print("############################################")
 print("mal:")
 print(f"  client_id: {client_id}")

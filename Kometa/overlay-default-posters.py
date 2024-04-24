@@ -4,9 +4,9 @@ from pathlib import Path
 from git.repo.base import Repo, GitCommandError
 from PIL import Image
 
-IMAGE_REPO = "https://github.com/meisnate12/Plex-Meta-Manager-Images"
-LOCAL_FOLDER = "Plex-Meta-Manager-Images"
-OVERLAID_FOLDER = "Plex-Meta-Manager-Images-Overlaid"
+IMAGE_REPO = "https://github.com/meisnate12/Kometa-Images"
+LOCAL_FOLDER = "Kometa-Images"
+OVERLAID_FOLDER = "Kometa-Images-Overlaid"
 OVERLAY_SOURCE_FOLDER = "default_collection_overlays"
 OVERLAY_BASE_IMAGE = "overlay-template.png"
 

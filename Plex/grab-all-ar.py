@@ -223,7 +223,7 @@ else:
         print("Asset directory naming is built around an 'ASSET NAME'")
         print("which is '9-1-1 Lone Star' in the above hierarchy.")
         print("Other file hierarchies are incompatible with the")
-        print("PMM asset naming setup at this time.")
+        print("Kometa asset naming setup at this time.")
         print("================== ATTENTION ==================")
         print("To skip this in future runs, add 'NO_FS_WARNING=1' to .env")
         print("pausing for 15 seconds...")

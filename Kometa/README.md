@@ -26,7 +26,7 @@ POSTER_DIR=extracted_posters                 # put downloaded posters here
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
 POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-PMM_CONFIG_DIR=/opt/pmm/Plex-Meta-Manager/config/ # path to Plex-Meta-Manager config directory
+KOMETA_CONFIG_DIR=/opt/pmm/Kometa/config/ # path to Kometa config directory
 
 # ORIGINAL TO ASSETS
 USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
@@ -38,8 +38,8 @@ ASSET_DIR=assets                             # top-level directory for those ass
 1. [clean-overlay-backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
 1. [extract-collections.py](#extract-collectionspy) - extract collections from a library
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
-1. [pmm-trakt-auth.py](#pmm-trakt-authpy) - generate trakt auth block for PMM config.yml
-1. [pmm-mal-auth.py](#pmm-mal-authpy) - generate mal auth block for PMM config.yml
+1. [pmm-trakt-auth.py](#pmm-trakt-authpy) - generate trakt auth block for KOMETA config.yml
+1. [pmm-mal-auth.py](#pmm-mal-authpy) - generate mal auth block for KOMETA config.yml
 1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
 
 ### OBSOLETE
@@ -47,7 +47,7 @@ ASSET_DIR=assets                             # top-level directory for those ass
 
 ## clean-overlay-backup.py
 
-You've deleted stuff from Plex and want to clean up the leftover backup art that PMM saved when it applied overlays
+You've deleted stuff from Plex and want to clean up the leftover backup art that KOMETA saved when it applied overlays
 
 ### Settings
 
@@ -57,7 +57,7 @@ PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or 
 PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 DELAY=1                                      # optional delay between items
-PMM_CONFIG_DIR=/opt/pmm/config/              # path to Plex-Meta-Manager config directory
+KOMETA_CONFIG_DIR=/opt/pmm/config/              # path to Kometa config directory
 ```
 
 ### Usage
@@ -86,7 +86,7 @@ They might be items that are not intended to have overlays
 
 ## extract-collections.py
 
-You're getting started with Plex-Meta-Manager and you want to export your existing collections
+You're getting started with Kometa and you want to export your existing collections
 
 Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
@@ -94,7 +94,7 @@ Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 1. setup as above
 2. Run with `python extract-collections.py`
 
-The script will grab some details from each collection and write a metadata file that you could use with PMM.  It also grabs artwork and background.
+The script will grab some details from each collection and write a metadata file that you could use with KOMETA.  It also grabs artwork and background.
 
 This is extremely naive; it doesn't recreate filters, just grabs a list of everything in each collection.
 
@@ -127,11 +127,11 @@ Here is a basic script to do that.
 1. create overlay images in `default_collection_overlays` [see README in that folder for notes.]
 1. Run with `overlay-default-posters.py`
 
-The script will clone or update the `Plex-Meta-Manager-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Plex-Meta-Manager-Images-Overlaid`, ready for you to use with the PMM Asset Directory [after moving them to that directory] or via template variables.
+The script will clone or update the `Kometa-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Kometa-Images-Overlaid`, ready for you to use with the KOMETA Asset Directory [after moving them to that directory] or via template variables.
 
 It chooses the overlay by name based on the "group" that each collection is part of: 
 ```
-Plex-Meta-Manager-Images
+Kometa-Images
 ├── aspect
 ├── audio_language
 ├── award
@@ -154,25 +154,25 @@ Plex-Meta-Manager-Images
 └── year
 ```
 
-For example, all the `audio_language` collection posters will be overlaid by `Plex-Meta-Manager/default_collection_overlays/audio_language.png`.
+For example, all the `audio_language` collection posters will be overlaid by `Kometa/default_collection_overlays/audio_language.png`.
 
-If there isn't a specific image for a "group", then `Plex-Meta-Manager/default_collection_overlays/overlay-template.png` will be used.
+If there isn't a specific image for a "group", then `Kometa/default_collection_overlays/overlay-template.png` will be used.
 
 ```
-Fetch/Pull on Plex-Meta-Manager-Images
+Fetch/Pull on Kometa-Images
 Using default_collection_overlays/overlay-template.png as global overlay
 building list of targets
 Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37) 
-Plex-Meta-Manager-Images/genre/Sword & Sandal.jpg
+Kometa-Images/genre/Sword & Sandal.jpg
 ```
 
 ## pmm-trakt-auth.py
 
-Perhaps you're running PMM in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
+Perhaps you're running KOMETA in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
 
-This little script will generate the trakt section for your PMM config file.  Most of this code is pulled from PMM's own trakt authentication; it's just been simplified to do the one thing.
+This little script will generate the trakt section for your KOMETA config file.  Most of this code is pulled from KOMETA's own trakt authentication; it's just been simplified to do the one thing.
 
-You can run this on a completely separate machine to where PMM is running.
+You can run this on a completely separate machine to where KOMETA is running.
 
 There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
 
@@ -184,7 +184,7 @@ You'll be asked for your trakt Client ID and Client Secret then taken to a trakt
 
 Copy the PIN and paste it at the prompt.
 
-Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+Some yaml will be printed, ready to copy-paste into your KOMETA config.yml.
 
 ```
 Let's authenticate against Trakt!
@@ -200,7 +200,7 @@ If a browser window doesn't open go to that URL manually.
 
 
 Enter the Trakt pin from that web page: 9CE4045E
-Copy the following into your PMM config.yml:
+Copy the following into your KOMETA config.yml:
 ############################################
 trakt:
   client_id: JOHNNYJOEYDEEDEE
@@ -217,9 +217,9 @@ trakt:
 
 ## pmm-mal-auth.py
 
-This little script will generate the `mal` section for your PMM config file.  Most of this code is pulled from PMM's own MAL authentication; it's just been simplified to do the one thing.
+This little script will generate the `mal` section for your KOMETA config file.  Most of this code is pulled from KOMETA's own MAL authentication; it's just been simplified to do the one thing.
 
-You can run this on a completely separate machine to where PMM is running.
+You can run this on a completely separate machine to where KOMETA is running.
 
 There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
 
@@ -234,7 +234,7 @@ Log in and click "Allow"; you'll be redirected to a localhost page that won't lo
 
 Copy that localhost URL and paste it at the prompt.
 
-Some yaml will be printed, ready to copy-paste into your PMM config.yml.
+Some yaml will be printed, ready to copy-paste into your KOMETA config.yml.
 
 ```
 Let's authenticate against MyAnimeList!
@@ -255,7 +255,7 @@ Hit enter when ready:
 URL: http://localhost/?code=TuomasEmppuTroyFloorKaiJukka
 
 
-Copy the following into your PMM config.yml:
+Copy the following into your KOMETA config.yml:
 ############################################
 mal:
   client_id: JOHNNYJOEYDEEDEE
@@ -313,7 +313,7 @@ Complete!
 
 ## top-n-actor-coll.py
 
-This has been obsoleted by "Dynamic Collections" in PMM; it's left here for historical reference.
+This has been obsoleted by "Dynamic Collections" in KOMETA; it's left here for historical reference.
 
 You should use Dynamic Collections instead.
 
@@ -321,7 +321,7 @@ Connects to a plex library, grabs all the movies.
 
 For each movie, gets the cast from TMDB; keeps track across all movies how many times it sees each actor.  You can specify a TV library, but I haven't tested that a lot.  My one attempt showed a list of 10 actors who had each been in 1 series, which doesn't seem right.
 
-At the end, builds a basic Plex-Meta-Manager metadata file for the top N actors.
+At the end, builds a basic Kometa metadata file for the top N actors.
 
 Script-specific variables in .env:
 ```

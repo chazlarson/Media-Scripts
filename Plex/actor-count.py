@@ -67,7 +67,7 @@ KNOWN_FOR_ONLY = booler(os.getenv("KNOWN_FOR_ONLY"))
 TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
 JOB_TYPE = booler(os.getenv("JOB_TYPE"))
 
-GENERATE_PMM_YAML = booler(os.getenv("GENERATE_PMM_YAML"))
+GENERATE_KOMETA_YAML = booler(os.getenv("GENERATE_KOMETA_YAML"))
 NUM_COLLECTIONS = int(os.getenv("NUM_COLLECTIONS"))
 MIN_GENDER_NONE = int(os.getenv("MIN_GENDER_NONE"))
 MIN_GENDER_FEMALE = int(os.getenv("MIN_GENDER_FEMALE"))
@@ -268,7 +268,7 @@ for lib in LIB_ARRAY:
     ascii_histogram(lists)
     print("--------------------------------\n")
     
-    if GENERATE_PMM_YAML:
+    if GENERATE_KOMETA_YAML:
         top_people = Counter()
 
         count = 0
@@ -324,7 +324,7 @@ for lib in LIB_ARRAY:
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
         print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
         
-        print(f"--- YAML FOR PMM config.yml ----")
+        print(f"--- YAML FOR Kometa config.yml ----")
         
         print(collection_string)
 

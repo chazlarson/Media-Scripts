@@ -81,7 +81,7 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-PMM_CONFIG_DIR = os.getenv("PMM_CONFIG_DIR")
+KOMETA_CONFIG_DIR = os.getenv("KOMETA_CONFIG_DIR")
 
 redaction_list = []
 redaction_list.append(os.getenv('PLEXAPI_AUTH_SERVER_BASEURL'))
@@ -122,8 +122,8 @@ def get_SE_str(item):
 
 def find_original(library_title, the_key): 
     original_file = None
-    # PMM_CONFIG_DIR=/opt/pmm/Plex-Meta-Manager/config
-    original_path = Path(PMM_CONFIG_DIR, 'overlays', f"{library_title} Original Posters")
+    # KOMETA_CONFIG_DIR=/opt/pmm/Kometa/config
+    original_path = Path(KOMETA_CONFIG_DIR, 'overlays', f"{library_title} Original Posters")
     original_file = Path(original_path, f"{the_key}.jpg")
 
     return original_file

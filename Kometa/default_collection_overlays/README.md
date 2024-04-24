@@ -7,7 +7,7 @@ Assumptions:
 2. these images are named for the "groups" of collections as defined in the images repo [`aspect`, `audio_language`, etc]:
 
 ```
-Plex-Meta-Manager-Images
+Kometa-Images
 ├── aspect
 ├── audio_language
 ├── award

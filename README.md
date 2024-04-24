@@ -35,12 +35,12 @@ ok no
    ```
 1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
    
-   Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Plex-Meta-Manager wiki.
+   Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Kometa wiki.
 
 ### After you've done one of the above:
 Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
 
-1. cd to script directory [`Plex`, `Plex-Meta-Manager`, `TMDB`, etc]
+1. cd to script directory [`Plex`, `Kometa`, `TMDB`, etc]
    for example:
    ```
    cd Plex
@@ -87,11 +87,11 @@ See the [Plex Scripts README](Plex/README.md) for details.
 ## Plex-Meta Manager scripts
 
 1. extract-collections.py - extract collections from a library
-2. pmm-trakt-auth.py - generate trakt auth block for PMM config.yml
-3. pmm-mal-auth.py - generate mal auth block for PMM config.yml
+2. pmm-trakt-auth.py - generate trakt auth block for Kometa config.yml
+3. pmm-mal-auth.py - generate mal auth block for Kometa config.yml
 4. original-to-assets.py - Copy image files from an "Original Posters" directory to an asset directory
 
-See the [Plex-Meta-Manager Scripts README](Plex-Meta-Manager/README.md) for details.
+See the [Kometa Scripts README](Kometa/README.md) for details.
 
 # TMDB scripts
 
