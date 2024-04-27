@@ -11,7 +11,9 @@ from helpers import (booler, get_all_from_library, get_plex, validate_filename, 
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.0.1"
+# 0.0.2 added superchatty logging
+
+VERSION = "0.0.2"
 
 env_file_path = Path(".env")
 
@@ -212,18 +214,24 @@ for lib in LIB_ARRAY:
                         try:
                             # get rating key
                             the_key = item.ratingKey
-                            
+                            superchat(f"Working with {item.title}: {the_key}", 'info', 'a')
+
                             # find image in originals as Path
                             original_file = find_original(the_lib.title, the_key)
+                            superchat(f"original file for {item.title}: {original_file}", 'info', 'a')
 
                             # get asset path as Path
                             target_file = target_asset(item)
+                            superchat(f"target file for {item.title}: {target_file}", 'info', 'a')
 
                             # create folders on the way to the target
                             target_file.parent.mkdir(parents=True, exist_ok=True)
+                            superchat(f"created target folders for {item.title}: {target_file}", 'info', 'a')
 
                             # copy original image to asset dir, overwriting whatever's there
                             shutil.copy(original_file, target_file)
+                            superchat(f"copied: {original_file}", 'info', 'a')
+                            superchat(f"to:     {target_file}", 'info', 'a')
 
                             item_count += 1
                         except Exception as ex:
