@@ -79,10 +79,11 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.8 more logging about why we're skipping collections
 #      0.8.9 fix logic error on string replace
 #      0.8.9a don't report a spurious error due to missing collection
+#      0.8.9b change one blogger to plogger since there's no bar in that context
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.9a"
+VERSION = "0.8.9b"
 
 env_file_path = Path(".env")
 
@@ -963,7 +964,7 @@ def get_posters(lib, item, uuid, title):
             try:
                 progress_str = f"{get_progress_string(item)} - {len(all_posters)} posters"
 
-                blogger(progress_str, 'info', 'a', bar)
+                plogger(progress_str, 'info', 'a')
 
                 import fnmatch
 
