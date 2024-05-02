@@ -79,6 +79,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.8 more logging about why we're skipping collections
 #      0.8.9 fix logic error on string replace
 #      0.8.9a don't report a spurious error due to missing collection
+#      0.8.9b reset the LIMITED_COLLECTION_LIST with each library
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -297,9 +298,9 @@ else:
 ONLY_THESE_COLLECTIONS = os.getenv("ONLY_THESE_COLLECTIONS")
 
 if ONLY_THESE_COLLECTIONS:
-    COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
+    LIMITED_COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
 else:
-    COLLECTION_ARRAY = []
+    LIMITED_COLLECTION_ARRAY = []
 
 THREADED_DOWNLOADS = booler(os.getenv("THREADED_DOWNLOADS"))
 plogger(f"Threaded downloads: {THREADED_DOWNLOADS}", 'info', 'a')
@@ -1135,6 +1136,8 @@ for lib in LIB_ARRAY:
         try:
             highwater = 0
             start_queue_length = len(my_futures)
+
+            COLLECTION_ARRAY = LIMITED_COLLECTION_ARRAY
 
             if len(my_futures) > 0:
                 plogger(f"queue length: {len(my_futures)}", 'info', 'a')
