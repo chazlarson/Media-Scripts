@@ -36,8 +36,9 @@ env_file_path = Path(".env")
 
 #      0.1.1 Log config details
 #      0.1.2 incorporate helper changes, remove testing code
+#      0.1.3 switch to 'editAddedAt' and 'editOriginallyAvailable'
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 # current dateTime
 now = datetime.now()
@@ -171,14 +172,16 @@ for lib in LIB_ARRAY:
                                     
                                     if added_too_far_apart:
                                         try:
-                                            item.addedAt = release_date
+                                            item.editAddedAt(release_date)
+                                            item.reload()
                                             blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
                                         except Exception as ex:
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
             
                                     if orig_too_far_apart:
                                         try:
-                                            item.originallyAvailableAt = release_date
+                                            item.editOriginallyAvailable(release_date)
+                                            item.reload()
                                             blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
                                         except Exception as ex:
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
