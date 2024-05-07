@@ -416,11 +416,11 @@ def load_and_upgrade_env(file_path):
         status = 1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
+        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.")
         status = -1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
+        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.")
         status = -1
 
     return status

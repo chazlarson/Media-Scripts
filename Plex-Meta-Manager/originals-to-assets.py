@@ -13,8 +13,9 @@ SCRIPT_NAME = Path(__file__).stem
 
 # 0.0.2 added superchatty logging
 # 0.0.3 guardrail to prevent trying to get the seasonNumber of a show
+# 0.0.4 more chatty logging and bail if the original isn't found
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 env_file_path = Path(".env")
 
@@ -112,7 +113,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
             LIB_ARRAY.append(lib.title.strip())
 
 def get_SE_str(item):
-    superchat(f"entering get_SE_str {item}", 'info', 'a')
+    superchat(f"entering get_SE_str for {item.TYPE} {item.title}", 'info', 'a')
     if item.TYPE == "season":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}"
     elif item.TYPE == "episode":
@@ -133,6 +134,7 @@ def find_original(library_title, the_key):
 
 def target_asset(item):
     target_file = None
+    superchat(f"getting target asset name for {item.TYPE} {item.title}", 'info', 'a')
 
     item_se_str = get_SE_str(item)
     item_season = None
@@ -141,7 +143,11 @@ def target_asset(item):
  
     asset_name = None
     try:
-        asset_name = Path(item.media[0].parts[0].file).parent.stem
+        video_file = item.media[0].parts[0].file
+        superchat(f"Video file: {video_file}", 'info', 'a')
+
+        asset_name = Path(video_file).parent.stem
+        superchat(f"Asset name: {asset_name}", 'info', 'a')
     except:
         raise FileNotFoundError
 
@@ -165,6 +171,8 @@ def target_asset(item):
         # Episode poster         <path_to_assets>/ASSET_NAME_S##E##.ext
         if item.TYPE == "episode":
             target_file = Path(ASSET_PATH, f"{asset_name}_{item_se_str}{base_name}")
+
+    superchat(f"Target file: {target_file}", 'info', 'a')
 
     return target_file
     
@@ -214,24 +222,29 @@ for lib in LIB_ARRAY:
                         try:
                             # get rating key
                             the_key = item.ratingKey
-                            superchat(f"Working with {item.title}: {the_key}", 'info', 'a')
-
+                            superchat(f"{item.title} key: {the_key}", 'info', 'a')
+                            
                             # find image in originals as Path
                             original_file = find_original(the_lib.title, the_key)
-                            superchat(f"original file for {item.title}: {original_file}", 'info', 'a')
+                            superchat(f"{item.title} original file: {original_file}", 'info', 'a')
 
-                            # get asset path as Path
-                            target_file = target_asset(item)
-                            superchat(f"target file for {item.title}: {target_file}", 'info', 'a')
+                            if original_file.exists():
+                                superchat(f"{item.title} original file is here.", 'info', 'a')
 
-                            # create folders on the way to the target
-                            target_file.parent.mkdir(parents=True, exist_ok=True)
-                            superchat(f"created target folders for {item.title}: {target_file}", 'info', 'a')
+                                # get asset path as Path
+                                target_file = target_asset(item)
+                                superchat(f"{item.title} target file: {target_file}", 'info', 'a')
 
-                            # copy original image to asset dir, overwriting whatever's there
-                            shutil.copy(original_file, target_file)
-                            superchat(f"copied: {original_file}", 'info', 'a')
-                            superchat(f"to:     {target_file}", 'info', 'a')
+                                # create folders on the way to the target
+                                target_file.parent.mkdir(parents=True, exist_ok=True)
+                                superchat(f"Created folders for: {target_file}", 'info', 'a')
+
+                                # copy original image to asset dir, overwriting whatever's there
+                                shutil.copy(original_file, target_file)
+                                superchat(f"copied {original_file}", 'info', 'a')
+                                superchat(f"    to {target_file}", 'info', 'a')
+                            else:
+                                plogger(f"{item.title} ORIGINAL NOT FOUND: {original_file}", 'info', 'a')
 
                             item_count += 1
                         except Exception as ex:
