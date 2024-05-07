@@ -12,8 +12,9 @@ from helpers import (booler, get_all_from_library, get_plex, validate_filename, 
 SCRIPT_NAME = Path(__file__).stem
 
 # 0.0.2 added superchatty logging
+# 0.0.3 guardrail to prevent trying to get the seasonNumber of a show
 
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 
 env_file_path = Path(".env")
 
@@ -135,12 +136,11 @@ def target_asset(item):
 
     item_se_str = get_SE_str(item)
     item_season = None
-    if item.TYPE != 'movie':
+    if item.TYPE == 'season':
         item_season = item.seasonNumber
  
     asset_name = None
     try:
-        video_file = item.media[0].parts[0].file
         asset_name = Path(item.media[0].parts[0].file).parent.stem
     except:
         raise FileNotFoundError
