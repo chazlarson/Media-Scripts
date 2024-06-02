@@ -65,9 +65,9 @@ CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
 KNOWN_FOR_ONLY = booler(os.getenv("KNOWN_FOR_ONLY"))
 TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
-JOB_TYPE = booler(os.getenv("JOB_TYPE"))
+JOB_TYPE = os.getenv("JOB_TYPE")
 
-GENERATE_PMM_YAML = booler(os.getenv("GENERATE_PMM_YAML"))
+GENERATE_KOMETA_YAML = booler(os.getenv("GENERATE_KOMETA_YAML"))
 NUM_COLLECTIONS = int(os.getenv("NUM_COLLECTIONS"))
 MIN_GENDER_NONE = int(os.getenv("MIN_GENDER_NONE"))
 MIN_GENDER_FEMALE = int(os.getenv("MIN_GENDER_FEMALE"))
@@ -167,9 +167,8 @@ def ascii_histogram(data) -> None:
 for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
     the_lib = plex.library.section(lib)
-    items = get_all_from_library(plex, the_lib)
+    item_total, items = get_all_from_library(the_lib)
 
-    item_total = len(items)
     print(f"looping over {item_total} items...")
     print(f"tracking gender: {TRACK_GENDER}")
     item_count = 1
@@ -268,7 +267,7 @@ for lib in LIB_ARRAY:
     ascii_histogram(lists)
     print("--------------------------------\n")
     
-    if GENERATE_PMM_YAML:
+    if GENERATE_KOMETA_YAML:
         top_people = Counter()
 
         count = 0
@@ -307,7 +306,7 @@ for lib in LIB_ARRAY:
                     top_people[person[0]] = person[1]
 
         print(f"--------------------------------")
-        collection_string = "- pmm: actor\n  template_variables:\n    include:\n"
+        collection_string = "- default: actor\n  template_variables:\n    include:\n"
         print(f"Top {NUM_COLLECTIONS} people with genders accounted for")
         for person in sorted(top_people.items(), key=lambda x: x[1], reverse=True):
             if count < TOP_COUNT:
@@ -324,7 +323,7 @@ for lib in LIB_ARRAY:
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
         print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
         
-        print(f"--- YAML FOR PMM config.yml ----")
+        print(f"--- YAML FOR Kometa config.yml ----")
         
         print(collection_string)
 

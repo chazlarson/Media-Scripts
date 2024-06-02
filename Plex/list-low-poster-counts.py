@@ -126,10 +126,8 @@ for lib in LIB_ARRAY:
             ID_ARRAY = []
             the_title = the_lib.title
 
-            items = get_all_from_library(plex, the_lib, None, None)
-            plogger(f"Completed loading {len(items)} of {the_lib.totalViewSize()} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
-
-            item_total = len(items)
+            item_total, items = get_all_from_library(the_lib, None, None)
+            plogger(f"Completed loading {item_total} of {the_lib.totalViewSize()} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
 
             if item_total > 0:
                 logger(f"looping over {item_total} items...", 'info', 'a')
@@ -143,7 +141,7 @@ for lib in LIB_ARRAY:
                         try:
                             all_posters = item.posters()
                             if len(all_posters) < POSTER_THRESHOLD:
-                                plogger(f"{item.title} has {len(all_posters)} posters", 'info', 'a')
+                                plogger(f"{item.title} poster count: {len(all_posters)}", 'info', 'a')
 
                             item_count += 1
                         except Exception as ex:

@@ -204,15 +204,13 @@ for lib in LIB_ARRAY:
 
                     if coll == 'placeholder_collection_name':
                         plogger(f"Loading {the_lib.TYPE}s  ...", 'info', 'a')
-                        items = get_all_from_library(plex, the_lib, None, None)
+                        item_total, items = get_all_from_library(the_lib, None, None)
                         plogger(f"Completed loading {len(items)} of {the_lib.totalViewSize()} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
 
                     else:
                         plogger(f"Loading everything in collection {coll} ...", 'info', 'a')
-                        items = get_all_from_library(plex, the_lib, None, {'collection': coll})
+                        item_total, items = get_all_from_library(the_lib, None, {'collection': coll})
                         plogger(f"Completed loading {len(items)} from collection {coll}", 'info', 'a')
-
-                    item_total = len(items)
 
                     if item_total > 0:
                         logger(f"looping over {item_total} items...", 'info', 'a')
@@ -223,9 +221,6 @@ for lib in LIB_ARRAY:
 
                         with alive_bar(item_total, dual_line=True, title=f"Grab all posters {the_lib.title}") as bar:
                             for item in items:
-                                if item.title == '90 Day Fiancé: Just Landed':
-                                    item.title = item.title
-                                    
                                 try:
                                     imdbid, tmid, tvid = get_ids(item.guids, None)
                                     imdbid_format = f"{imdbid : >10}" if imdbid else "       N/A"

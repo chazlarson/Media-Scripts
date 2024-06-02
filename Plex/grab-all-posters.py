@@ -60,13 +60,13 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #            Patch for windows crash on old dates
 # NEW  0.7.3 EVEN MORE SUPERCHAT to track down a Windows issue
 # FIX  0.7.4 Orderly failure if a Plex item has no "locations"
-#            observed by wogsurfer 🇲🇹 on PMM Discord [running Windows, movies library doesn't show the problem]
+#            observed by wogsurfer 🇲🇹 on Kometa Discord [running Windows, movies library doesn't show the problem]
 #      0.7.5 report libraries found on the server on connect and in "can't find the library" message
 #      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
 #      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
 # FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
 # FIX  0.7.8 missed a couple logging.info calls
-#      0.7.9 Check for and optionally delete PMM-overlaid images
+#      0.7.9 Check for and optionally delete Kometa-overlaid images
 #      0.8.0 Use asset naming if only current OR depth = 1
 #      0.8.1 or not OR
 #      0.8.2 look for and handle TCM-overlaid images
@@ -218,11 +218,11 @@ TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
 IGNORE_SHRINKING_LIBRARIES = booler(os.getenv("IGNORE_SHRINKING_LIBRARIES"))
 RETAIN_OVERLAID_IMAGES = booler(os.getenv("RETAIN_OVERLAID_IMAGES"))
 FIND_OVERLAID_IMAGES = booler(os.getenv("FIND_OVERLAID_IMAGES"))
-RETAIN_PMM_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
+RETAIN_KOMETA_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
 RETAIN_TCM_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
 
 if RETAIN_OVERLAID_IMAGES:
-    RETAIN_PMM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
+    RETAIN_KOMETA_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
     RETAIN_TCM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
 
 
@@ -252,7 +252,7 @@ else:
         print("Asset directory naming is built around an 'ASSET NAME'")
         print("which is '9-1-1 Lone Star' in the above hierarchy.")
         print("Other file hierarchies are incompatible with the")
-        print("PMM asset naming setup at this time.")
+        print("KOMETA asset naming setup at this time.")
         print("================== ATTENTION ==================")
         print("To skip this in future runs, add 'NO_FS_WARNING=1' to .env")
         print("pausing for 15 seconds...")
@@ -1102,12 +1102,12 @@ def rename_by_type(target):
         
     # check for overlay exif tag
     if FIND_OVERLAID_IMAGES:
-        pmm_overlay, tcm_overlay = has_overlay(target)
-        if pmm_overlay or tcm_overlay:
-            logger(f"pmm_overlay: {pmm_overlay}, tcm_overlay: {tcm_overlay} on image: {target}", 'info', 'a')
+        kometa_overlay, tcm_overlay = has_overlay(target)
+        if kometa_overlay or tcm_overlay:
+            logger(f"kometa_overlay: {kometa_overlay}, tcm_overlay: {tcm_overlay} on image: {target}", 'info', 'a')
 
-        if not RETAIN_PMM_OVERLAID_IMAGES and pmm_overlay:
-            logger(f"Marking as JUNK: PMM-overlaid image: {target}", 'info', 'a')
+        if not RETAIN_KOMETA_OVERLAID_IMAGES and kometa_overlay:
+            logger(f"Marking as JUNK: Kometa-overlaid image: {target}", 'info', 'a')
             extension = ".del"
         if not RETAIN_TCM_OVERLAID_IMAGES and tcm_overlay:
             logger(f"Marking as JUNK: TCM-overlaid image: {target}", 'info', 'a')

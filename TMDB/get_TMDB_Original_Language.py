@@ -17,7 +17,7 @@ load_dotenv()
 
 PLEX_URL = os.getenv("PLEX_URL")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-PMM_CACHE = os.getenv("PMM_CACHE")
+KOMETA_CACHE = os.getenv("KOMETA_CACHE")
 INPUT_FILES = os.getenv("INPUT_FILES")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
