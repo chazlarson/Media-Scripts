@@ -84,7 +84,7 @@ All these scripts use the same `.env` and requirements.
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
-## Plex-Meta Manager scripts
+## Kometa scripts
 
 1. extract-collections.py - extract collections from a library
 2. kometa-trakt-auth.py - generate trakt auth block for Kometa config.yml
