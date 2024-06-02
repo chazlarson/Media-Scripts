@@ -48,15 +48,15 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
 ## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
-USE_ASSET_FOLDERS=1                          # should those PMM-Asset-Directory names use asset folders?
+USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
-ASSETS_BY_LIBRARIES=1                        # should those PMM-Asset-Directory images be sorted into library folders?
-ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
+ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
+ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
                                              # if asset-directory naming is on, the next three are ignored                                            
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
@@ -119,8 +119,8 @@ CAST_DEPTH=20                                # how deep to go into the cast for 
 TOP_COUNT=10                                 # how many actors to export
 KNOWN_FOR_ONLY=0                                # ignore cast members who are not primarily known as actors
 TRACK_GENDER=1                               # Pay attention to actor gender [as recorded on TMDB]
-BUILD_COLLECTIONS=0                          # build yaml for PMM config.yml
-NUM_COLLECTIONS=20                           # this many actors in PMM yaml
+BUILD_COLLECTIONS=0                          # build yaml for Kometa config.yml
+NUM_COLLECTIONS=20                           # this many actors in Kometa yaml
 MIN_GENDER_NONE = 5                          # include minimum this many "none" gendered actors in the YAML, if possible
 MIN_GENDER_FEMALE = 5                        # include minimum this many "female" gendered actors in the YAML, if possible
 MIN_GENDER_MALE = 5                          # include minimum this many "male" gendered actors in the YAML, if possible
@@ -198,7 +198,7 @@ boingster - boing@gmail.com
 
 Perhaps you want to reset all the posters in a library
 
-This script will set the poster for every series or movie to the default poster from TMDB/TVDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with PMM's overlay resets.
+This script will set the poster for every series or movie to the default poster from TMDB/TVDB.  It also saves that poster under `./posters/[movies|shows]/<rating_key>.ext` in case you want to use them with Kometa's overlay resets.
 
 If there is a file already located at `./posters/[movies|shows]/<rating_key>.ext`, the script will use *that image* instead of retrieving a new one, so if you replace that local one with a poster of your choice, the script will use the custom one rather than the TMDB/TVDB default.
 
@@ -256,7 +256,7 @@ That is on a system with a 1G connection up and down, so values are just relativ
 
 The value of the local archive is that if you want to replace some of those images with your own, it provides a simple way to update all the posters in a library to custom posters of your own.  When the script runs, it looks at that archive first, only downloading an image if one doesn't exist in the archive.
 
-In that way it's sort of like PMM's Asset Directory.
+In that way it's sort of like Kometa's Asset Directory.
 
 If you're just looking to reset as a one-off, that may not have value.
 
@@ -309,11 +309,11 @@ Perhaps you want to get local copies of some or all the posters Plex knows about
 
 Maybe you find it easier to look through a bunch of options in CoverFlow or something.
 
-Maybe you want to grab all the current custom art in a library to put in a PMM asset directory or back it up for some other purpose.
+Maybe you want to grab all the current custom art in a library to put in a Kometa asset directory or back it up for some other purpose.
 
 This script will download some or all the posters for every item in a given set of libraries.  It (probably) won't download the same thing more than once, so you can cancel it and restart it if need be.  I say "probably" because the script is assuming that the list of posters retrieved from Plex is always in the same order [i.e. that new posters get appended to the end of the list].  On subsequent runs, the script checks only that a target file exists.  It doesn't pay any attention to whether the two [the one on disk vs. the one coming from Plex] are the same image.  I'll probably add a check to look at the image URL to attempt to ameliorate this at some point.
 
-The script can name these files so that they are ready for use with [Plex-Meta-Manager's Asset Directory](https://metamanager.wiki/en/latest/home/guides/assets.html).  This only works with `ONLY_CURRENT` set, since PMM has no provision for multiple assets for a given thing.
+The script can name these files so that they are ready for use with [Kometa's Asset Directory](https://metamanager.wiki/en/latest/home/guides/assets.html).  This only works with `ONLY_CURRENT` set, since Kometa has no provision for multiple assets for a given thing.
 
 If you have downloaded more than one image for each thing, see [image_picker.py](#image_pickerpy) for a simpler way to choose which one you want to make active.
 
@@ -337,15 +337,15 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_PMM_OVERLAID_IMAGES=0                 # keep images that have the PMM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
 ## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match PMM's Asset Directory requirements?
-USE_ASSET_FOLDERS=1                          # should those PMM-Asset-Directory names use asset folders?
+USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
-ASSETS_BY_LIBRARIES=1                        # should those PMM-Asset-Directory images be sorted into library folders?
-ASSET_DIR=assets                             # top-level directory for those PMM-Asset-Directory images
+ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
+ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
                                              # if asset-directory naming is on, the next three are ignored                                            
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
@@ -409,18 +409,18 @@ RESET_LIBRARIES=Movies
 ```
 That will set the fallback date to "the beginning of time" and apply that new fallback date to the "Movies" library only.
  
-If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates PMM created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_PMM_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
+If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates Kometa created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_KOMETA_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
 
-If "RETAIN_PMM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
+If "RETAIN_KOMETA_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
 
-If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the PMM EXIF tag are **not** deleted.
+If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
 
 If "RETAIN_OVERLAID_IMAGES" is `1`, the previous two settings will be forced to `0` and all overlaid images will be retained.  This is a older deprecated setting.
 
 NOTE: `ONLY_CURRENT` and `POSTER_DEPTH` do not take these images into account, meaning that if you have:
 ```
 ONLY_CURRENT=1
-RETAIN_PMM_OVERLAID_IMAGES=0
+RETAIN_KOMETA_OVERLAID_IMAGES=0
 ```
 Then nothing will be retained for items with overlaid posters.  `grab-all-posters` will download the current art, find that it has an overlay, delete it, then go to the next movie/show.
 
@@ -428,7 +428,7 @@ Similarly:
 ```
 ONLY_CURRENT=0
 POSTER_DEPTH=20
-RETAIN_PMM_OVERLAID_IMAGES=0
+RETAIN_KOMETA_OVERLAID_IMAGES=0
 ```
 This won't grab images until you have 20 downloaded.  It will grab 20 images, and if ten are found to have overlays, those ten will be deleted and you will end up with 10.
 
@@ -517,7 +517,7 @@ extracted_posters/
         └── ABC-None-local-002.jpg
 ```
 
-Use PMM Asset-directory naming, flat:
+Use Kometa Asset-directory naming, flat:
 ```shell
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
@@ -536,7 +536,7 @@ assets
 └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}_background.jpg
 ```
 
-Use PMM Asset-directory naming, movies and TV in a single directory, split by item name:
+Use Kometa Asset-directory naming, movies and TV in a single directory, split by item name:
 ```shell
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
@@ -558,7 +558,7 @@ assets
     └── poster.jpg
 ```
 
-Use PMM Asset-directory naming, split by Plex library name, flat folder:
+Use Kometa Asset-directory naming, split by Plex library name, flat folder:
 ```shell
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=0
@@ -579,7 +579,7 @@ assets
     └── Adam-12 Collection.jpg
 ```
 
-Use PMM Asset-directory naming, split by Plex library name, split by item name:
+Use Kometa Asset-directory naming, split by Plex library name, split by item name:
 ```shell
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
@@ -603,7 +603,7 @@ assets
         └── poster.jpg
 ```
 
-Use PMM Asset-directory naming, split by Plex library name, split by first letter, split by item name:
+Use Kometa Asset-directory naming, split by Plex library name, split by first letter, split by item name:
 ```shell
 USE_ASSET_NAMING=1
 USE_ASSET_FOLDERS=1
@@ -639,9 +639,9 @@ This script does not use anything from the `.env`, but it does make some assumpt
 
 It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
 
-When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the PMM asset directory.
+When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the Kometa asset directory.
 
-You can then copy that `active_assets` directory to the PMM config dir ready for use.
+You can then copy that `active_assets` directory to the Kometa config dir ready for use.
 
 It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
 
@@ -924,8 +924,8 @@ Script-specific variables in .env:
 CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
 TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 KNOWN_FOR_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
-BUILD_COLLECTIONS=0             # build yaml for PMM config.yml
-NUM_COLLECTIONS=20              # this many actors in PMM yaml
+BUILD_COLLECTIONS=0             # build yaml for Kometa config.yml
+NUM_COLLECTIONS=20              # this many actors in Kometa yaml
 MIN_GENDER_NONE = 5             # include minimum this many "none" gendered actors in the YAML, if possible
 MIN_GENDER_FEMALE = 5           # include minimum this many "female" gendered actors in the YAML, if possible
 MIN_GENDER_MALE = 5             # include minimum this many "male" gendered actors in the YAML, if possible
@@ -938,7 +938,7 @@ MIN_GENDER_NB = 5               # include minimum this many "non-binary" gendere
 
 Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `KNOWN_FOR_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
 
-`BUILD_COLLECTIONS` will make the script build some YAML to paste into your Plex-Meta-Manager config file to generate collections.
+`BUILD_COLLECTIONS` will make the script build some YAML to paste into your Kometa config file to generate collections.
 
 `NUM_COLLECTIONS` controls the number of collections in that YAML
 

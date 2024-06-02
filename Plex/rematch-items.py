@@ -77,11 +77,10 @@ for lib in LIB_ARRAY:
 
     if UNMATCHED_ONLY:
         print(f"getting UNMATCHED items from [{lib}]...")
-        items = get_all_from_library(plex, the_lib, None, {'unmatched': True})
+        item_total, items = get_all_from_library(the_lib, None, {'unmatched': True})
     else:
-        items = get_all_from_library(plex, the_lib)
+        item_total, items = get_all_from_library(the_lib)
 
-    item_total = len(items)
     plogger(f"looping over {item_total} items...", 'info', 'a')
     item_count = 0
 

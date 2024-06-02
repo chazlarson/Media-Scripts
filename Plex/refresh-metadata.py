@@ -74,15 +74,14 @@ for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
     logger(f"getting items from [{lib}]...", 'info', 'a')
     the_lib = plex.library.section(lib)
-    items = get_all_from_library(plex, the_lib)
-    item_total = len(items)
+    item_total, items = get_all_from_library(the_lib)
     logger(f"looping over {item_total} items...", 'info', 'a')
     item_count = 1
 
     plex_links = []
     external_links = []
 
-    with alive_bar(item_total, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
+    with alive_bar(item_total, dual_line=True, title=f"Refresh Metadata: {the_lib.title}") as bar:
         for item in items:
             tmpDict = {}
             item_count = item_count + 1
