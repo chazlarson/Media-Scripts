@@ -80,6 +80,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 #      0.8.9 fix logic error on string replace
 #      0.8.9a don't report a spurious error due to missing collection
 #      0.8.9b change one blogger to plogger since there's no bar in that context
+#      0.8.9c use sanitize_filename on illegal names and actually use that name
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -87,6 +88,7 @@ VERSION = "0.8.9b"
 
 env_file_path = Path(".env")
 
+print(f"{env_file_path.read_text()}")
 # current dateTime
 now = datetime.now()
 
@@ -936,13 +938,12 @@ def get_posters(lib, item, uuid, title):
         # for assets we would want:
         # Adam-12 Collection
         
-        new_path = item_path.replace('/', '-')
-        new_path = new_path.replace('\\', '-')
+        new_path = sanitize_filename(item_path)
 
         if new_path != item_path and USE_ASSET_NAMING:
             plogger(f"modified '{item_path}' to '{new_path}'; this will need to be renamed for asset use", 'info', 'a')
 
-        artwork_path = Path(tgt_dir, item_path)
+        artwork_path = Path(tgt_dir, new_path)
         logger(f"final artwork_path: {artwork_path}", 'info', 'a')
         
         # current_posters/all_libraries/collection-Adam-12 Collection'
