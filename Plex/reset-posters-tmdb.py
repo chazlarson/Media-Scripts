@@ -263,7 +263,7 @@ for lib in LIB_ARRAY:
     status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
 
-    if get_overlay_status(plex, the_lib) and not OVERRIDE_OVERLAY_STATUS:
+    if get_overlay_status(the_lib) and not OVERRIDE_OVERLAY_STATUS:
         print("==================== ATTENTION ====================")
         print(f"Library: {lib}")
         print("This library appears to have Kometa overlays applied.")
