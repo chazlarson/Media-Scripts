@@ -726,6 +726,8 @@ def process_the_thing(params):
             SCRIPT_STRING = (
                 SCRIPT_STRING + f"{script_line}{os.linesep}"
             )
+    else:
+        plogger(f"SKIP EXISTING {final_file_path}", 'info', 'a')
 
     return result
 
