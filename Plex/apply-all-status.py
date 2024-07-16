@@ -16,7 +16,9 @@ from datetime import datetime
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
+
+# DONE 0.1.1: guard against empty library map
 
 # current dateTime
 now = datetime.now()
@@ -39,7 +41,11 @@ PLEX_OWNER = os.getenv("TARGET_PLEX_OWNER")
 
 LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 
-lib_map = json.loads(LIBRARY_MAP)
+try:
+    lib_map = json.loads(LIBRARY_MAP)
+except:
+    plogger(f"LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+    lib_map = json.loads("{}")
 
 def progress(count, total, status=""):
     bar_len = 40
