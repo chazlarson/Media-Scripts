@@ -167,7 +167,7 @@ for lib in LIB_ARRAY:
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
             plogger(f"getting all items from the {the_type} library [{lib}]...", 'info', 'a')
-            items = get_all_from_library(plex, the_lib)
+            item_count, items = get_all_from_library(the_lib)
             REMOVE_LABELS = False
         else:
             plogger(
