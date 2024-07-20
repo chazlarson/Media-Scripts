@@ -42,10 +42,18 @@ def get_plex(user_token=None):
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
     try:
+        session = None
+        if booler(os.getenv("PLEXAPI_SKIP_VERIFYSSL", 'false')):
+            session = requests.Session()
+            session.verify = False
+            import urllib3
+            
+            urllib3.disable_warnings()
+        
         if user_token is not None:
-            plex = PlexServer(token=user_token)
+            plex = PlexServer(token=user_token, session=session)
         else:
-            plex = PlexServer()
+            plex = PlexServer(session=session)
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
         raise Unauthorized
