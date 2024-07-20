@@ -289,7 +289,7 @@ for lib in LIB_ARRAY:
     for lbl in LBL_ARRAY:
         if lbl == "xy22y1973":
             print(f"{os.linesep}getting all items from the library [{lib}]...")
-            library_items = get_all_from_library(plex, the_lib)
+            library_items_counts, library_items = get_all_from_library(the_lib)
             REMOVE_LABELS = False
         else:
             print(
