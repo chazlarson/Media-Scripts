@@ -43,7 +43,7 @@ def get_plex(user_token=None):
     plex = None
     try:
         session = None
-        if booler(os.getenv("PLEXAPI_SKIP_VERIFYSSL", 'false')):
+        if booler(os.getenv("PLEXAPI_SKIP_VERIFYSSL", False)):
             session = requests.Session()
             session.verify = False
             import urllib3
