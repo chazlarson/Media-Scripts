@@ -41,6 +41,7 @@ ASSET_DIR=assets                             # top-level directory for those ass
 1. [kometa-trakt-auth.py](#kometa-trakt-authpy) - generate trakt auth block for Kometa config.yml
 1. [kometa-mal-auth.py](#kometa-mal-authpy) - generate mal auth block for Kometa config.yml
 1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
+1. [metadata-extractor.py](#metadata-extractorpy) - Extract all metadata from libraries into a Kometa-compatible metadata YAML file
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
@@ -311,6 +312,55 @@ Completed loading 35 of 35 movie(s) from Test-Movies
 Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s) 
 Processed 35 of 35
 Complete!
+```
+
+## metadata-extractor.py
+
+You want to seed a Kometa metadata file with the contents of one or more libraries.
+
+Here is a basic script to do that.
+
+### Usage
+1. setup as above
+1. Run with `metadata-extractor.py`
+
+The script will read all metadata from one of more libraries and format it into a Kometa-compatible metadata file.  This includes current artwork, which will be downloaded and the files linked in the metadata YAML.
+
+
+example output:
+```
+Starting metadata-extractor 0.2.0 at 2024-08-16 21:20:27
+connecting to http://192.168.1.11:32400...
+tmdb config...
+getting items from [Kometa-Demo-Movies]...
+looping over 218 items...
+Extracting metadata from Kometa-Demo-Movies |████████████████████████████████████████| 218/218 [100%] in 9:17.8 (0.39/s)
+getting items from [Kometa-Demo-TV]...
+looping over 24 items...
+Extracting metadata from Kometa-Demo-TV |████████████████████████████████████████| 24/24 [100%] in 1:21.6 (0.29/s)
+
+
+processed 242 items in 642.92 seconds.
+```
+
+That run produced two metadata files:
+```
+metadata-Kometa-Demo-Movies.yml
+metadata-Kometa-Demo-TV.yml
+```
+And a directory of images:
+```
+metadata-items
+├── Kometa-Demo-Movies
+│   ├── imdb-tt0031381-378
+│   │   ├── background.jpg
+│   │   └── poster.jpg
+│   ├── imdb-tt0031679-584
+│   │   ├── background.jpg
+│   │   └── poster.jpg
+│   ├── imdb-tt0035575-1238
+│   │   ├── background.jpg
+...
 ```
 
 ## OBSOLETE SCRIPTS

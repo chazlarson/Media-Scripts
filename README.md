@@ -87,9 +87,10 @@ See the [Plex Scripts README](Plex/README.md) for details.
 ## Kometa scripts
 
 1. extract-collections.py - extract collections from a library
-2. kometa-trakt-auth.py - generate trakt auth block for Kometa config.yml
-3. kometa-mal-auth.py - generate mal auth block for Kometa config.yml
-4. original-to-assets.py - Copy image files from an "Original Posters" directory to an asset directory
+1. kometa-trakt-auth.py - generate trakt auth block for Kometa config.yml
+1. kometa-mal-auth.py - generate mal auth block for Kometa config.yml
+1. original-to-assets.py - Copy image files from an "Original Posters" directory to an asset directory
+1. metadata-extractor.py - Back up all metadata into a Kometa-compatible metadata file
 
 See the [Kometa Scripts README](Kometa/README.md) for details.
 

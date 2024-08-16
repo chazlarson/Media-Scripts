@@ -13,6 +13,7 @@ from timeit import default_timer as timer
 from helpers import get_ids, get_plex, load_and_upgrade_env
 import yaml
 from logs import setup_logger, plogger, blogger, logger
+from alive_progress import alive_bar
 
 # import tvdb_v4_official
 
@@ -31,12 +32,14 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 # // TODO: TV Theme tunes
 # // TODO: Process Music libraries
 # // TODO: Process Photo libraries
+# // TODO: Deal correctly with multi-line summaries
 
 # DONE 0.2.0: complete inplementation
+# DONE 0.2.1: Use alivebar, support multiple libraries
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
@@ -480,51 +483,54 @@ for lib in LIB_ARRAY:
             item_total = len(items)
             print(f"looping over {item_total} items...")
             metadataDict = {'metadata':{}}
-            for item in items:
-                item_count = item_count + 1
-                try:
-                    progress(item_count, item_total, item.title)
-                    itemKey = f"{item.title} ({item.year})"
-                    itemDict = get_common_video_info(item)
-
-                    itemDict = None
-                    if item.TYPE == "show":
+            with alive_bar(item_total, dual_line=True, title=f"Extracting metadata from {lib}") as bar:
+                for item in items:
+                    item_count = item_count + 1
+                    try:
+                        itemKey = f"{item.title} ({item.year})"
+                        blogger(f"Starting {itemKey}", 'info', 'a', bar)
                         itemDict = get_common_video_info(item)
-                        # loop through seasons and then episodes
-                        all_seasons_dict = {}
-                        show_seasons = item.seasons()
 
-                        for season in show_seasons:
-                            seasonNumber = season.seasonNumber
+                        itemDict = None
+                        if item.TYPE == "show":
+                            itemDict = get_common_video_info(item)
+                            # loop through seasons and then episodes
+                            all_seasons_dict = {}
+                            show_seasons = item.seasons()
 
-                            this_season_dict = get_season_info(season)
+                            for season in show_seasons:
+                                seasonNumber = season.seasonNumber
 
-                            season_episodes = season.episodes()
+                                this_season_dict = get_season_info(season)
 
-                            all_episodes_dict = {}
+                                season_episodes = season.episodes()
 
-                            for episode in season_episodes:
-                                episodeNumber = episode.episodeNumber
+                                all_episodes_dict = {}
 
-                                this_episode_dict = get_episode_info(episode)
+                                for episode in season_episodes:
+                                    episodeNumber = episode.episodeNumber
 
-                                all_episodes_dict[episodeNumber] = this_episode_dict
+                                    this_episode_dict = get_episode_info(episode)
 
-                            this_season_dict['episodes'] = all_episodes_dict
+                                    all_episodes_dict[episodeNumber] = this_episode_dict
 
-                            all_seasons_dict[seasonNumber] = this_season_dict
+                                this_season_dict['episodes'] = all_episodes_dict
 
-                        itemDict['seasons'] = all_seasons_dict
-                    else:
-                        itemDict = get_common_video_info(item)
-                    
-                    # get image data
+                                all_seasons_dict[seasonNumber] = this_season_dict
 
-                    if itemDict is not None:
-                        metadataDict['metadata'][itemKey] = itemDict
+                            itemDict['seasons'] = all_seasons_dict
+                        else:
+                            itemDict = get_common_video_info(item)
+                        
+                        # get image data
 
-                except Exception as ex:
-                    progress(item_count, item_total, "EX: " + item.title)
+                        if itemDict is not None:
+                            metadataDict['metadata'][itemKey] = itemDict
+
+                    except Exception as ex:
+                        print(ex)
+
+                    bar()
 
             with open(f"metadata-{lib}.yml", 'w') as yaml_file:
                 yaml.dump(metadataDict, yaml_file, default_flow_style=False, width=float("inf"))
