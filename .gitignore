@@ -10,6 +10,8 @@
 **/*.pickle
 **/*.sqlite
 
+Kometa/metadata-items
+
 Plex/movies
 Plex/shows
 Plex/active_assets
