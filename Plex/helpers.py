@@ -432,3 +432,29 @@ def load_and_upgrade_env(file_path):
         status = -1
 
     return status
+
+def check_for_images(file_path):
+    jpg_path = file_path.replace(".dat", ".jpg")
+    png_path = file_path.replace(".dat", ".png")
+
+    dat_file = Path(file_path)
+    jpg_file = Path(jpg_path)
+    png_file = Path(png_path)
+
+    dat_here = dat_file.is_file()
+    jpg_here = jpg_file.is_file()
+    png_here = png_file.is_file()
+
+    if dat_here:
+        os.remove(file_path)
+
+    if jpg_here and png_here:
+        os.remove(jpg_path)
+
+        os.remove(png_path)
+
+    if jpg_here or png_here:
+        return True
+
+    return False
+

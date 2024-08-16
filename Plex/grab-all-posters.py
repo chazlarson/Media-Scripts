@@ -21,7 +21,7 @@ import plexapi
 import requests
 from alive_progress import alive_bar, alive_it
 from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
+from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env, check_for_images)
 from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
@@ -557,40 +557,6 @@ def get_image_name(params, tgt_ext, background=False):
 
     ret_val = ret_val.replace("--", "-")
     return ret_val
-
-def check_for_images(file_path):
-    jpg_path = file_path.replace(".dat", ".jpg")
-    png_path = file_path.replace(".dat", ".png")
-
-    dat_file = Path(file_path)
-    jpg_file = Path(jpg_path)
-    png_file = Path(png_path)
-
-    dat_here = dat_file.is_file()
-    jpg_here = jpg_file.is_file()
-    png_here = png_file.is_file()
-
-    if dat_here:
-        try:
-            os.remove(file_path)
-        except:
-            plogger(f"Can't find {file_path} even though it was here a moment ago", 'info', 'd')
-
-    if jpg_here and png_here:
-        try:
-            os.remove(jpg_path)
-        except:
-            plogger(f"Can't find {jpg_path} even though it was here a moment ago", 'info', 'd')
-
-        try:
-            os.remove(png_path)
-        except:
-            plogger(f"Can't find {png_path} even though it was here a moment ago", 'info', 'd')
-
-    if jpg_here or png_here:
-        return True
-
-    return False
 
 executor = ThreadPoolExecutor()
 my_futures = []
