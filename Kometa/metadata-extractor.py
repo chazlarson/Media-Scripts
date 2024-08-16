@@ -34,7 +34,7 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 # // TODO: Process Photo libraries
 # // TODO: Deal correctly with multi-line summaries
 
-# DONE 0.2.0: complete inplementation
+# DONE 0.2.0: complete implementation
 # DONE 0.2.1: Use alivebar, support multiple libraries
 
 SCRIPT_NAME = Path(__file__).stem
