@@ -36,10 +36,11 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 # DONE 0.2.0: complete implementation
 # DONE 0.2.1: Use alivebar, support multiple libraries
+# DONE 0.2.2: Actually fill in the show match attribute
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
@@ -160,12 +161,18 @@ def get_movie_match(item):
 
 def get_show_match(item):
     imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
-    matchDict = {}
-# title1	Only matches shows that exactly match the show's Title.
-# Can be a list (only one needs to match).
-# year	Only matches shows that were released in the given year.
-# mapping_id2	Only matches shows that have the given TVDb or IMDb ID.
-    return matchDict
+
+    mapping_id = imdb_id if imdb_id is not None else tvdb_id
+    tmpDict = {'mapping_id':mapping_id}
+    
+    match_title = item.title
+    match_year = item.title
+
+    if mapping_id is None:
+        tmpDict['title'] = match_title
+        tmpDict['year'] = match_year
+
+    return tmpDict
 
 def getCSV(list):
     tmpStr = ', '.join([str(item) for item in list])

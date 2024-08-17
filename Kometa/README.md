@@ -326,6 +326,19 @@ Here is a basic script to do that.
 
 The script will read all metadata from one of more libraries and format it into a Kometa-compatible metadata file.  This includes current artwork, which will be downloaded and the files linked in the metadata YAML.
 
+IMPORTANT NOTES:
+
+This script backs up all Kometa-supported metadata [with a few minor exceptions], which includes things you may not have changed.  It also includes the "Overlay" label.  It backs up this label because it *also* backsup the current art, which might be overlaid.  You will probably want to edit or trim this file before using it to restore.
+
+Metadata not backed up:
+```
+metadata_language     Movie, Show
+subtitle mode         Show, Season
+content_rating        Episode
+```
+Generally these are because it's not obvious how to extract them from Plex and I haven't reviewed the Kometa source to see what it sets in these cases, OR the values in Plex differ from the values in Kometa and I haven't looked into why.
+
+The match method defaults to IMDb ID, falls back to TMDB/TVDB if here is no IMDb ID, and if neither exist, uses title and year.  The edition [value or blank] is added for movies in any case.
 
 example output:
 ```
