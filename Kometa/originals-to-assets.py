@@ -15,8 +15,9 @@ SCRIPT_NAME = Path(__file__).stem
 # 0.0.3 guardrail to prevent trying to get the seasonNumber of a show
 # 0.0.4 more chatty logging and bail if the original isn't found
 # 0.0.5 Actually fix TV libraries
+# 0.0.6 use parent directory name rather than stem
 
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 
 env_file_path = Path(".env")
 
@@ -147,7 +148,7 @@ def target_asset(item):
         video_file = item.media[0].parts[0].file
         superchat(f"Video file: {video_file}", 'info', 'a')
 
-        asset_name = Path(video_file).parent.stem
+        asset_name = Path(video_file).parent.name
         superchat(f"Movie asset name: {asset_name}", 'info', 'a')
 
     if item.TYPE == 'show':
