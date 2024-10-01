@@ -635,8 +635,6 @@ assets
 
 You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
 
-This script does not use anything from the `.env`, but it does make some assumptions:
-
 It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
 
 When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the Kometa asset directory.
@@ -644,6 +642,8 @@ When you click on an image, it is copied to a parallel file system rooted at `ac
 You can then copy that `active_assets` directory to the Kometa config dir ready for use.
 
 It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
+
+This script does not use anything from the `.env`, but it does make some assumptions:
 
 ### Assumptions:
 1. You are working with a directory of images produced by `grab-all-posters`
