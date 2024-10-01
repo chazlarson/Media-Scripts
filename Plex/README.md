@@ -36,19 +36,28 @@ LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries
 
 # IMAGE DOWNLOAD ENV VARS
 ## what-to-grab
-GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
-GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
-GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
-ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
-ARTWORK=1                                    # current background is downloaded with current poster
+### collection-related
 INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
 ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
-POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
+
+### tv-related
+GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
+GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
+
+### background-related 
+GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
+ARTWORK=1                                    # current background is downloaded with current poster
+
+### quantity-related
+ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
+POSTER_DEPTH=20                              # grab this many posters [0 grabs all] [ONLY_CURRENT overrides this]
+
+### what-to-keep
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0              # keep images that have the Kometa overlay EXIF tag 
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
 
 ## where-to-put-it
