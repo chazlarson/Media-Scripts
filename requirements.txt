@@ -22,3 +22,4 @@ Flask
 GitPython
 num2words
 retrying
+console-menu
