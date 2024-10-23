@@ -97,14 +97,14 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in ALL_LIBS:
         LIB_ARRAY.append(lib.title.strip())
 
-"""Function which returns season-episode string for an item."""
 def get_se_str(the_item):
+    """Function returns season-episode string for an item."""
     if the_item.TYPE == "season":
         ret_val = f"S{str(the_item.seasonNumber).zfill(2)}"
     elif the_item.TYPE == "episode":
         ret_val = f"S{str(the_item.seasonNumber).zfill(2)}E{str(the_item.episodeNumber).zfill(2)}"
     else:
-        ret_val = f""
+        ret_val = ""
 
     return ret_val
 
@@ -173,7 +173,7 @@ for lib in LIB_ARRAY:
                         except Exception as ex:
                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                        bar()
+                        bar() # pylint: disable=not-callable
 
                 plogger(f"Processed {ITEM_COUNT} of {ITEM_TOTAL}", 'info', 'a')
 
