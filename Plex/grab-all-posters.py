@@ -361,7 +361,7 @@ def get_asset_names(item):
             superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
             ret_val['asset'] = f"{ASSET_NAME}"
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             plogger(f"unable to retrieve movie file", 'info', 'a')
             superchat(f"{ex}", 'info', 'a')
     elif item.TYPE == "show":
@@ -376,7 +376,7 @@ def get_asset_names(item):
             superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
             ret_val['asset'] = f"{ASSET_NAME}"
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             plogger(f"unable to retrieve show locations", 'info', 'a')
             superchat(f"{ex}", 'info', 'a')
     elif item.TYPE == "season":
@@ -393,7 +393,7 @@ def get_asset_names(item):
             ret_val['poster'] = f"Season{str(item.seasonNumber).zfill(2)}"
             ret_val['background'] = f"{ret_val['poster']}_background"
             ret_val['asset'] = f"{ASSET_NAME}"
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             plogger(f"unable to retrieve show locations", 'info', 'a')
             superchat(f"{ex}", 'info', 'a')
     elif item.TYPE == "episode":
@@ -410,7 +410,7 @@ def get_asset_names(item):
             ret_val['poster'] = f"{get_SE_str(item)}"
             ret_val['background'] = f"{ret_val['poster']}_background"
             ret_val['asset'] = f"{ASSET_NAME}"
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             plogger(f"unable to retrieve episode file", 'info', 'a')
             superchat(f"{ex}", 'info', 'a')
     else:
@@ -677,7 +677,7 @@ def process_the_thing(params):
                         with open(SOURCE_FILE_NAME, "a", encoding="utf-8") as sf:
                             sf.write(f"{local_file} - {redact(src_URL, redaction_list)}{os.linesep}")
 
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     result['success'] = False
                     result['status'] = f"{ex}"
                     logger(f"error on {src_URL} - {ex}", 'info', 'd')
@@ -822,7 +822,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
                     idx += 1
 
             attempts = 6
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             progress_str = f"EX: {ex} {item.title}"
             logger(progress_str, 'info', 'a')
             attempts  += 1
@@ -1039,7 +1039,7 @@ def get_posters(lib, item, uuid, title):
                         idx += 1
 
                 attempts = 6
-            except Exception as ex:
+            except Exception as ex: # pylint: disable=broad-exception-caught
                 progress_str = f"EX: {ex} {item.title}"
                 logger(progress_str, 'info', 'a')
 
@@ -1289,7 +1289,7 @@ for lib in LIB_ARRAY:
                                         blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
                                     item_count += 1
-                                except Exception as ex:
+                                except Exception as ex: # pylint: disable=broad-exception-caught
                                     plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                                 bar() # pylint: disable=not-callable
@@ -1338,7 +1338,7 @@ for lib in LIB_ARRAY:
             if skip_file.is_file():
                 skip_file.unlink()
 
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             progress_str = f"Problem processing {lib}; {ex}"
             plogger(progress_str, 'info', 'a')
     else:

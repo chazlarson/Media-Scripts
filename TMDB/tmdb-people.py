@@ -85,9 +85,9 @@ with alive_bar(item_total, dual_line=True, title="TMDB people") as bar:
                         bar.text = f"-> retrieving: {idx}-{item}"
                         save_image(person, idx, UPPER)
 
-                    except Exception as ex:
+                    except Exception as ex: # pylint: disable=broad-exception-caught
                         print(f"->  exception: {item} - {ex.args[0]}")
-            except Exception as ex:
+            except Exception as ex: # pylint: disable=broad-exception-caught
                 print(f"->  exception: {item} - {ex.args[0]}")
 
             bar() # pylint: disable=not-callable

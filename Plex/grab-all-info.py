@@ -221,12 +221,12 @@ def get_IDs(type, item):
                                 cf.write(f"{action} - {payload} {os.linesep}")
 
                             insert_record(payload)
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     print(f"{item.ratingKey}- {item.title} - Exception: {ex}")
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
             else:
                 logging.info(f"{guid} already complete")
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             logging.info(f"No guid: {bits}")
 
 COMPLETE_ARRAY = []
@@ -278,7 +278,7 @@ for lib in LIB_ARRAY:
 
         print(os.linesep)
 
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         progress_str = f"Problem processing {lib}; {ex}"
         logging.info(progress_str)
 

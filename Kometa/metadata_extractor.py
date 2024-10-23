@@ -542,7 +542,7 @@ for lib in LIB_ARRAY:
                         if itemDict is not None:
                             metadataDict['metadata'][itemKey] = itemDict
 
-                    except Exception as ex:
+                    except Exception as ex: # pylint: disable=broad-exception-caught
                         print(ex)
 
                     bar() # pylint: disable=not-callable
@@ -550,7 +550,7 @@ for lib in LIB_ARRAY:
             with open(f"metadata-{lib}.yml", 'w') as yaml_file:
                 yaml.dump(metadataDict, yaml_file, default_flow_style=False, width=float("inf"))
 
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             progress_str = f"Problem processing {lib}; {ex}"
             plogger(progress_str, 'info', 'a')
 

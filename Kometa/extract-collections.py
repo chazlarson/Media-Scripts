@@ -119,7 +119,7 @@ for lib in lib_array:
                         filename=f"{safe_title}.png",
                         savepath=artwork_path,
                     )
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     print(f"Continuing without image - {ex}")
 
                 if collection.art is not None:
@@ -178,7 +178,7 @@ for lib in lib_array:
                     open(metadatafile_path, "w", encoding="utf-8"))
             else:
                 print(f"{lib} has no collections to export")
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"error loading library: {lib}")
         print(f"This server has: {plex.library.sections()}")
 

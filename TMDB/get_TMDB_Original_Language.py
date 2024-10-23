@@ -398,7 +398,7 @@ else:
 
                     progress(item_count, item_total, pi.title)
 
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     progress(item_count, item_total, f"EX: {ex} {item.title}")
 
                 # Wait between items in case hammering the Plex server turns out badly.

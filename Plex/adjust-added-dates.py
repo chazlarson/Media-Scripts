@@ -173,23 +173,23 @@ for lib in LIB_ARRAY:
                                         try:
                                             item.addedAt = release_date
                                             blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
-                                        except Exception as ex:
+                                        except Exception as ex: # pylint: disable=broad-exception-caught
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                                     if orig_too_far_apart:
                                         try:
                                             item.originallyAvailableAt = release_date
                                             blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
-                                        except Exception as ex:
+                                        except Exception as ex: # pylint: disable=broad-exception-caught
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                                 else:
                                     blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
 
-                            except Exception as ex:
+                            except Exception as ex: # pylint: disable=broad-exception-caught
                                 plogger(f"Problem processing sub_item {item.title}; {ex}", 'info', 'a')
 
-                    except Exception as ex:
+                    except Exception as ex: # pylint: disable=broad-exception-caught
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                     bar() # pylint: disable=not-callable
@@ -199,6 +199,6 @@ for lib in LIB_ARRAY:
         progress_str = "COMPLETE"
         logger(progress_str, 'info', 'a')
 
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         progress_str = f"Problem processing {lib}; {ex}"
         plogger(progress_str, 'info', 'a')

@@ -230,7 +230,7 @@ for lib in LIB_ARRAY:
                                 track_gender(the_key, person.gender)
                             credit_count += 1
                             bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
-            except Exception as ex:
+            except Exception as ex: # pylint: disable=broad-exception-caught
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
             bar() # pylint: disable=not-callable

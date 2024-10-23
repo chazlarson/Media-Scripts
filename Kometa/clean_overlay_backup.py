@@ -170,7 +170,7 @@ for lib in LIB_ARRAY:
 
 
                             ITEM_COUNT += 1
-                        except Exception as ex:
+                        except Exception as ex: # pylint: disable=broad-exception-caught
                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                         bar() # pylint: disable=not-callable
@@ -189,7 +189,7 @@ for lib in LIB_ARRAY:
                         try:
                             p.unlink()
                             delete_list.append(rk)
-                        except Exception as ex:
+                        except Exception as ex: # pylint: disable=broad-exception-caught
                             plogger(f"Problem deleting {target_file}; {ex}", 'info', 'a')
 
                 for rk in delete_list:
@@ -204,7 +204,7 @@ for lib in LIB_ARRAY:
 
             logger("COMPLETE", 'info', 'a')
 
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             plogger(f"Problem processing {lib}; {ex}", 'info', 'a')
     else:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')

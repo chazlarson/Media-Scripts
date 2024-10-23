@@ -94,7 +94,7 @@ for lib in lib_array:
 
             individuals.update(tmpDict)
             jobs.update(jobDict)
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")

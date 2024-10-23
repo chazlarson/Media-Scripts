@@ -147,7 +147,7 @@ def plex_knows_this_image(item, source, path):
                         logger((f"This is one of Plex' posters: {posterURL}"), 'info', 'a')
                         return poster
             attempts = 6
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             logger((f'Exception processing "{item}": {ex}'), 'info', 'a')
             attempts += 1
 
@@ -194,7 +194,7 @@ def get_base_tmdb_image(item_title, tmdb_id):
         logger((f"{item_title}: tmdb_id: {tmdb_id} - RELOADING ITEM"), 'info', 'a')
         tmdb_item.reload()
         tmdb_base = tmdb_item.poster_path
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         logger((f"{item_title}: tmdb_id: {tmdb_id} - EXCEPTION {ex}"), 'info', 'a')
         tmdb_base = None
 
@@ -433,7 +433,7 @@ for lib in LIB_ARRAY:
                                                             try:
                                                                 tmdb_s_id = tmdb_ep.season_number
                                                                 tmdb_e_id = tmdb_ep.episode_number
-                                                            except Exception as ex:
+                                                            except Exception as ex: # pylint: disable=broad-exception-caught
                                                                 blogger(f"-> EXCEPTION getting TMDB season or episode ID: {ex}", 'info', 'a', bar)
 
                                                             if tmdb_s_id is not None and tmdb_e_id is not None:
@@ -485,7 +485,7 @@ for lib in LIB_ARRAY:
                     else:
                         blogger(f"NO TMDB poster available for {item_title}", 'info', 'a', bar)
 
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     plogger(f'Exception processing "{item_title}": {ex}', 'info', 'a')
                     # there's a 500 in the season poster upload
 

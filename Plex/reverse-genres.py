@@ -112,7 +112,7 @@ for lib in LIB_ARRAY:
 
         print(os.linesep)
 
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         progress_str = f"Problem processing {lib}; {ex}"
         logger((progress_str), 'info', 'a')
 

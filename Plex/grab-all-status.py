@@ -104,14 +104,14 @@ def process_section(username, section):
     file_string = ""
 
     print(f"------------ {section['title']} ------------")
-    items = get_xml_watched(PLEX_URL, PLEX_TOKEN, section['key'], section['type'])
+    items = get_xml_watched(plex_url, plex_token, section['key'], section['type'])
     if len(items) > 0:
         with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
             for video in items:
                 status_text = get_data_line(username, section['type'], section['title'], video)
                 file_string = (f"{file_string}{status_text}{os.linesep}")
                 bar() # pylint: disable=not-callable
-     return file_string
+        return file_string
 
 padwidth = 95
 count = 0
@@ -147,7 +147,7 @@ try:
     else:
         print(f"Could not retrieve libraries for {account.username}")
 
-except Exception as ex:
+except Exception as ex: # pylint: disable=broad-exception-caught
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
     file_string = file_string + f"{file_line}{os.linesep}"
@@ -175,7 +175,7 @@ for plex_user in all_users:
         else:
             print(f"Could not retrieve libraries for {plex_user.title}")
 
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         file_line = f"Exception processing {plex_user.title} - {ex}"
         file_string = file_string + f"{file_line}{os.linesep}"
         print(file_line)

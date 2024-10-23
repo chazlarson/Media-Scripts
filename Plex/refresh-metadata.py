@@ -112,7 +112,7 @@ for lib in LIB_ARRAY:
                     progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
                 except ReadTimeout:
                     progress(item_count, item_total, "ReadTimeout: " + item.title)
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-exception-caught
                     progress(item_count, item_total, "EX: " + item.title)
                     logging.error(ex)
 

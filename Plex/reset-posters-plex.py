@@ -249,7 +249,7 @@ for lib in LIB_ARRAY:
 
                                                 track_completion(id_array, status_file, f"{e.ratingKey}")
 
-                    except Exception as ex:
+                    except Exception as ex: # pylint: disable=broad-exception-caught
                         plogger(f'Exception processing "{item.title}": {ex}', 'info', 'a')
 
                     bar() # pylint: disable=not-callable

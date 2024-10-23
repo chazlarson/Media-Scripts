@@ -49,7 +49,7 @@ def get_plex(user_token=None):
     except Unauthorized:
         print("Plex Error: Plex token is invalid")
         raise Unauthorized
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"Plex Error: {ex.args}")
         raise ex
 
@@ -275,7 +275,7 @@ def get_xml_libraries(plex_url, plex_token):
         if raw_output.status_code == 200:
             print(f"- success")
             media_output = raw_output.json()
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"- problem getting libraries: {ex}")
 
     return media_output

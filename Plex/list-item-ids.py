@@ -233,7 +233,7 @@ for lib in LIB_ARRAY:
                                         plogger(f"item {item_count : >5}/{item_total : >5} | TVDb ID: {tvid_format}    | IMDb ID: {imdbid_format}  | {item.title}", 'info', 'a')
 
                                     item_count += 1
-                                except Exception as ex:
+                                except Exception as ex: # pylint: disable=broad-exception-caught
                                     plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                                 bar() # pylint: disable=not-callable
@@ -243,7 +243,7 @@ for lib in LIB_ARRAY:
             progress_str = "COMPLETE"
             logger(progress_str, 'info', 'a')
 
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             progress_str = f"Problem processing {lib}; {ex}"
             plogger(progress_str, 'info', 'a')
     else:

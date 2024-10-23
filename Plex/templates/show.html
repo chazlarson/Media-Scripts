@@ -127,7 +127,7 @@
             </div>
         </div>
     </div>
-    
+
 
     <div class="row">
         <div class="col d-flex justify-content-between">
@@ -146,9 +146,9 @@
     <div class="row">
         {% for image_info in images_info %}
         <div class="col-md-4 mb-4 p-4 text-center image-container" data-image-type="{{ image_info.type }}">
-            <img src="{{ url_for('image', library_name=library_name, category_name=category_name, show_name=show_name, filename=image_info.name) }}" 
-                    alt="{{ image_info.name }}" 
-                    title="{{ image_info.name }}" 
+            <img src="{{ url_for('image', library_name=library_name, category_name=category_name, show_name=show_name, filename=image_info.name) }}"
+                    alt="{{ image_info.name }}"
+                    title="{{ image_info.name }}"
                     onclick='copyAndHighlight(this, "{{ library_name }}", "{{ category_name }}", "{{ show_name }}", "{{ image_info.name }}")'
                     onload='doHighlight(this, "{{ library_name }}", "{{ category_name }}", "{{ show_name }}", "{{ image_info.name }}")'>
             <p>{{ image_info.name }}<br />{{ image_info.width }} x {{ image_info.height }} px</p>
@@ -164,12 +164,12 @@
             document.getElementById('contents').style.visibility="hidden";
         } else if (state == 'complete') {
             var scaleValue = localStorage.getItem('scaleValue');
-            
+
             document.getElementById('imageScaleSlider').value = scaleValue
             document.querySelectorAll('.image-container img').forEach(function(img) {
                 img.style.width = scaleValue + '%';
             });
-            
+
             var chks = document.querySelectorAll("input[class='image-type-checkbox']");
             for (let i = 0; i < chks.length; i++) {
                 chks[i].checked = false;
@@ -202,7 +202,7 @@
             },1000);
         }
     }
-    
+
     function setZoom() {
     }
 

@@ -69,5 +69,5 @@ for plex_user in all_users:
                             f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
                         )
                     print(f"{typestr} - {output}")
-    except Exception as ex:
+    except Exception as ex: # pylint: disable=broad-exception-caught
         handle_this_silently = "please"
