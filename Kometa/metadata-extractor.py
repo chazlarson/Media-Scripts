@@ -547,5 +547,5 @@ for lib in LIB_ARRAY:
             plogger(progress_str, 'info', 'a')
 
 end = timer()
-elapsed = end - start
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {"{:.2f}".format(elapsed)} seconds.")
+elapsed = "{:.2f}".format(end - start)
+print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
