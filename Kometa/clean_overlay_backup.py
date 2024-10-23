@@ -41,7 +41,7 @@ if plex_url is None:
     plex_url = os.getenv(TARGET_URL_VAR)
 
 # strip a trailing slash
-plex_url = PLEX_URL.rstrip("/")
+plex_url = plex_url.rstrip("/")
 
 TARGET_TOKEN_VAR = 'PLEX_TOKEN'
 plex_token = os.getenv(TARGET_TOKEN_VAR)
@@ -63,7 +63,7 @@ LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 KOMETA_CONFIG_DIR = os.getenv("KOMETA_CONFIG_DIR")
 
 if KOMETA_CONFIG_DIR is None:
-    plogger(f"You must specify KOMETA_CONFIG_DIR in the .env file.", 'info', 'a')
+    plogger("You must specify KOMETA_CONFIG_DIR in the .env file.", 'info', 'a')
     sys.exit()
 
 DELAY = int(os.getenv("DELAY"))
@@ -97,23 +97,14 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in ALL_LIBS:
         LIB_ARRAY.append(lib.title.strip())
 
-def get_se_str(item):
-    if item.TYPE == "season":
-        ret_val = f"S{str(item.seasonNumber).zfill(2)}"
-    elif item.TYPE == "episode":
-        ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
+"""Function which returns season-episode string for an item."""
+def get_se_str(the_item):
+    if the_item.TYPE == "season":
+        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}"
+    elif the_item.TYPE == "episode":
+        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}E{str(the_item.episodeNumber).zfill(2)}"
     else:
         ret_val = f""
-
-    return ret_val
-
-def get_progress_string(item):
-    if item.TYPE == "season":
-        ret_val = f"{item.parentTitle} - {get_se_str(item)} - {item.title}"
-    elif item.TYPE == "episode":
-        ret_val = f"{item.grandparentTitle} - {item.parentTitle} - {get_se_str(item)} - {item.title}"
-    else:
-        ret_val = f"{item.title}"
 
     return ret_val
 
@@ -168,14 +159,14 @@ for lib in LIB_ARRAY:
                 with alive_bar(ITEM_TOTAL, dual_line=True, title=f"Clean Overlay Backup {the_lib.title}") as bar:
                     for item in items:
                         try:
-                            rk = f"{item.ratingKey}"
-                            blogger(f"Processing {item.title}; rating key {rk}", 'info', 'a', bar)
-                            if rk in backup_dict:
-                                blogger(f"Rating key {rk} found", 'info', 'a', bar)
-                                backup_dict.pop(rk)
+                            RK = f"{item.ratingKey}"
+                            blogger(f"Processing {item.title}; rating key {RK}", 'info', 'a', bar)
+                            if RK in backup_dict:
+                                blogger(f"Rating key {RK} found", 'info', 'a', bar)
+                                backup_dict.pop(RK)
                             else:
                                 missing_dict[rk]= f"{item.title}"
-                                blogger(f"{item.title}; rating key {rk} has no backup art", 'info', 'a', bar)
+                                blogger(f"{item.title}; rating key {RK} has no backup art", 'info', 'a', bar)
 
 
                             ITEM_COUNT += 1
