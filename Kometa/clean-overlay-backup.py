@@ -30,8 +30,6 @@ from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from plexapi.utils import download
 
-# 0.5.8: QOL, bugfixes
-
 SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
