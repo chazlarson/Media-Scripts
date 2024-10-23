@@ -35,7 +35,7 @@ ASSET_DIR=assets                             # top-level directory for those ass
 ```
 
 ## Scripts:
-1. [clean-overlay-backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
+1. [clean_overlay_backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
 1. [extract-collections.py](#extract-collectionspy) - extract collections from a library
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
 1. [kometa-trakt-auth.py](#kometa-trakt-authpy) - generate trakt auth block for Kometa config.yml
@@ -63,14 +63,14 @@ KOMETA_CONFIG_DIR=/opt/kometa/config/              # path to Kometa config direc
 
 ### Usage
 1. setup as above
-2. Run with `python clean-overlay-backup.py`
+2. Run with `python clean_overlay_backup.py`
 
 The script will catalog the backup files and current Plex contents for each library listed in the `.env`.
 
 It then compares the two lists, and any files in the backup dir that do not correspond to current items in Plkex are deleted.
 
 ```
-Starting clean-overlay-backup 0.1.0 at 2024-02-13 17:52:31
+Starting clean_overlay_backup 0.1.0 at 2024-02-13 17:52:31
 connecting to https://plex.bing.bang...
 6686 images in the Movies overlay backup directory ...
 Loading Movies ...
@@ -474,3 +474,4 @@ collections:
   Sylvester Stallone:
     template: {name: Person, person: 16483}
 ```
+
