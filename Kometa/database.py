@@ -2,11 +2,11 @@ import datetime
 import sqlite3
 
 def get_connection(db_name='kometascripts.sqlite'):
-    sqliteConnection = sqlite3.connect(db_name, timeout=10,
+    sqlite_connection = sqlite3.connect(db_name, timeout=10,
                                        detect_types=sqlite3.PARSE_DECLTYPES |
                                                     sqlite3.PARSE_COLNAMES)
 
-    return sqliteConnection
+    return sqlite_connection
 
 
 # Track artwork download runs
@@ -22,13 +22,13 @@ def last_artwork_run_table_create_query():
 def add_last_run(uuid, name, level, last_run_date):
     method_name = "add_last_run"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = last_artwork_run_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'last_run_by_library'
@@ -47,28 +47,28 @@ def add_last_run(uuid, name, level, last_run_date):
         data_tuple = (last_run_date, uuid, name, level)
         cursor.execute(sqlite_update_with_param, data_tuple)
 
-        sqliteConnection.commit()
+        sqlite_connection.commit()
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 def get_last_run(uuid, level):
     method_name = "get_last_run"
     last_run_date = None
 
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = last_artwork_run_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_select_query = """SELECT last_run_date from last_run_by_library where uuid = ? and level = ?"""
@@ -83,17 +83,17 @@ def get_last_run(uuid, level):
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
     return last_run_date
 
 def reset_last_run():
     method_name = "reset_last_run"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS last_run_by_library;"""
         cursor.execute(sqlite_drop_query)
@@ -106,8 +106,8 @@ def reset_last_run():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # Track media details
 def media_details_table_create_query():
@@ -124,13 +124,13 @@ def media_details_table_create_query():
 def add_media_details(path, title, type, height, width, aspect_ratio, aspect_ratio_calc):
     method_name = "add_media_details"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_details_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'media_details'
@@ -140,22 +140,22 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
         data_tuple = (path, title, type, height, width, aspect_ratio, aspect_ratio_calc)
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
-        sqliteConnection.commit()
+        sqlite_connection.commit()
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 def reset_media_details():
     method_name = "reset_media_details"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS media_details;"""
         cursor.execute(sqlite_drop_query)
@@ -168,8 +168,8 @@ def reset_media_details():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # Track downloaded URLs
 def url_tracking_table_create_query():
@@ -184,13 +184,13 @@ def url_tracking_table_create_query():
 def add_url(url, uuid, title):
     method_name = "add_url"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = url_tracking_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'url_tracking'
@@ -199,53 +199,52 @@ def add_url(url, uuid, title):
         data_tuple = (url, uuid, title, )
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
-        sqliteConnection.commit()
+        sqlite_connection.commit()
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name} ({url}, {uuid}, {title}): ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 def check_url(url, uuid):
     method_name = "check_url"
     known_url = False
 
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = url_tracking_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_select_query = """SELECT url from url_tracking where url = ? and uuid = ?"""
         cursor.execute(sqlite_select_query, (url, uuid, ))
         records = cursor.fetchall()
 
-        for row in records:
-            known_url = True
+        known_url = len(records) > 0
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
     return known_url
 
 def reset_url_tracking():
     method_name = "reset_url_tracking"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS url_tracking;"""
         cursor.execute(sqlite_drop_query)
@@ -258,8 +257,8 @@ def reset_url_tracking():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # Track artwork download completion
 def completion_tracking_table_create_query():
@@ -274,14 +273,14 @@ def add_key(rating_key, uuid, tracking):
     method_name = "add_key"
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = completion_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_insert_with_param = """INSERT OR IGNORE INTO 'completed_keys' ('rating_key', 'uuid') VALUES (?, ?);"""
@@ -289,15 +288,15 @@ def add_key(rating_key, uuid, tracking):
             data_tuple = (rating_key, uuid, )
             cursor.execute(sqlite_insert_with_param, data_tuple)
 
-            sqliteConnection.commit()
+            sqlite_connection.commit()
 
             cursor.close()
 
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
 def check_key(rating_key, uuid, tracking):
     method_name = "check_key"
@@ -305,14 +304,14 @@ def check_key(rating_key, uuid, tracking):
 
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = completion_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_select_query = """SELECT rating_key from completed_keys where rating_key = ? and uuid = ?"""
@@ -327,17 +326,17 @@ def check_key(rating_key, uuid, tracking):
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
     return known_key
 
 def reset_completion_tracking():
     method_name = "reset_completion_tracking"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS completed_keys;"""
         cursor.execute(sqlite_drop_query)
@@ -350,8 +349,8 @@ def reset_completion_tracking():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # Track item rematch completion
 def rematch_tracking_table_create_query():
@@ -366,14 +365,14 @@ def add_rematch_key(rating_key, uuid, tracking):
     method_name = "add_rematch_key"
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = rematch_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_insert_with_param = """INSERT OR IGNORE INTO 'rematch_completed_keys' ('rating_key', 'uuid') VALUES (?, ?);"""
@@ -381,15 +380,15 @@ def add_rematch_key(rating_key, uuid, tracking):
             data_tuple = (rating_key, uuid, )
             cursor.execute(sqlite_insert_with_param, data_tuple)
 
-            sqliteConnection.commit()
+            sqlite_connection.commit()
 
             cursor.close()
 
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
 def check_rematch_key(rating_key, uuid, tracking):
     method_name = "check_rematch_key"
@@ -397,14 +396,14 @@ def check_rematch_key(rating_key, uuid, tracking):
 
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = rematch_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_select_query = """SELECT rating_key from rematch_completed_keys where rating_key = ? and uuid = ?"""
@@ -419,17 +418,17 @@ def check_rematch_key(rating_key, uuid, tracking):
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
     return known_key
 
 def reset_rematch_tracking():
     method_name = "reset_rematch_tracking"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS rematch_completed_keys;"""
         cursor.execute(sqlite_drop_query)
@@ -442,8 +441,8 @@ def reset_rematch_tracking():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # Track artwork reset completion
 def art_reset_tracking_table_create_query():
@@ -459,14 +458,14 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
     method_name = "add_art_reset_key"
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = reset_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_insert_with_param = """INSERT OR IGNORE INTO 'art_reset_completed_keys' ('rating_key', 'uuid', 'source') VALUES (?, ?, ?);"""
@@ -474,15 +473,15 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
             data_tuple = (rating_key, uuid, source)
             cursor.execute(sqlite_insert_with_param, data_tuple)
 
-            sqliteConnection.commit()
+            sqlite_connection.commit()
 
             cursor.close()
 
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
 def check_art_reset_key(rating_key, uuid, source, tracking):
     method_name = "check_art_reset_key"
@@ -490,14 +489,14 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
 
     if tracking:
         try:
-            sqliteConnection = sqlite3.connect('mediascripts.sqlite',
+            sqlite_connection = sqlite3.connect('mediascripts.sqlite',
                                             detect_types=sqlite3.PARSE_DECLTYPES |
                                                             sqlite3.PARSE_COLNAMES)
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
 
             sqlite_create_table_query = art_reset_tracking_table_create_query()
 
-            cursor = sqliteConnection.cursor()
+            cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
 
             sqlite_select_query = """SELECT rating_key from art_reset_completed_keys where rating_key = ? and uuid = ? and source = ?"""
@@ -512,17 +511,17 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
         except sqlite3.Error as error:
             print(f"Error while working with SQLite in {method_name}: ", error)
         finally:
-            if (sqliteConnection):
-                sqliteConnection.close()
+            if sqlite_connection:
+                sqlite_connection.close()
 
     return known_key
 
 def reset_art_reset_tracking():
     method_name = "reset_art_reset_tracking"
     try:
-        sqliteConnection = get_connection()
+        sqlite_connection = get_connection()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_drop_query = """DROP TABLE IF EXISTS art_reset_completed_keys;"""
         cursor.execute(sqlite_drop_query)
@@ -535,8 +534,8 @@ def reset_art_reset_tracking():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 # grab-all-ids
 def media_keys_table_create_query():
@@ -558,13 +557,13 @@ def get_completed():
     records = None
 
     try:
-        sqliteConnection = get_connection(db_name='ids.sqlite')
+        sqlite_connection = get_connection(db_name='ids.sqlite')
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_keys_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_select_query = """SELECT * from keys where complete = ?"""
@@ -576,8 +575,8 @@ def get_completed():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
     return records
 
@@ -586,13 +585,13 @@ def get_count():
     record_count = 0
 
     try:
-        sqliteConnection = get_connection(db_name='ids.sqlite')
+        sqlite_connection = get_connection(db_name='ids.sqlite')
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_keys_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_select_query = """SELECT COUNT(guid) from keys"""
@@ -607,8 +606,8 @@ def get_count():
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
     return record_count
 
@@ -617,13 +616,13 @@ def get_media_key(target_guid):
     result = None
 
     try:
-        sqliteConnection = get_connection(db_name='ids.sqlite')
+        sqlite_connection = get_connection(db_name='ids.sqlite')
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_keys_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_select_query = """SELECT * from keys where guid = ? """
@@ -638,8 +637,8 @@ def get_media_key(target_guid):
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
     return result
 
@@ -647,14 +646,14 @@ def insert_record(payload):
     method_name = "insert_record"
 
     try:
-        sqliteConnection = sqlite3.connect('ids.sqlite',
+        sqlite_connection = sqlite3.connect('ids.sqlite',
                                         detect_types=sqlite3.PARSE_DECLTYPES |
                                                         sqlite3.PARSE_COLNAMES)
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_keys_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'keys' ('guid','imdb','tmdb','tvdb','title','year','type','complete') VALUES (?, ?, ?, ?, ?, ?, ?, ?);"""
@@ -662,28 +661,28 @@ def insert_record(payload):
         data_tuple = (payload['guid'], payload['imdb'], payload['tmdb'], payload['tvdb'], payload['title'], payload['year'], payload['type'], payload['complete'])
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
-        sqliteConnection.commit()
+        sqlite_connection.commit()
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 def update_record(payload):
     method_name = "update_record"
 
     try:
-        sqliteConnection = sqlite3.connect('ids.sqlite',
+        sqlite_connection = sqlite3.connect('ids.sqlite',
                                         detect_types=sqlite3.PARSE_DECLTYPES |
                                                         sqlite3.PARSE_COLNAMES)
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
 
         sqlite_create_table_query = media_keys_table_create_query()
 
-        cursor = sqliteConnection.cursor()
+        cursor = sqlite_connection.cursor()
         cursor.execute(sqlite_create_table_query)
 
         sqlite_update_with_param = 'UPDATE keys SET imdb=?,tmdb=?,tvdb=?,title=?,year=?,type=?,complete=? WHERE guid=?'
@@ -691,15 +690,15 @@ def update_record(payload):
         update_tuple = (payload['imdb'], payload['tmdb'], payload['tvdb'], payload['title'], payload['year'], payload['type'], payload['complete'], payload['guid'])
         cursor.execute(sqlite_update_with_param, update_tuple)
 
-        sqliteConnection.commit()
+        sqlite_connection.commit()
 
         cursor.close()
 
     except sqlite3.Error as error:
         print(f"Error while working with SQLite in {method_name}: ", error)
     finally:
-        if (sqliteConnection):
-            sqliteConnection.close()
+        if sqlite_connection:
+            sqlite_connection.close()
 
 def get_diffs(payload):
 
@@ -729,4 +728,3 @@ def get_diffs(payload):
         diffs['changes']['year']= payload['year']
 
     return diffs
-

@@ -182,7 +182,7 @@ for lib in LIB_ARRAY:
             if len(backup_dict)> 0:
                 delete_list = []
                 with alive_bar(ITEM_TOTAL, dual_line=True, title=f"Clean Overlay Backup {the_lib.title}") as bar:
-                    for rk in backup_dict:
+                    for rk, target_file in backup_dict.items():
                         target_file = backup_dict[rk]
                         p = Path(target_file)
                         blogger(f"Deleting {target_file}", 'info', 'a', bar)
@@ -199,8 +199,8 @@ for lib in LIB_ARRAY:
                     plogger(f"{len(backup_dict)} items could not be deleted", 'info', 'a')
 
             plogger(f"{len(missing_dict)} items in Plex with no backup art", 'info', 'a')
-            plogger(f"These might be items added to Plex since the last overlay run", 'info', 'a')
-            plogger(f"They might be items that are not intended to have overlays", 'info', 'a')
+            plogger("These might be items added to Plex since the last overlay run", 'info', 'a')
+            plogger("They might be items that are not intended to have overlays", 'info', 'a')
 
             logger("COMPLETE", 'info', 'a')
 
