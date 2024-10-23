@@ -35,7 +35,7 @@ from database import add_last_run, get_last_run, add_media_details
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
 # TODO: download to random number filename, rename at completion
-# possible bruteforce to avoid: 
+# possible bruteforce to avoid:
 # on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
 
 # DONE 0.5.7: allowing skipping a library
@@ -81,23 +81,23 @@ def setup_dual_logger(logger_name, log_file, level=logging.INFO):
 
 def logger(msg, level, logfile):
     if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
+    if logfile == 'd'   : log = logging.getLogger('download_log')
+    if level == 'info'    : log.info(msg)
     if level == 'warning' : log.warning(msg)
     if level == 'error'   : log.error(msg)
 
 def plogger(msg, level, logfile):
     if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
+    if logfile == 'd'   : log = logging.getLogger('download_log')
+    if level == 'info'    : log.info(msg)
     if level == 'warning' : log.warning(msg)
     if level == 'error'   : log.error(msg)
     print(msg)
 
 def blogger(msg, level, logfile, bar):
     if logfile == 'a'   : log = logging.getLogger('activity_log')
-    if logfile == 'd'   : log = logging.getLogger('download_log') 
-    if level == 'info'    : log.info(msg) 
+    if logfile == 'd'   : log = logging.getLogger('download_log')
+    if level == 'info'    : log.info(msg)
     if level == 'warning' : log.warning(msg)
     if level == 'error'   : log.error(msg)
     bar.text(msg)
@@ -275,9 +275,9 @@ if ONLY_THESE_COLLECTIONS:
 else:
     COLLECTION_ARRAY = []
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+IMDB_STR = "imdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 redaction_list = []
 redaction_list.append(PLEX_URL)
@@ -420,7 +420,7 @@ def get_image_name(params, tgt_ext, background=False):
     item_type = params['type']
     item_season = params['seasonNumber']
     item_se_str = params['se_str']
- 
+
     idx = params['idx']
     provider = params['provider']
     source = params['source']
@@ -543,7 +543,7 @@ def process_the_thing(params):
             # folder_path: assets/One Show/Adam-12 Collection
             # tgt_filename '_poster.ext'
             # want: assets/One Show/Adam-12 Collection/poster.ext'
-            # strip leading _ 
+            # strip leading _
             if tgt_filename[0] == '_':
                 tgt_filename = tgt_filename[1:]
             # then
@@ -561,13 +561,13 @@ def process_the_thing(params):
                 if not FOLDERS_ONLY:
                     logger(f"provider: {provider} - source: {source} - downloading {redact(src_URL, redaction_list)} to {tgt_filename}", 'info', 'd')
                     try:
-                        thumbPath = download(
+                        THUMBPATH = download(
                             f"{src_URL}",
                             PLEX_TOKEN,
                             filename=tgt_filename,
                             savepath=folder_path,
                         )
-                        logger(f"Downloaded {thumbPath}", 'info', 'd')
+                        logger(f"Downloaded {THUMBPATH}", 'info', 'd')
 
                         # Wait between items in case hammering the Plex server turns out badly.
                         time.sleep(DELAY)
@@ -713,7 +713,7 @@ def get_art(item, artwork_path, tmid, tvid):
                             art_params['episodeNumber'] = item.episodeNumber
                         except:
                             art_params['episodeNumber'] = None
-                        
+
                         art_params['se_str'] = get_SE_str(item)
 
                         art_params['background'] = True
@@ -732,7 +732,7 @@ def get_art(item, artwork_path, tmid, tvid):
                         # append it to the queue
                         my_futures.append(future)
 
-                    else: 
+                    else:
                         logger(f"skipping empty internal art object", 'info', 'a')
 
                     idx += 1
@@ -784,7 +784,7 @@ def get_posters(lib, item):
     # current_posters/all_libraries
     # for assets we want:
     # assets/One Show
-    
+
     # add a letter level here.
     if USE_ASSET_SUBFOLDERS:
         if item.type == 'collection':
@@ -876,7 +876,7 @@ def get_posters(lib, item):
                     art_params['path'] = artwork_path
                     art_params['provider'] = poster.provider
                     art_params['source'] = 'remote'
-                    
+
                     art_params['type'] = item.TYPE
 
                     try:
@@ -1043,7 +1043,7 @@ for lib in LIB_ARRAY:
                                 except:
                                     arc = "None"
                                 add_media_details(part.parts[0].file, item.title, the_lib.TYPE, part.height, part.width, part.aspectRatio, arc)
-                                    
+
                         else:
                             blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
@@ -1070,7 +1070,7 @@ for lib in LIB_ARRAY:
             progress_str = f"stop file found, leaving loop"
         if skip_file.is_file():
             progress_str = f"skip file found, skipping library"
-        
+
         plogger(progress_str, 'info', 'a')
 
         if stop_file.is_file():

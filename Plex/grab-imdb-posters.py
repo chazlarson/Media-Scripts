@@ -37,7 +37,7 @@ print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 POSTER_DIR = os.getenv("POSTER_DIR")
@@ -58,9 +58,9 @@ if LIBRARY_NAMES:
 else:
     lib_array = [LIBRARY_NAME]
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+IMDB_STR = "imdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 def progress(count, total, status=""):
     bar_len = 40

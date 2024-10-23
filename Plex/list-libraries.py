@@ -57,6 +57,6 @@ with alive_bar(item_total, dual_line=True, title='Library list - Plex') as bar:
 
         # Wait between items in case hammering the Plex server turns out badly.
         time.sleep(DELAY)
-    
+
 print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 

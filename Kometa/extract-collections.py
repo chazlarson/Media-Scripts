@@ -38,7 +38,7 @@ if load_and_upgrade_env(env_file_path) < 0:
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-# TMDB_KEY = os.getenv("TMDB_KEY")
+# tmdb_key = os.getenv("TMDB_KEY")
 # TVDB_KEY = os.getenv("TVDB_KEY")
 # CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 # TOP_COUNT = int(os.getenv("TOP_COUNT"))
@@ -47,29 +47,29 @@ DELAY = int(os.getenv("DELAY"))
 if not DELAY:
     DELAY = 0
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
 
 if PLEX_URL.endswith('/'):
-    PLEX_URL = PLEX_URL[:-1]
+    plex_url = PLEX_URL[:-1]
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
 if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
 else:
     lib_array = [LIBRARY_NAME]
 
-artwork_dir = "artwork"
-background_dir = "background"
-config_dir = "config"
+ARTWORK_DIR = "artwork"
+BACKGROUND_DIR = "background"
+CONFIG_DIR = "config"
 
 plex = get_plex()
 
@@ -103,17 +103,17 @@ for lib in lib_array:
 
                 print(f"title - {title} | safe - {safe_title}")
 
-                artwork_path = Path(".", config_dir, f"{safe_lib}-{artwork_dir}")
+                artwork_path = Path(".", CONFIG_DIR, f"{safe_lib}-{ARTWORK_DIR}")
                 artwork_path.mkdir(mode=511, parents=True, exist_ok=True)
 
-                background_path = Path(".", config_dir, f"{safe_lib}-{background_dir}")
+                background_path = Path(".", CONFIG_DIR, f"{safe_lib}-{BACKGROUND_DIR}")
                 background_path.mkdir(mode=511, parents=True, exist_ok=True)
 
-                thumbPath = None
-                artPath = None
+                THUMBPATH = None
+                ARTPATH = None
 
                 try:
-                    thumbPath = download(
+                    THUMBPATH = download(
                         f"{PLEX_URL}{collection.thumb}",
                         PLEX_TOKEN,
                         filename=f"{safe_title}.png",
@@ -123,7 +123,7 @@ for lib in lib_array:
                     print(f"Continuing without image - {ex}")
 
                 if collection.art is not None:
-                    artPath = download(
+                    ARTPATH = download(
                         f"{PLEX_URL}{collection.art}",
                         PLEX_TOKEN,
                         filename=f"{safe_title}.png",
@@ -132,10 +132,10 @@ for lib in lib_array:
 
                 this_coll = {}
                 this_coll["sort_title"] = collection.titleSort
-                if thumbPath is not None:
-                    this_coll["file_poster"] = f"./{thumbPath}"
-                if artPath is not None:
-                    this_coll["file_background"] = f"./{artPath}"
+                if THUMBPATH is not None:
+                    this_coll["file_poster"] = f"./{THUMBPATH}"
+                if ARTPATH is not None:
+                    this_coll["file_background"] = f"./{ARTPATH}"
 
                 if len(collection.summary) > 0:
                     this_coll["summary"] = collection.summary
@@ -155,7 +155,7 @@ for lib in lib_array:
 
                 bar()
 
-        metadatafile_path = Path(".", config_dir, f"{safe_lib}-existing.yml")
+        metadatafile_path = Path(".", CONFIG_DIR, f"{safe_lib}-existing.yml")
 
 
         if yaml.version_info < (0, 15):

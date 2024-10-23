@@ -1,7 +1,7 @@
 import datetime
 import sqlite3
 
-def get_connection(db_name='mediascripts.sqlite'):
+def get_connection(db_name='kometascripts.sqlite'):
     sqliteConnection = sqlite3.connect(db_name, timeout=10,
                                        detect_types=sqlite3.PARSE_DECLTYPES |
                                                     sqlite3.PARSE_COLNAMES)

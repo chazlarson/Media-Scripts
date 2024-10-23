@@ -94,7 +94,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib_type_supported(lib):
             LIB_ARRAY.append(lib.title.strip())
 
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 REMOVE_LABELS = os.getenv("REMOVE_LABELS")
 PLEXAPI_AUTH_SERVER_TOKEN = os.getenv("PLEXAPI_AUTH_SERVER_TOKEN")
@@ -107,8 +107,8 @@ if REMOVE_LABELS:
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 local_dir = f"{os.getcwd()}/posters"
 
@@ -138,10 +138,10 @@ size_str = "original"
 
 def get_movie_match(item):
     imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
-    
+
     mapping_id = imdb_id if imdb_id is not None else tmdb_id
     tmpDict = {'mapping_id':mapping_id}
-    
+
     match_title = item.title
     match_year = item.title
 
@@ -164,7 +164,7 @@ def get_show_match(item):
 
     mapping_id = imdb_id if imdb_id is not None else tvdb_id
     tmpDict = {'mapping_id':mapping_id}
-    
+
     match_title = item.title
     match_year = item.title
 
@@ -213,7 +213,7 @@ def getTheme(item):
         thm_path = f"{base_path}/NO-MATCH-{item.ratingKey}/"
 
     Path(thm_path).mkdir(parents=True, exist_ok=True)
-    
+
     mp3Path = doDownload(item.themeUrl, 'theme.mp3', thm_path)
 
     # themeUrl ='http://192.168.1.11:32400/library/metadata/1262/theme/1723823327?X-Plex-Token=3rCte1jyCczPrzsAokwR'
@@ -235,7 +235,7 @@ def getPoster(item):
         img_path = f"{base_path}/NO-MATCH-{item.ratingKey}/"
 
     Path(img_path).mkdir(parents=True, exist_ok=True)
-    
+
     imgPath = doDownload(item.posterUrl, 'poster.jpg', img_path)
 
     # posterUrl = 'http://192.168.1.11:32400/library/metadata/1262/thumb/1723823327?X-Plex-Token=3rCte1jyCczPrzsAokwR'
@@ -513,7 +513,7 @@ for lib in LIB_ARRAY:
                                 seasonNumber = season.seasonNumber
 
                                 blogger(f"Processing {itemKey} season {seasonNumber}", 'info', 'a', bar)
-                        
+
                                 this_season_dict = get_season_info(season)
 
                                 season_episodes = season.episodes()
@@ -536,7 +536,7 @@ for lib in LIB_ARRAY:
                             itemDict['seasons'] = all_seasons_dict
                         else:
                             itemDict = get_common_video_info(item)
-                        
+
                         # get image data
 
                         if itemDict is not None:

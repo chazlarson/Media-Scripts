@@ -24,7 +24,7 @@ def get_tmdb_item(tmdb_id, tvdb_id):
             else:
                 logger((f"{item_title}: no tvdb_id specified"), 'info', 'a')
 
-                
+
     else:
         if tmdb_id is not None:
             logger((f"{item_title}: tmdb_id: {tmdb_id} - getting movie"), 'info', 'a')

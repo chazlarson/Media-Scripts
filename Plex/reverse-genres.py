@@ -60,7 +60,7 @@ def reverse_genres(item):
 
     for genre in genres:
         reversed_list.insert(0, genre)
-    
+
     print(f"{item.title} reversed: {reversed_list}")
 
     for genre in reversed_list:

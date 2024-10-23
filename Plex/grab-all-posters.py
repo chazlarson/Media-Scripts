@@ -36,7 +36,7 @@ from database import add_last_run, get_last_run, add_url, check_url, add_key, ch
 # TODO: resumable queue
 # TODO: only shows, seasons, episodes
 # TODO: download to random number filename, rename at completion
-# possible bruteforce to avoid: 
+# possible bruteforce to avoid:
 # on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
 # TODO: go dig around in the overlay backup folder to find the non-overlaid art
 
@@ -139,27 +139,27 @@ epoch = datetime(1970,1,1)
 if IS_WINDOWS and fallback_date is not None and fallback_date < epoch:
     fallback_date = None
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
 
 # strip a trailing slash
-PLEX_URL = PLEX_URL.rstrip("/")
+plex_url = PLEX_URL.rstrip("/")
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+if plex_url is None or plex_url == 'https://plex.domain.tld':
+    plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
     exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+if plex_token is None or plex_token == 'PLEX-TOKEN':
+    plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -307,9 +307,9 @@ else:
 THREADED_DOWNLOADS = booler(os.getenv("THREADED_DOWNLOADS"))
 plogger(f"Threaded downloads: {THREADED_DOWNLOADS}", 'info', 'a')
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+IMDB_STR = "imdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 redaction_list = []
 redaction_list.append(os.getenv('PLEXAPI_AUTH_SERVER_BASEURL'))
@@ -339,7 +339,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 def get_asset_names(item):
     ret_val = {}
     item_file = None
-    
+
     superchat(f"entering get_asset_names {item}", 'info', 'a')
 
     ret_val['poster'] = f"poster"
@@ -371,7 +371,7 @@ def get_asset_names(item):
             superchat(f"item_file {item_file}", 'info', 'a')
             superchat(f"item_file.parts {item_file.parts}", 'info', 'a')
             superchat(f"Trying to grab item_file.parts[{len(item_file.parts)-1}]", 'info', 'a')
-            
+
             ASSET_NAME = item_file.parts[len(item_file.parts)-1]
             superchat(f"ASSET_NAME {ASSET_NAME}", 'info', 'a')
 
@@ -515,7 +515,7 @@ def get_image_name(params, tgt_ext, background=False):
     item_title = params['title']
     item_season = params['seasonNumber']
     item_se_str = params['se_str']
- 
+
     idx = params['idx']
     provider = params['provider']
     source = params['source']
@@ -608,7 +608,7 @@ def process_the_thing(params):
         # folder_path: assets/One Show/Adam-12 Collection
         # tgt_filename '_poster.ext'
         # want: assets/One Show/Adam-12 Collection/poster.ext'
-        # strip leading _ 
+        # strip leading _
         if tgt_filename[0] == '_':
             tgt_filename = tgt_filename[1:]
         # then
@@ -627,13 +627,13 @@ def process_the_thing(params):
             if not FOLDERS_ONLY:
                 logger(f"provider: {provider} - source: {source} - downloading {redact(src_URL, redaction_list)} to {tgt_filename}", 'info', 'd')
                 try:
-                    thumbPath = download(
+                    THUMBPATH = download(
                         f"{src_URL}",
                         PLEX_TOKEN,
                         filename=tgt_filename,
                         savepath=folder_path,
                     )
-                    logger(f"Downloaded {thumbPath}", 'info', 'd')
+                    logger(f"Downloaded {THUMBPATH}", 'info', 'd')
 
                     # Wait between items in case hammering the Plex server turns out badly.
                     time.sleep(DELAY)
@@ -788,7 +788,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
                             art_params['episodeNumber'] = item.episodeNumber
                         except:
                             art_params['episodeNumber'] = None
-                        
+
                         art_params['se_str'] = get_SE_str(item)
 
                         art_params['background'] = True
@@ -816,7 +816,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
                         else:
                             logger(f"SKIPPING {item.title} as its URL was found in the URL tracking table: {src_URL} ", 'info', 'a')
 
-                    else: 
+                    else:
                         logger(f"skipping empty internal art object", 'info', 'a')
 
                     idx += 1
@@ -837,7 +837,7 @@ def get_posters(lib, item, uuid, title):
     tvid = None
     uuid = uuid
     lib_title = title
-    
+
     collection_title = None
     movie_title = None
     show_title = None
@@ -859,7 +859,7 @@ def get_posters(lib, item, uuid, title):
             episode_title = item.title
     else:
         collection_title = item.title
-    
+
     superchat(f"This {item.type} is called {item.title}", 'info', 'a')
 
     if USE_ASSET_NAMING:
@@ -871,12 +871,12 @@ def get_posters(lib, item, uuid, title):
             tgt_dir = os.path.join(POSTER_DIR, "all_libraries")
         else:
             tgt_dir = os.path.join(POSTER_DIR, lib)
-    
+
     superchat(f"Target directory for {item.title} artwork: {tgt_dir}", 'info', 'a')
     # current_posters/all_libraries
     # for assets we want:
     # assets/One Show
-    
+
     # add a letter level here.
     if USE_ASSET_SUBFOLDERS:
         if item.type == 'collection':
@@ -905,7 +905,7 @@ def get_posters(lib, item, uuid, title):
         # collection-Adam-12 Collection
         # for assets we would want:
         # Adam-12 Collection
-        
+
         new_path = sanitize_filename(item_path)
 
         if new_path != item_path and USE_ASSET_NAMING:
@@ -913,7 +913,7 @@ def get_posters(lib, item, uuid, title):
 
         artwork_path = Path(tgt_dir, new_path)
         logger(f"final artwork_path: {artwork_path}", 'info', 'a')
-        
+
         # current_posters/all_libraries/collection-Adam-12 Collection'
         # for assets this should be:
         # assets/One Show/Adam-12 Collection
@@ -991,13 +991,13 @@ def get_posters(lib, item, uuid, title):
                         art_params['path'] = artwork_path
                         art_params['provider'] = poster.provider
                         art_params['source'] = 'remote'
-                        
+
                         art_params['type'] = item.TYPE
                         art_params['title'] = item.title
 
                         art_params['uuid'] = uuid
                         art_params['lib_title'] = lib_title
-        
+
                         try:
                             art_params['seasonNumber'] = item.seasonNumber
                         except:
@@ -1051,7 +1051,7 @@ def get_posters(lib, item, uuid, title):
         plogger('Skipping {item.title}, error determining target subdirectory', 'info', 'a')
 
 def rename_by_type(target):
-    
+
     p = Path(target)
 
     kind = filetype.guess(target)
@@ -1068,7 +1068,7 @@ def rename_by_type(target):
     else:
         extension = f".{kind.extension}"
         logger(f"changing image extension to {extension} on {target}", 'info', 'a')
-        
+
     # check for overlay exif tag
     if FIND_OVERLAID_IMAGES:
         kometa_overlay, tcm_overlay = has_overlay(target)
@@ -1159,7 +1159,7 @@ for lib in LIB_ARRAY:
                     logger(f"{idx} URls loaded and stored in the DB", 'info', 'a')
                 superchat(f"DELETING {url_file}", 'info', 'a')
                 url_file.unlink()
-                
+
 
             SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
 
@@ -1196,7 +1196,7 @@ for lib in LIB_ARRAY:
                             else:
                                 blogger(f"SKIPPING {item.title}; not in a targeted collection", 'info', 'a', bar)
                                 blogger(f"either len(COLLECTION_ARRAY) == 0: {len(COLLECTION_ARRAY)} or {item.title} is not in {COLLECTION_ARRAY}", 'info', 'a', bar)
-                                
+
             else:
                 plogger(f"Skipping collection artwork ...", 'info', 'a')
 
@@ -1229,7 +1229,7 @@ for lib in LIB_ARRAY:
 
                             if last_run_season is None and fallback_date is not None:
                                 last_run_season = fallback_date
-        
+
                             if last_run_season is None:
                                 plogger(f"Loading seasons ...", 'info', 'a')
                                 season_count, seasons = get_all_from_library(the_lib, 'season', None)
@@ -1251,7 +1251,7 @@ for lib in LIB_ARRAY:
 
                             if last_run_episode is None and fallback_date is not None:
                                 last_run_episode = fallback_date
-        
+
                             if last_run_episode is None:
                                 plogger(f"Loading episodes ...", 'info', 'a')
                                 episode_count, episodes = get_all_from_library(the_lib, 'episode', None)
@@ -1329,7 +1329,7 @@ for lib in LIB_ARRAY:
                 progress_str = f"stop file found, leaving loop"
             if skip_file.is_file():
                 progress_str = f"skip file found, skipping library"
-            
+
             plogger(progress_str, 'info', 'a')
 
             if stop_file.is_file():

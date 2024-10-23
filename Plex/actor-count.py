@@ -59,7 +59,7 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
@@ -85,8 +85,8 @@ if not DELAY:
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 people = Counter()
 lists = Counter()
@@ -98,50 +98,50 @@ gender_nonbinary = Counter()
 def track_gender(the_key, gender):
     if gender == TMDB_GENDER_NOT_SET:
         gender_none[the_key] += 1
-        
+
     if gender == TMDB_GENDER_FEMALE:
         gender_female[the_key] += 1
-        
+
     if gender == TMDB_GENDER_MALE:
         gender_male[the_key] += 1
-        
+
     if gender == TMDB_GENDER_NONBINARY:
         gender_nonbinary[the_key] += 1
 
 def translate_gender(gender):
     if gender == TMDB_GENDER_NOT_SET:
         return 'Unknown/Not set'
-        
+
     if gender == TMDB_GENDER_FEMALE:
         return 'Female'
-        
+
     if gender == TMDB_GENDER_MALE:
         return 'Male'
-        
+
     if gender == TMDB_GENDER_NONBINARY:
         return 'Non-binary'
 
 def reverse_gender(gender_str):
     if gender_str == 'Unknown/Not set':
         return TMDB_GENDER_NOT_SET
-        
+
     if gender_str == 'Female':
         return TMDB_GENDER_FEMALE
-        
+
     if gender_str == 'Male':
         return TMDB_GENDER_MALE
-        
+
     if gender_str == 'Non-binary':
         return TMDB_GENDER_NONBINARY
 
-def getTID(theList):
+def getTID(the_list):
     tmid = None
     tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
+    for guid in the_list:
+        if TMDB_STR in guid.id:
+            tmid = guid.id.replace(TMDB_STR, "")
+        if TVDB_STR in guid.id:
+            tvid = guid.id.replace(TVDB_STR, "")
     return tmid, tvid
 
 plex = get_plex()
@@ -266,7 +266,7 @@ for lib in LIB_ARRAY:
     print("--------------------------------\nlist sizes with relative frequency\n--------------------------------")
     ascii_histogram(lists)
     print("--------------------------------\n")
-    
+
     if GENERATE_KOMETA_YAML:
         top_people = Counter()
 
@@ -316,15 +316,15 @@ for lib in LIB_ARRAY:
                 count = count + 1
 
         print(f"--------------------------------")
-        
+
         print(f"Creating {NUM_COLLECTIONS} with:")
         print(f"Minimum {MIN_GENDER_FEMALE} female people if possible")
         print(f"Minimum {MIN_GENDER_MALE} male people if possible")
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
         print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
-        
+
         print(f"--- YAML FOR Kometa config.yml ----")
-        
+
         print(collection_string)
 
         print(f"--- END YAML -------------------")

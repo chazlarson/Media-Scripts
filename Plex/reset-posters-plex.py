@@ -30,7 +30,7 @@ SCRIPT_NAME = Path(__file__).stem
 
 # DONE 0.1.1 added a couple booler
 # DONE 0.1.2 Require a meaningful value for TARGET_LABELS
-# DONE 0.1.3 Batch remove labels 
+# DONE 0.1.3 Batch remove labels
 
 VERSION = "0.1.3"
 
@@ -93,7 +93,7 @@ def sleep_for_a_while():
     sleeptime = DELAY
     if DELAY == 99:
         sleeptime = random.uniform(0, 1)
-    
+
     time.sleep(sleeptime)
 
 def get_log_title(item):
@@ -192,7 +192,7 @@ for lib in LIB_ARRAY:
                         blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                         showPoster = pick_poster(posters, None)
-                        
+
                         apply_poster(item, showPoster)
 
                         # Wait between items in case hammering the Plex server turns out badly.
@@ -203,7 +203,7 @@ for lib in LIB_ARRAY:
                             item.removeLabel(lbl, True)
 
                         track_completion(id_array, status_file, f"{item.ratingKey}")
-                        
+
                         if item.TYPE == "show":
                             if RESET_SEASONS:
                                 # get seasons
@@ -219,7 +219,7 @@ for lib in LIB_ARRAY:
                                         blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                                         seasonPoster = pick_poster(posters, showPoster)
-                                        
+
                                         apply_poster(s, seasonPoster)
 
                                         # Wait between items in case hammering the Plex server turns out badly.

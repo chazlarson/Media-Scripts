@@ -40,24 +40,24 @@ URL_ARRAY = []
 # no one using this yet
 # QUEUED_DOWNLOADS = {}
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+if plex_url is None or plex_url == 'https://plex.domain.tld':
+    plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
     exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+if plex_token is None or plex_token == 'PLEX-TOKEN':
+    plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -77,9 +77,9 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+IMDB_STR = "imdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 redaction_list = []
 redaction_list.append(os.getenv('PLEXAPI_AUTH_SERVER_BASEURL'))

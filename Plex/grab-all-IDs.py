@@ -43,7 +43,7 @@ if load_and_upgrade_env(env_file_path) < 0:
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
 
@@ -73,13 +73,13 @@ def get_IDs(type, item):
     if bits[0] == 'plex:':
         try:
             guid = bits[3]
-        
+
             if guid not in COMPLETE_ARRAY:
                 try:
                     if item.type != 'collection':
                         logging.info("Getting IDs")
                         imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
-                        complete = imdbid is not None and tmid is not None and tvid is not None 
+                        complete = imdbid is not None and tmid is not None and tvid is not None
                         payload = {
                             'guid': guid,
                             'imdb': imdbid,
@@ -92,7 +92,7 @@ def get_IDs(type, item):
                         }
 
                         diffs = get_diffs(payload)
-                            
+
                         if diffs['new'] or diffs['updated']:
                             # record change
                             if diffs['new']:
@@ -107,15 +107,15 @@ def get_IDs(type, item):
                             with open(change_file, "a", encoding="utf-8") as cf:
                                 cf.write(f"{action} - {payload} {os.linesep}")
 
-                            
+
                 except Exception as ex:
-                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
+                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
             else:
                 logging.info(f"{guid} already complete")
         except Exception as ex:
             logging.info(f"No guid: {bits}")
-        
+
 COMPLETE_ARRAY = []
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':

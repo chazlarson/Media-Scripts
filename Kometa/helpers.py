@@ -16,7 +16,7 @@ from PIL import Image
 def has_overlay(image_path):
     kometa_overlay = False
     tcm_overlay = False
-    
+
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
         kometa_overlay = exif_tags is not None and 0x04bc in exif_tags and exif_tags[0x04bc] == "overlay"
@@ -37,7 +37,7 @@ def redact(the_url, str_list):
     for thing in str_list:
         ret_val = ret_val.replace(thing, '[REDACTED]')
     return ret_val
-    
+
 def get_plex(user_token=None):
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
@@ -55,21 +55,21 @@ def get_plex(user_token=None):
 
     return plex
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+IMDB_STR = "imdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
-def get_ids(theList, TMDB_KEY):
+def get_ids(the_list, TMDB_KEY):
     imdbid = None
     tmid = None
     tvid = None
-    for guid in theList:
-        if imdb_str in guid.id:
-            imdbid = guid.id.replace(imdb_str, "")
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
+    for guid in the_list:
+        if IMDB_STR in guid.id:
+            imdbid = guid.id.replace(IMDB_STR, "")
+        if TMDB_STR in guid.id:
+            tmid = guid.id.replace(TMDB_STR, "")
+        if TVDB_STR in guid.id:
+            tvid = guid.id.replace(TVDB_STR, "")
 
     return imdbid, tmid, tvid
 
@@ -87,7 +87,7 @@ def validate_filename(filename):
         stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
         return mapping_name, stat_string
 
-def getPath(library, item, season=False):
+def get_path(library, item, season=False):
     if item.type == "collection":
         return "Collection", item.title
     else:
@@ -217,14 +217,14 @@ def get_type(type):
 
 def get_size(the_lib, tgt_class=None, filter=None):
     lib_size = 0
-    foo = []
+    temp_var = []
 
     if filter is not None:
-        foo = the_lib.search(libtype=tgt_class, filters=filter)
+        temp_var = the_lib.search(libtype=tgt_class, filters=filter)
     else:
-        foo = the_lib.search(libtype=tgt_class)
-    
-    lib_size = len(foo)
+        temp_var = the_lib.search(libtype=tgt_class)
+
+    lib_size = len(temp_var)
 
     return lib_size
 
@@ -233,7 +233,7 @@ def get_all_from_library(the_lib, tgt_class=None, filter=None):
         tgt_class = the_lib.type
 
     lib_size = get_size(the_lib, tgt_class, filter)
-    
+
     key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
     c_start = 0
     c_size = 500
@@ -243,7 +243,7 @@ def get_all_from_library(the_lib, tgt_class=None, filter=None):
             results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
         else:
             results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
-        
+
         print(f"Loaded: {len(results)}/{lib_size}", end='\r')
         c_start += c_size
         if len(results) < c_start:
@@ -277,7 +277,7 @@ def get_xml_libraries(plex_url, plex_token):
             media_output = raw_output.json()
     except Exception as ex:
         print(f"- problem getting libraries: {ex}")
-    
+
     return media_output
 
 def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
@@ -328,7 +328,7 @@ def get_media_details(plex_url, plex_token, rating_key):
     ssn.headers.update({'Accept': 'application/json'})
     ssn.params.update({'X-Plex-Token': plex_token})
     media_output = ssn.get(f'{plex_url}/library/metadata/{rating_key}').json()
-    
+
     return media_output
 
 def get_all_watched(plex, the_lib):
@@ -363,9 +363,9 @@ def remove_articles(thing):
 
 def get_letter_dir(thing):
     ret_val = "Other"
-    
+
     thing = remove_articles(thing)
-                            
+
     first_char = thing[0]
 
     if first_char.lower() in ALPHABET:
@@ -378,7 +378,7 @@ def get_letter_dir(thing):
 
 def load_and_upgrade_env(file_path):
     status = 0
-    
+
     if os.path.exists(file_path):
         load_dotenv(dotenv_path=file_path)
     else:
@@ -392,10 +392,10 @@ def load_and_upgrade_env(file_path):
             print(f"No example [.env.example] file.  Cannot create base file.")
         status = -1
 
-    PLEX_URL = os.getenv("PLEX_URL")
-    PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+    plex_url = os.getenv("PLEX_URL")
+    plex_token = os.getenv("PLEX_TOKEN")
 
-    if PLEX_URL is not None:
+    if plex_url is not None:
         # Add the PLEXAPI env vars
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_PLEXAPI_TIMEOUT", value_to_set="360")
 
@@ -410,7 +410,7 @@ def load_and_upgrade_env(file_path):
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_PATH", value_to_set="plexapi.log")
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_ROTATE_BYTES", value_to_set='512000')
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_SHOW_SECRETS", value_to_set="false")
-        
+
         # and load the new file
         load_dotenv(dotenv_path=file_path)
         status = 1

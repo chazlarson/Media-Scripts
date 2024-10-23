@@ -1041,7 +1041,7 @@ def run_playlists(config):
 if __name__ == "__main__":
     try:
         if run_args["run"]:
-            print("foo")
+            print("temp_var")
             process({})
         else:
             print("bar")

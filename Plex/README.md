@@ -48,8 +48,8 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
@@ -57,7 +57,7 @@ USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directo
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
 ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored                                            
+                                             # if asset-directory naming is on, the next three are ignored
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
@@ -337,8 +337,8 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
@@ -346,7 +346,7 @@ USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directo
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
 ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored                                            
+                                             # if asset-directory naming is on, the next three are ignored
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
@@ -396,7 +396,7 @@ Then the "beginning of time" fallback date will be used.  This is a Windows issu
 
 Normally, this fallback date is used *only* if there is no last-run date stored, for example the first time you run the script.  This means that if you run the script once with `DEFAULT_YEARS_BACK=2` then change that to `DEFAULT_YEARS_BACK=0`, nothing new will be downloaded.  The script will read the last run date from its database and will never look at the new fallback date.
 
-You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.  
+You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.
 
 If you want to reset all libraries and clear all history, delete `mediascripts.sqlite`.
 
@@ -408,7 +408,7 @@ DEFAULT_YEARS_BACK=0
 RESET_LIBRARIES=Movies
 ```
 That will set the fallback date to "the beginning of time" and apply that new fallback date to the "Movies" library only.
- 
+
 If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates Kometa created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_KOMETA_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
 
 If "RETAIN_KOMETA_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
@@ -892,7 +892,7 @@ on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     2/  125 | T
 on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     3/  125 | TVDb ID: 419379    | IMDb ID: tt15384586  | Fellow Travelers
 on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     4/  125 | TVDb ID: 439494    | IMDb ID: tt10270200  | The Vanishing Triangle
 ```
-or 
+or
 ```
 on 5782: INFO: 11/05/2023 05:07:49 PM tem  5782/ 5786 | TMDb ID:   9398    | IMDb ID:  tt0196229  | Zoolander
 on 5783: INFO: 11/05/2023 05:07:49 PM tem  5783/ 5786 | TMDb ID: 329833    | IMDb ID:  tt1608290  | Zoolander 2
@@ -958,7 +958,7 @@ connecting to https://plex.bing.bang...
 getting items from [Movies - 4K DV]...
 Completed loading 1996 items from Movies - 4K DV
 looping over 1996 items...
-[======----------------------------------] 15.0% ... Captain America: Civil War    
+[======----------------------------------] 15.0% ... Captain America: Civil War
 ```
 
 It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
@@ -1001,7 +1001,7 @@ Note that the top ten changed dramatically due to looking deeper into the cast l
 
 Perhaps you want a list of crew members with a count of how many movies from your libraries they have been credited in.
 
-This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.  
+This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.
 At the end, it produces a list of a configurable size in descending order of number of appearances.
 
 Script-specific variables in .env:
@@ -1012,7 +1012,7 @@ TARGET_JOB=Director             ### WHAT JOB TO TRACK
 SHOW_JOBS=0                     ### Display a list of all the jobs the script saw
 ```
 
-`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.  
+`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
 
 `CREW_COUNT` is the number of individuals to show in the list at the end.
 
@@ -1026,7 +1026,7 @@ If `SHOW_JOBS` is set to 1, the script will also output a list of all the jobs i
 connecting to Plex...
 getting items from [Test-Movies]...
 looping over 35 items...
-[=========================================] 102.9% ... Wild Gals of the Naked West   
+[=========================================] 102.9% ... Wild Gals of the Naked West
 ```
 
 It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
@@ -1120,4 +1120,4 @@ on 52: 21 Up has 4 posters
 on 77: 63 Up has 7 posters
 on 94: 1962 Halloween Massacre has 8 posters
 on 119: Ace in the Hole has 8 posters
-Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
+Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18)

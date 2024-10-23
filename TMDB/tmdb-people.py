@@ -10,7 +10,7 @@ start = timer()
 
 load_dotenv()
 
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 POSTER_DIR = os.getenv("POSTER_DIR")
 PERSON_DEPTH = 0
 try:
@@ -19,7 +19,7 @@ except:
     PERSON_DEPTH = 0
 
 
-TMDb = TMDbAPIs(TMDB_KEY, language="en")
+TMDb = TMDbAPIs(tmdb_key, language="en")
 
 image_path = POSTER_DIR
 people_name_file = "people_list.txt"

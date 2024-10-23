@@ -42,27 +42,27 @@ if load_and_upgrade_env(env_file_path) < 0:
 
 ID_FILES = True
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
 
 # strip a trailing slash
-PLEX_URL = PLEX_URL.rstrip("/")
+plex_url = PLEX_URL.rstrip("/")
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+if plex_url is None or plex_url == 'https://plex.domain.tld':
+    plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
     exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+if plex_token is None or plex_token == 'PLEX-TOKEN':
+    plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -127,7 +127,7 @@ def get_SE_str(item):
     superchat(f"returning {ret_val}", 'info', 'a')
     return ret_val
 
-def find_original(library_title, the_key): 
+def find_original(library_title, the_key):
     original_file = None
     # KOMETA_CONFIG_DIR=/opt/kometa/Kometa/config
     original_path = Path(KOMETA_CONFIG_DIR, 'overlays', f"{library_title} Original Posters")
@@ -158,7 +158,7 @@ def target_asset(item):
         asset_name = target_path.name
         superchat(f"Show asset name: {asset_name}", 'info', 'a')
         ASSET_DIR_LOOKUP[item.ratingKey] = asset_name
- 
+
     if item.TYPE == 'season':
         item_season = item.seasonNumber
         superchat(f"item_season: {item_season}", 'info', 'a')
@@ -191,7 +191,7 @@ def target_asset(item):
     superchat(f"Target file: {target_file}", 'info', 'a')
 
     return target_file
-    
+
 for lib in LIB_ARRAY:
     if lib in ALL_LIB_NAMES:
         try:
@@ -239,7 +239,7 @@ for lib in LIB_ARRAY:
                             # get rating key
                             the_key = item.ratingKey
                             superchat(f"{item.title} key: {the_key}", 'info', 'a')
-                            
+
                             # find image in originals as Path
                             original_file = find_original(the_lib.title, the_key)
                             superchat(f"{item.title} original file: {original_file}", 'info', 'a')

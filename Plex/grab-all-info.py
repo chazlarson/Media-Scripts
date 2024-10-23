@@ -58,7 +58,7 @@ if load_and_upgrade_env(env_file_path) < 0:
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
 
@@ -78,7 +78,7 @@ def get_connection():
     metadata = db.MetaData()
 
     connection = engine.connect()
-        
+
     try:
         ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
     except db.exc.NoSuchTableError as nste:
@@ -117,7 +117,7 @@ def get_count():
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
     count = len(ResultSet)
-    
+
     connection.close()
 
     return count
@@ -125,13 +125,13 @@ def get_count():
 def insert_record(payload):
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'], 
-                                    imdb=payload['imdb'], 
-                                    tmdb=payload['tmdb'], 
-                                    tvdb=payload['tvdb'], 
-                                    title=payload['title'], 
-                                    year=payload['year'], 
-                                    type=payload['type'], 
+    stmt = insert(keys).values(guid=payload['guid'],
+                                    imdb=payload['imdb'],
+                                    tmdb=payload['tmdb'],
+                                    tvdb=payload['tvdb'],
+                                    title=payload['title'],
+                                    year=payload['year'],
+                                    type=payload['type'],
                                     complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
@@ -170,7 +170,7 @@ def get_diffs(payload):
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['year']= payload['year']
-    
+
     return diffs
 
 plex = get_plex()
@@ -188,13 +188,13 @@ def get_IDs(type, item):
     if bits[0] == 'plex:':
         try:
             guid = bits[3]
-        
+
             if guid not in COMPLETE_ARRAY:
                 try:
                     if item.type != 'collection':
                         logging.info("Getting IDs")
                         imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
-                        complete = imdbid is not None and tmid is not None and tvid is not None 
+                        complete = imdbid is not None and tmid is not None and tvid is not None
                         payload = {
                             'guid': guid,
                             'imdb': imdbid,
@@ -207,7 +207,7 @@ def get_IDs(type, item):
                         }
 
                         diffs = get_diffs(payload)
-                            
+
                         if diffs['new'] or diffs['updated']:
                             # record change
                             if diffs['new']:
@@ -222,13 +222,13 @@ def get_IDs(type, item):
 
                             insert_record(payload)
                 except Exception as ex:
-                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
+                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
             else:
                 logging.info(f"{guid} already complete")
         except Exception as ex:
             logging.info(f"No guid: {bits}")
-        
+
 COMPLETE_ARRAY = []
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':

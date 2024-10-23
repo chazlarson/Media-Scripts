@@ -8,11 +8,11 @@ from tmdbapis import TMDbAPIs
 
 load_dotenv()
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
+plex_url = os.getenv("PLEX_URL")
+plex_token = os.getenv("PLEX_TOKEN")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
+tmdb_key = os.getenv("TMDB_KEY")
 TVDB_KEY = os.getenv("TVDB_KEY")
 CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
 TOP_COUNT = int(os.getenv("TOP_COUNT"))
@@ -28,8 +28,8 @@ else:
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 actors = Counter()
 
@@ -43,14 +43,14 @@ with open("collection.tmpl") as tmpl:
     COLL_TMPL = tmpl.read()
 
 
-def getTID(theList):
+def getTID(the_list):
     tmid = None
     tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
+    for guid in the_list:
+        if TMDB_STR in guid.id:
+            tmid = guid.id.replace(TMDB_STR, "")
+        if TVDB_STR in guid.id:
+            tvid = guid.id.replace(TVDB_STR, "")
     return tmid, tvid
 
 

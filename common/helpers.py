@@ -14,9 +14,15 @@ import shutil
 from PIL import Image
 
 def has_overlay(image_path):
+    kometa_overlay = False
+    tcm_overlay = False
+
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
-    return (0x04bc in exif_tags and exif_tags[0x04bc] == "overlay")
+        kometa_overlay = exif_tags is not None and 0x04bc in exif_tags and exif_tags[0x04bc] == "overlay"
+        tcm_overlay = exif_tags is not None and 0x4242 in exif_tags and exif_tags[0x4242] == "titlecard"
+
+    return kometa_overlay, tcm_overlay
 
 def booler(thing):
     if type(thing) == str:
@@ -210,29 +216,23 @@ def get_type(type):
     return None
 
 def get_size(the_lib, tgt_class=None, filter=None):
-    lib_size = the_lib.totalViewSize()
-    item_class = the_lib.type
-
-    if tgt_class is not None:
-        item_class = tgt_class
+    lib_size = 0
+    temp_var = []
 
     if filter is not None:
-        temp_var = the_lib.search(libtype=item_class, filters=filter)
-        lib_size = len(temp_var)
+        temp_var = the_lib.search(libtype=tgt_class, filters=filter)
     else:
-        temp_var = the_lib.search(libtype=item_class)
-        lib_size = len(temp_var)
+        temp_var = the_lib.search(libtype=tgt_class)
+
+    lib_size = len(temp_var)
 
     return lib_size
 
-def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
-    lib_size = the_lib.totalViewSize()
-    lib_type = get_type(the_lib.type)
-    item_class = the_lib.type
+def get_all_from_library(the_lib, tgt_class=None, filter=None):
+    if tgt_class is None:
+        tgt_class = the_lib.type
 
-    if tgt_class is not None:
-        item_class = tgt_class
-        lib_size = the_lib.totalViewSize(libtype=tgt_class)
+    lib_size = get_size(the_lib, tgt_class, filter)
 
     key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
     c_start = 0
@@ -240,17 +240,17 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
     results = []
     while lib_size is None or c_start <= lib_size:
         if filter is not None:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
+            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
         else:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
+            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
 
         print(f"Loaded: {len(results)}/{lib_size}", end='\r')
         c_start += c_size
         if len(results) < c_start:
             c_start = lib_size + 1
-    return results
+    return lib_size, results
 
-def get_overlay_status(plex, the_lib):
+def get_overlay_status(the_lib):
     overlay_items = the_lib.search(label="Overlay")
 
     ret_val = len(overlay_items) > 0
@@ -332,7 +332,6 @@ def get_media_details(plex_url, plex_token, rating_key):
     return media_output
 
 def get_all_watched(plex, the_lib):
-    lib_size = the_lib.totalViewSize()
     results = the_lib.search(unwatched=False)
     return results
 
@@ -381,7 +380,7 @@ def load_and_upgrade_env(file_path):
     status = 0
 
     if os.path.exists(file_path):
-        load_dotenv(dotenv_path=file_path)
+        load_dotenv(dotenv_path=file_path, override=True)
     else:
         print(f"No environment [.env] file.  Creating base file.")
         if os.path.exists('.env.example'):
@@ -417,11 +416,11 @@ def load_and_upgrade_env(file_path):
         status = 1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
+        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.")
         status = -1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
+        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.")
         status = -1
 
     return status

@@ -100,7 +100,7 @@ def update_tracking_info(library_name, category_name, show_name, filename):
     new_list.append(filename)
 
     tracking_info[key]['images'] = new_list
-    
+
     with open(TRACKING_FILE, 'w') as file:
         json.dump(tracking_info, file)
 
@@ -128,12 +128,12 @@ def get_target_image(filename):
     for pattern in IMAGE_PATTERNS:
         target_pattern = IMAGE_PATTERNS[pattern]
         match = target_pattern.match(filename)
-        
+
         background_pattern = re.compile(r'^.*background.*$')
         background = background_pattern.match(filename)
         # is this a background?
         if background:
-            target_format = ASSET_FILENAMES['background']            
+            target_format = ASSET_FILENAMES['background']
 
         season_pattern = re.compile(r'^Season(\d{2,3})(?:[^.]*)\.(.+)$')
         episode_pattern = re.compile(r'^S(\d+)E(\d+)(?:[^.]*)\.(.+)$')
@@ -149,7 +149,7 @@ def get_target_image(filename):
             target_format = ASSET_FILENAMES['season']
             if background:
                 target_format = ASSET_FILENAMES['season_background']
-                
+
             # 'season': "Season##.ext",
             # 'season_background': "Season##_background.ext",
 
@@ -164,21 +164,21 @@ def get_target_image(filename):
                 season_number, episode_number, extension = match.groups()
                 target_format = ASSET_FILENAMES['episode']
                 if background:
-                    target_format = ASSET_FILENAMES['episode_background']            
+                    target_format = ASSET_FILENAMES['episode_background']
             # 'episode': "S##E##.ext",
             # 'episode_background': "S##E##_background.ext"
 
             new_filename = target_format.replace('ext', extension)
             new_filename = new_filename.replace('S##', f"S{season_number}")
             new_filename = new_filename.replace('E##', f"E{episode_number}")
-    
+
     return new_filename
 
 @app.route('/library/<library_name>/')
 def library(library_name):
     library_path = os.path.join(ASSETS_DIR, library_name)
     directories = get_directories(library_path)
-    
+
     # Check if the first directory contains images, indicating direct show/movie directories
     if directories and directory_contains_images(os.path.join(library_path, directories[0])):
         shows = directories
@@ -214,7 +214,7 @@ def get_active_images(library_name, category_name, show_name):
 
     if image_list is not None:
         data = {'status': 'success', 'images': image_list}
-    
+
     return jsonify(data)
 
 @app.route('/copy_image/<library_name>/<category_name>/<show_name>/<filename>')
@@ -233,7 +233,7 @@ def copy_image(library_name, category_name, show_name, filename):
     if category_name == 'NA':
         source_path = os.path.join(ASSETS_DIR, library_name, show_name, filename)
         target_dir = os.path.join(ACTIVE_ASSETS_DIR, library_name, show_name)
-    
+
     os.makedirs(target_dir, exist_ok=True)
     target_path = os.path.join(target_dir, new_filename)
 
@@ -265,7 +265,7 @@ def show(library_name, category_name, show_name):
         show_path = os.path.join(ASSETS_DIR, library_name, show_name)
         category_path = os.path.join(ASSETS_DIR, library_name)
         image_url = f"{library_name}/{show_name}"
-    
+
     images_info = []
     for img in os.listdir(show_path):
         if img.endswith(('png', 'jpg', 'jpeg')):

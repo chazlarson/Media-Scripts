@@ -46,8 +46,8 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 
 def progress(count, total, status=""):

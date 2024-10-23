@@ -56,8 +56,8 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
         if lib.type == 'movie' or lib.type == 'show':
             LIB_ARRAY.append(lib.title.strip())
 
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+TMDB_STR = "tmdb://"
+TVDB_STR = "tvdb://"
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -98,7 +98,7 @@ for lib in LIB_ARRAY:
                     logger(progress_str, 'info', 'a')
 
                     item.refresh()
-                    
+
                     time.sleep(DELAY)
                     progress_str = f"{item.title} - DONE"
                     progress(item_count, item_total, progress_str)

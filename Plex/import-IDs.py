@@ -43,7 +43,7 @@ def get_connection():
     metadata = db.MetaData()
 
     connection = engine.connect()
-        
+
     try:
         ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
     except db.exc.NoSuchTableError as nste:
@@ -94,7 +94,7 @@ def get_count():
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
     count = len(ResultSet)
-    
+
     connection.close()
 
     return count
@@ -102,13 +102,13 @@ def get_count():
 def insert_record(payload):
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'], 
-                                    imdb=payload['imdb'], 
-                                    tmdb=payload['tmdb'], 
-                                    tvdb=payload['tvdb'], 
-                                    title=payload['title'], 
-                                    year=payload['year'], 
-                                    type=payload['type'], 
+    stmt = insert(keys).values(guid=payload['guid'],
+                                    imdb=payload['imdb'],
+                                    tmdb=payload['tmdb'],
+                                    tvdb=payload['tvdb'],
+                                    title=payload['title'],
+                                    year=payload['year'],
+                                    type=payload['type'],
                                     complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
@@ -150,7 +150,7 @@ def get_diffs(payload):
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['year']= payload['year']
-    
+
     return diffs
 
 logging.basicConfig(
@@ -197,11 +197,11 @@ with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
 
             for key in values.keys():
                 payload[key] = values[key]
-                        
+
             is_complete = payload['imdb'] is not None and payload['tmdb'] is not None and payload['tvdb'] is not None and payload['year'] is not None
-            
+
             payload['complete'] = is_complete
-            
+
             logging.info(f"{payload}")
 
             insert_record(payload)

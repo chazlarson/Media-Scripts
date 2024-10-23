@@ -35,25 +35,25 @@ if load_and_upgrade_env(env_file_path) < 0:
     sys.exit()
 
 TARGET_URL_VAR = 'PLEX_URL'
-PLEX_URL = os.getenv(TARGET_URL_VAR)
-if PLEX_URL is None:
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
     TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(TARGET_URL_VAR)
+    plex_url = os.getenv(TARGET_URL_VAR)
 
 # strip a trailing slash
-PLEX_URL = PLEX_URL.rstrip("/")
+plex_url = PLEX_URL.rstrip("/")
 
 TARGET_TOKEN_VAR = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(TARGET_TOKEN_VAR)
-if PLEX_TOKEN is None:
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
     TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(TARGET_TOKEN_VAR)
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
+if plex_url is None or plex_url == 'https://plex.domain.tld':
     plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
     sys.exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
+if plex_token is None or plex_token == 'PLEX-TOKEN':
     plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
     sys.exit()
 

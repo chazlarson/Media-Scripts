@@ -35,24 +35,24 @@ plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+if plex_url is None or plex_url == 'https://plex.domain.tld':
+    plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
     exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+if plex_token is None or plex_token == 'PLEX-TOKEN':
+    plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
     exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")
@@ -146,7 +146,7 @@ try:
                     file_string = file_string + f"{file_line}{os.linesep}"
     else:
         print(f"Could not retrieve libraries for {account.username}")
-        
+
 except Exception as ex:
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
@@ -159,7 +159,7 @@ for plex_user in all_users:
     user_idx += 1
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
-        PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
+        plex_token = user_acct.get_token(plex.machineIdentifier)
         print(f"------------ getting libraries -------------")
         plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
         if plex_sections is not None:

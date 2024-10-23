@@ -76,7 +76,7 @@ connecting to https://plex.bing.bang...
 Loading Movies ...
 Loading movies from Movies  ...
 Completed loading 6965 of 6965 movie(s) from Movies
-Clean Overlay Backup Movies |████████████████████████████████████████| 6965/6965 [100%] in 11.0s (633.23/s) 
+Clean Overlay Backup Movies |████████████████████████████████████████| 6965/6965 [100%] in 11.0s (633.23/s)
 Processed 6965 of 6965
 0 items to delete
 279 items in Plex with no backup art
@@ -130,7 +130,7 @@ Here is a basic script to do that.
 
 The script will clone or update the `Kometa-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Kometa-Images-Overlaid`, ready for you to use with the Kometa Asset Directory [after moving them to that directory] or via template variables.
 
-It chooses the overlay by name based on the "group" that each collection is part of: 
+It chooses the overlay by name based on the "group" that each collection is part of:
 ```
 Kometa-Images
 ├── aspect
@@ -163,7 +163,7 @@ If there isn't a specific image for a "group", then `Kometa/default_collection_o
 Fetch/Pull on Kometa-Images
 Using default_collection_overlays/overlay-template.png as global overlay
 building list of targets
-Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37) 
+Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37)
 Kometa-Images/genre/Sword & Sandal.jpg
 ```
 
@@ -309,7 +309,7 @@ connecting to https://test-plex.DOMAIN.TLD...
 Loading Test-Movies ...
 Loading movies  ...
 Completed loading 35 of 35 movie(s) from Test-Movies
-Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s) 
+Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s)
 Processed 35 of 35
 Complete!
 ```
