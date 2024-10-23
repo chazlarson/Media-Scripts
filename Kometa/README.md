@@ -35,18 +35,18 @@ ASSET_DIR=assets                             # top-level directory for those ass
 ```
 
 ## Scripts:
-1. [clean_overlay_backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
+1. [clean_overlay_backup.py](#clean_overlay_backuppy) - clean out leftover overlay backup art
 1. [extract-collections.py](#extract-collectionspy) - extract collections from a library
 1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
 1. [kometa-trakt-auth.py](#kometa-trakt-authpy) - generate trakt auth block for Kometa config.yml
 1. [kometa-mal-auth.py](#kometa-mal-authpy) - generate mal auth block for Kometa config.yml
 1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
-1. [metadata-extractor.py](#metadata-extractorpy) - Extract all metadata from libraries into a Kometa-compatible metadata YAML file
+1. [metadata_extractor.py](#metadata_extractorpy) - Extract all metadata from libraries into a Kometa-compatible metadata YAML file
 
 ### OBSOLETE
 1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
 
-## clean-overlay-backup.py
+## clean_overlay_backup.py
 
 You've deleted stuff from Plex and want to clean up the leftover backup art that Kometa saved when it applied overlays
 
@@ -314,7 +314,7 @@ Processed 35 of 35
 Complete!
 ```
 
-## metadata-extractor.py
+## metadata_extractor.py
 
 You want to seed a Kometa metadata file with the contents of one or more libraries.
 
@@ -322,7 +322,7 @@ Here is a basic script to do that.
 
 ### Usage
 1. setup as above
-1. Run with `metadata-extractor.py`
+1. Run with `metadata_extractor.py`
 
 The script will read all metadata from one of more libraries and format it into a Kometa-compatible metadata file.  This includes current artwork, which will be downloaded and the files linked in the metadata YAML.
 

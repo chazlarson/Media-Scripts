@@ -10,7 +10,7 @@ import textwrap
 from tmdbapis import TMDbAPIs
 from pathlib import Path
 from timeit import default_timer as timer
-from helpers import get_ids, get_plex, load_and_upgrade_env
+from helpers import get_ids, get_plex, load_and_upgrade_env, get_all_from_library
 import yaml
 from logs import setup_logger, plogger, blogger, logger
 from alive_progress import alive_bar
@@ -186,12 +186,15 @@ def getDownloadBasePath():
     return f"metadata-items/{CURRENT_LIBRARY}"
 
 def doDownload(url, savefile, savepath):
-    file_path = download(
-        url,
-        PLEXAPI_AUTH_SERVER_TOKEN,
-        filename=savefile,
-        savepath=savepath,
-        )
+    if url is not None:
+        file_path = download(
+            url,
+            PLEXAPI_AUTH_SERVER_TOKEN,
+            filename=savefile,
+            savepath=savepath,
+            )
+    else:
+        file_path = None
 
     return file_path
 
@@ -486,11 +489,12 @@ for lib in LIB_ARRAY:
         CURRENT_LIBRARY = lib
         try:
             print(f"getting items from [{lib}]...")
-            items = plex.library.section(lib).all()
-            item_total = len(items)
-            print(f"looping over {item_total} items...")
+            the_lib = plex.library.section(lib)
+            item_count, items = get_all_from_library(the_lib, None, None)
+            # item_total = len(items)
+            print(f"looping over {item_count} items...")
             metadataDict = {'metadata':{}}
-            with alive_bar(item_total, dual_line=True, title=f"Extracting metadata from {lib}") as bar:
+            with alive_bar(item_count, dual_line=True, title=f"Extracting metadata from {lib}") as bar:
                 for item in items:
                     item_count = item_count + 1
                     try:
@@ -508,6 +512,8 @@ for lib in LIB_ARRAY:
                             for season in show_seasons:
                                 seasonNumber = season.seasonNumber
 
+                                blogger(f"Processing {itemKey} season {seasonNumber}", 'info', 'a', bar)
+                        
                                 this_season_dict = get_season_info(season)
 
                                 season_episodes = season.episodes()
@@ -516,6 +522,8 @@ for lib in LIB_ARRAY:
 
                                 for episode in season_episodes:
                                     episodeNumber = episode.episodeNumber
+
+                                    blogger(f"Processing {itemKey} S{seasonNumber}E{episodeNumber}", 'info', 'a', bar)
 
                                     this_episode_dict = get_episode_info(episode)
 
@@ -547,5 +555,5 @@ for lib in LIB_ARRAY:
             plogger(progress_str, 'info', 'a')
 
 end = timer()
-elapsed = end - start
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {"{:.2f}".format(elapsed)} seconds.")
+elapsed = '{:.2f}'.format(end - start)
+print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
