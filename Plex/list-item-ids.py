@@ -187,8 +187,8 @@ for lib in LIB_ARRAY:
                                 else:
                                     plogger(f"Collection: {item.title} item {coll_idx : >5}/{coll_item_total : >5} | TVDb ID: {tvid : >6}    | IMDb ID: {imdbid : >10}  | {collection_item.title}", 'info', 'a')
                                 coll_idx += 1
-                            bar()
-
+                            bar() # pylint: disable=not-callable
+ 
             else:
                 plogger(f"Skipping collection members ...", 'info', 'a')
 
@@ -236,8 +236,8 @@ for lib in LIB_ARRAY:
                                 except Exception as ex:
                                     plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                                bar()
-
+                                bar() # pylint: disable=not-callable
+ 
                         plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
 
             progress_str = "COMPLETE"

@@ -85,7 +85,7 @@ for lib in LIB_ARRAY:
                 bar.text = f"-> deleting: {title}"
                 item.delete()
 
-            bar()
-
+            bar() # pylint: disable=not-callable
+ 
             # Wait between items in case hammering the Plex server turns out badly.
             time.sleep(DELAY)

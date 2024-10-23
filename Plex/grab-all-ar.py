@@ -1051,8 +1051,8 @@ for lib in LIB_ARRAY:
                     except Exception as ex:
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                    bar()
-
+                    bar() # pylint: disable=not-callable
+ 
                     stop_file = Path(STOP_FILE_NAME)
                     skip_file = Path(SKIP_FILE_NAME)
 

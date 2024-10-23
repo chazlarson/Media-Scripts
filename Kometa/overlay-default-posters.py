@@ -85,4 +85,5 @@ with alive_bar(item_total, dual_line=True, title='Applying overlays') as bar:
         source_image.paste(local_overlay_im, (0,0), local_overlay_im)
         source_image.save(target_path)
 
-        bar()
+        bar() # pylint: disable=not-callable
+ 

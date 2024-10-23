@@ -1187,8 +1187,8 @@ for lib in LIB_ARRAY:
 
                                     get_posters(lib, item, the_uuid, the_title)
 
-                                    bar()
-
+                                    bar() # pylint: disable=not-callable
+ 
                                     add_key(item.ratingKey, the_uuid, TRACK_COMPLETION)
 
                                 else:
@@ -1292,8 +1292,8 @@ for lib in LIB_ARRAY:
                                 except Exception as ex:
                                     plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                                bar()
-
+                                bar() # pylint: disable=not-callable
+ 
                                 stop_file = Path(STOP_FILE_NAME)
                                 skip_file = Path(SKIP_FILE_NAME)
 

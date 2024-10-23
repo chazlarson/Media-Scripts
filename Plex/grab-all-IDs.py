@@ -154,8 +154,8 @@ for lib in LIB_ARRAY:
 
                 get_IDs(the_lib.type, item)
 
-                bar()
-
+                bar() # pylint: disable=not-callable
+ 
         progress_str = "COMPLETE"
         logging.info(progress_str)
 

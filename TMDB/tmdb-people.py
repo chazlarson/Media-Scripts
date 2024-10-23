@@ -90,4 +90,5 @@ with alive_bar(item_total, dual_line=True, title="TMDB people") as bar:
             except Exception as ex:
                 print(f"->  exception: {item} - {ex.args[0]}")
 
-            bar()
+            bar() # pylint: disable=not-callable
+ 

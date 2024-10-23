@@ -206,4 +206,5 @@ with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
 
             insert_record(payload)
 
-        bar()
+        bar() # pylint: disable=not-callable
+ 

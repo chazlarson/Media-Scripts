@@ -110,8 +110,8 @@ def process_section(username, section):
             for video in items:
                 status_text = get_data_line(username, section['type'], section['title'], video)
                 file_string = (f"{file_string}{status_text}{os.linesep}")
-                bar()
-    return file_string
+                bar() # pylint: disable=not-callable
+     return file_string
 
 padwidth = 95
 count = 0

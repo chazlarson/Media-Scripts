@@ -233,8 +233,8 @@ for lib in LIB_ARRAY:
             except Exception as ex:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
-            bar()
-
+            bar() # pylint: disable=not-callable
+ 
             # Wait between items in case hammering the Plex server turns out badly.
             time.sleep(DELAY)
 

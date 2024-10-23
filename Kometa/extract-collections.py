@@ -153,8 +153,8 @@ for lib in lib_array:
                 if len(this_coll) > 0:
                     coll_obj["collections"][collection.title] = this_coll
 
-                bar()
-
+                bar() # pylint: disable=not-callable
+ 
         metadatafile_path = Path(".", CONFIG_DIR, f"{safe_lib}-existing.yml")
 
 

@@ -103,8 +103,8 @@ for lib in LIB_ARRAY:
 
                 reverse_genres(item)
 
-                bar()
-
+                bar() # pylint: disable=not-callable
+ 
         progress_str = "COMPLETE"
         logger((progress_str), 'info', 'a')
 

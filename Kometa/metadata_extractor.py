@@ -545,8 +545,8 @@ for lib in LIB_ARRAY:
                     except Exception as ex:
                         print(ex)
 
-                    bar()
-
+                    bar() # pylint: disable=not-callable
+ 
             with open(f"metadata-{lib}.yml", 'w') as yaml_file:
                 yaml.dump(metadataDict, yaml_file, default_flow_style=False, width=float("inf"))
 

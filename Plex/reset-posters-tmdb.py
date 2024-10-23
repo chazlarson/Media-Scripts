@@ -490,8 +490,8 @@ for lib in LIB_ARRAY:
                     plogger(f'Exception processing "{item_title}": {ex}', 'info', 'a')
                     # there's a 500 in the season poster upload
 
-                bar()
-
+                bar() # pylint: disable=not-callable
+ 
                 logger((f'COMPLETE processing on {item_title}'), 'info', 'a')
 
         if REMOVE_LABELS:

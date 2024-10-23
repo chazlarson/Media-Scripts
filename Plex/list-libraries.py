@@ -53,8 +53,8 @@ with alive_bar(item_total, dual_line=True, title='Library list - Plex') as bar:
 
         table.append(info)
 
-        bar()
-
+        bar() # pylint: disable=not-callable
+ 
         # Wait between items in case hammering the Plex server turns out badly.
         time.sleep(DELAY)
 

@@ -252,8 +252,8 @@ for lib in LIB_ARRAY:
                     except Exception as ex:
                         plogger(f'Exception processing "{item.title}": {ex}', 'info', 'a')
 
-                    bar()
-
+                    bar() # pylint: disable=not-callable
+ 
                     # Wait between items in case hammering the Plex server turns out badly.
                     sleep_for_a_while()
 

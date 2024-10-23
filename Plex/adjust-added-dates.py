@@ -192,8 +192,8 @@ for lib in LIB_ARRAY:
                     except Exception as ex:
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                    bar()
-
+                    bar() # pylint: disable=not-callable
+ 
             plogger(f"Processed {items_processed} of {item_count}", 'info', 'a')
 
         progress_str = "COMPLETE"
