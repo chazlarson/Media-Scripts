@@ -1,17 +1,18 @@
+"""general helper functions"""
+
+from ast import literal_eval
 import itertools
 import os
 import shutil
 from pathlib import Path
 from pathvalidate import is_valid_filename, sanitize_filename
 import plexapi
-from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
-from tmdbapis import TMDbAPIs
+# from tmdbapis import TMDbAPIs
 import requests
 from dotenv import load_dotenv, set_key, unset_key
 from PIL import Image
-from ast import literal_eval
 
 def has_overlay(image_path):
     """docstring placeholder"""
@@ -27,7 +28,7 @@ def has_overlay(image_path):
 
 def booler(thing):
     """docstring placeholder"""
-    if isinstance(thing) == str:
+    if isinstance(thing, str):
         thing = literal_eval(thing)
     return bool(thing)
 
@@ -99,7 +100,7 @@ def get_path(library, item, season=False):
     ret1 = "Collection"
     ret2 = item.title
     if item.type != "collection":
-        if library.type == "movie":
+        if library.type == "movie": # pylint: disable=too-many-nested-blocks
             for media in item.media:
                 for part in media.parts:
                     ret1 = Path(part.file).parent
@@ -313,7 +314,7 @@ def get_xml_libraries(plex_url, plex_token):
 
     return media_output
 
-def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
+def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'): # pylint: disable=too-many-arguments
     """docstring placeholder"""
     output_array =[]
 
