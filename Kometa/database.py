@@ -484,7 +484,7 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
                                                             sqlite3.PARSE_COLNAMES)
             cursor = sqlite_connection.cursor()
 
-            sqlite_create_table_query = reset_tracking_table_create_query()
+            sqlite_create_table_query = art_reset_tracking_table_create_query()
 
             cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
