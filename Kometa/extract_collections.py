@@ -1,7 +1,10 @@
+"""Module extracts collection definitions."""
+
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import platform
 import re
+import sys
 from pathlib import Path
 from alive_progress import alive_bar
 from ruamel import yaml
@@ -35,7 +38,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -54,8 +57,8 @@ if plex_url is None:
     TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
     plex_url = os.getenv(TARGET_URL_VAR)
 
-if PLEX_URL.endswith('/'):
-    plex_url = PLEX_URL[:-1]
+if plex_url.endswith('/'):
+    plex_url = plex_url[:-1]
 
 TARGET_TOKEN_VAR = 'PLEX_TOKEN'
 plex_token = os.getenv(TARGET_TOKEN_VAR)
@@ -79,6 +82,7 @@ coll_obj["collections"] = {}
 
 
 def get_sort_text(argument):
+    """docstring placeholder."""
     switcher = {0: "release", 1: "alpha", 2: "custom"}
     return switcher.get(argument, "invalid-sort")
 
@@ -115,8 +119,8 @@ for lib in lib_array:
 
                 try:
                     THUMBPATH = download(
-                        f"{PLEX_URL}{collection.thumb}",
-                        PLEX_TOKEN,
+                        f"{plex_url}{collection.thumb}",
+                        plex_token,
                         filename=f"{safe_title}.png",
                         savepath=artwork_path,
                     )
@@ -125,8 +129,8 @@ for lib in lib_array:
 
                 if collection.art is not None:
                     ARTPATH = download(
-                        f"{PLEX_URL}{collection.art}",
-                        PLEX_TOKEN,
+                        f"{plex_url}{collection.art}",
+                        plex_token,
                         filename=f"{safe_title}.png",
                         savepath=background_path,
                     )
@@ -155,7 +159,7 @@ for lib in lib_array:
                     coll_obj["collections"][collection.title] = this_coll
 
                 bar() # pylint: disable=not-callable
- 
+
         metadatafile_path = Path(".", CONFIG_DIR, f"{safe_lib}-existing.yml")
 
 
@@ -164,22 +168,21 @@ for lib in lib_array:
             # yaml.round_trip_dump(data, ostream, width=1000, explicit_start=True)
             yaml.round_trip_dump(
                 coll_obj,
-                open(metadatafile_path, "w", encoding="utf-8"),
+                open(metadatafile_path, "w", encoding="utf-8"), # pylint: disable=consider-using-with
                 indent=None,
                 block_seq_indent=2,
             )
         else:
             # yml = ruamel.yaml.YAML(typ='safe')
             # data = yml.load(istream)
-            if (len(coll_obj['collections']) > 0):
+            if len(coll_obj['collections']) > 0:
                 ymlo = yaml.YAML()   # or yaml.YAML(typ='rt')
                 ymlo.width = 1000
                 ymlo.explicit_start = True
                 ymlo.dump(coll_obj,
-                    open(metadatafile_path, "w", encoding="utf-8"))
+                    open(metadatafile_path, "w", encoding="utf-8")) # pylint: disable=consider-using-with
             else:
                 print(f"{lib} has no collections to export")
     except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"error loading library: {lib}")
         print(f"This server has: {plex.library.sections()}")
-
