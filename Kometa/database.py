@@ -334,7 +334,7 @@ def check_key(rating_key, uuid, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, ))
             records = cursor.fetchall()
 
-            known_url = len(records) > 0
+            known_key = len(records) > 0
 
             cursor.close()
 
@@ -429,7 +429,7 @@ def check_rematch_key(rating_key, uuid, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, ))
             records = cursor.fetchall()
 
-            known_url = len(records) > 0
+            known_key = len(records) > 0
 
             cursor.close()
 
@@ -484,7 +484,7 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
                                                             sqlite3.PARSE_COLNAMES)
             cursor = sqlite_connection.cursor()
 
-            sqlite_create_table_query = art_reset_tracking_table_create_query()
+            sqlite_create_table_query = reset_tracking_table_create_query()
 
             cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
@@ -525,7 +525,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, source))
             records = cursor.fetchall()
 
-            known_url = len(records) > 0
+            known_key = len(records) > 0
 
             cursor.close()
 
