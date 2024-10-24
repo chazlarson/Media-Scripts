@@ -1,21 +1,22 @@
-from alive_progress import alive_bar, alive_it
-from ruamel import yaml
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 import platform
 import re
 from pathlib import Path
+from alive_progress import alive_bar
+from ruamel import yaml
 from plexapi.utils import download
-from logs import setup_logger, plogger, blogger, logger
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
+from logs import setup_logger, plogger
+from helpers import (get_plex, load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
 # 0.0.3 : handle some errors better
 # 0.0.4 : deal with invalid filenames
 # 0.0.5 : file_poster not url_poster
+# 0.0.6 : pylint cleanups
 
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 
 env_file_path = Path(".env")
 

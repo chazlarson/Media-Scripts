@@ -1,16 +1,15 @@
+import itertools
+import os
+import shutil
 from pathlib import Path
 from pathvalidate import is_valid_filename, sanitize_filename
-import itertools
 import plexapi
 from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
 import requests
-import json
-import os
 from dotenv import load_dotenv, set_key, unset_key
-import shutil
 from PIL import Image
 
 def has_overlay(image_path):
@@ -214,6 +213,17 @@ def get_type(type):
     if type == 'episode':
         return plexapi.video.Episode
     return None
+
+def get_se_str(the_item):
+    """Function returns season-episode string for an item."""
+    if the_item.TYPE == "season":
+        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}"
+    elif the_item.TYPE == "episode":
+        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}E{str(the_item.episodeNumber).zfill(2)}"
+    else:
+        ret_val = ""
+
+    return ret_val
 
 def get_size(the_lib, tgt_class=None, filter=None):
     lib_size = 0

@@ -97,17 +97,6 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     for lib in ALL_LIBS:
         LIB_ARRAY.append(lib.title.strip())
 
-def get_se_str(the_item):
-    """Function returns season-episode string for an item."""
-    if the_item.TYPE == "season":
-        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}"
-    elif the_item.TYPE == "episode":
-        ret_val = f"S{str(the_item.seasonNumber).zfill(2)}E{str(the_item.episodeNumber).zfill(2)}"
-    else:
-        ret_val = ""
-
-    return ret_val
-
 for lib in LIB_ARRAY:
     if lib in ALL_LIB_NAMES:
         try:
@@ -183,7 +172,6 @@ for lib in LIB_ARRAY:
                 delete_list = []
                 with alive_bar(ITEM_TOTAL, dual_line=True, title=f"Clean Overlay Backup {the_lib.title}") as bar:
                     for rk, target_file in backup_dict.items():
-                        target_file = backup_dict[rk]
                         p = Path(target_file)
                         blogger(f"Deleting {target_file}", 'info', 'a', bar)
                         try:

@@ -1,7 +1,9 @@
-import datetime
+"""Module manages database access."""
+
 import sqlite3
 
 def get_connection(db_name='kometascripts.sqlite'):
+    """docstring placeholder."""
     sqlite_connection = sqlite3.connect(db_name, timeout=10,
                                        detect_types=sqlite3.PARSE_DECLTYPES |
                                                     sqlite3.PARSE_COLNAMES)
@@ -11,6 +13,7 @@ def get_connection(db_name='kometascripts.sqlite'):
 
 # Track artwork download runs
 def last_artwork_run_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS last_run_by_library (
                                         uuid TEXT NOT NULL,
                                         level TEXT NOT NULL,
@@ -20,6 +23,7 @@ def last_artwork_run_table_create_query():
                                         );'''
 
 def add_last_run(uuid, name, level, last_run_date):
+    """docstring placeholder."""
     method_name = "add_last_run"
     try:
         sqlite_connection = get_connection()
@@ -58,6 +62,7 @@ def add_last_run(uuid, name, level, last_run_date):
             sqlite_connection.close()
 
 def get_last_run(uuid, level):
+    """docstring placeholder."""
     method_name = "get_last_run"
     last_run_date = None
 
@@ -89,6 +94,7 @@ def get_last_run(uuid, level):
     return last_run_date
 
 def reset_last_run():
+    """docstring placeholder."""
     method_name = "reset_last_run"
     try:
         sqlite_connection = get_connection()
@@ -111,6 +117,7 @@ def reset_last_run():
 
 # Track media details
 def media_details_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS media_details (
                                         path TEXT PRIMARY KEY,
                                         title TEXT NOT NULL,
@@ -121,7 +128,8 @@ def media_details_table_create_query():
                                         aspect_ratio_calc TEXT
                                         );'''
 
-def add_media_details(path, title, type, height, width, aspect_ratio, aspect_ratio_calc):
+def add_media_details(m_path, m_title, m_type, m_height, m_width, m_aspect_ratio, m_aspect_ratio_calc): # pylint: disable=too-many-arguments
+    """docstring placeholder."""
     method_name = "add_media_details"
     try:
         sqlite_connection = get_connection()
@@ -137,7 +145,7 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
                           ('path','title','type','height','width','aspect_ratio','aspect_ratio_calc')
                           VALUES (?, ?, ?, ?, ?, ?, ?);"""
 
-        data_tuple = (path, title, type, height, width, aspect_ratio, aspect_ratio_calc)
+        data_tuple = (m_path, m_title, m_type, m_height, m_width, m_aspect_ratio, m_aspect_ratio_calc)
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
         sqlite_connection.commit()
@@ -151,6 +159,7 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
             sqlite_connection.close()
 
 def reset_media_details():
+    """docstring placeholder."""
     method_name = "reset_media_details"
     try:
         sqlite_connection = get_connection()
@@ -173,6 +182,7 @@ def reset_media_details():
 
 # Track downloaded URLs
 def url_tracking_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS url_tracking (
                                         url TEXT,
                                         uuid TEXT,
@@ -182,6 +192,7 @@ def url_tracking_table_create_query():
                                         );'''
 
 def add_url(url, uuid, title):
+    """docstring placeholder."""
     method_name = "add_url"
     try:
         sqlite_connection = get_connection()
@@ -210,6 +221,7 @@ def add_url(url, uuid, title):
             sqlite_connection.close()
 
 def check_url(url, uuid):
+    """docstring placeholder."""
     method_name = "check_url"
     known_url = False
 
@@ -240,6 +252,7 @@ def check_url(url, uuid):
     return known_url
 
 def reset_url_tracking():
+    """docstring placeholder."""
     method_name = "reset_url_tracking"
     try:
         sqlite_connection = get_connection()
@@ -262,6 +275,7 @@ def reset_url_tracking():
 
 # Track artwork download completion
 def completion_tracking_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS completed_keys (
                                         rating_key TEXT,
                                         uuid TEXT,
@@ -270,6 +284,7 @@ def completion_tracking_table_create_query():
                                         );'''
 
 def add_key(rating_key, uuid, tracking):
+    """docstring placeholder."""
     method_name = "add_key"
     if tracking:
         try:
@@ -299,6 +314,7 @@ def add_key(rating_key, uuid, tracking):
                 sqlite_connection.close()
 
 def check_key(rating_key, uuid, tracking):
+    """docstring placeholder."""
     method_name = "check_key"
     known_key = False
 
@@ -332,6 +348,7 @@ def check_key(rating_key, uuid, tracking):
     return known_key
 
 def reset_completion_tracking():
+    """docstring placeholder."""
     method_name = "reset_completion_tracking"
     try:
         sqlite_connection = get_connection()
@@ -354,6 +371,7 @@ def reset_completion_tracking():
 
 # Track item rematch completion
 def rematch_tracking_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS rematch_completed_keys (
                                         rating_key TEXT,
                                         uuid TEXT,
@@ -362,6 +380,7 @@ def rematch_tracking_table_create_query():
                                         );'''
 
 def add_rematch_key(rating_key, uuid, tracking):
+    """docstring placeholder."""
     method_name = "add_rematch_key"
     if tracking:
         try:
@@ -391,6 +410,7 @@ def add_rematch_key(rating_key, uuid, tracking):
                 sqlite_connection.close()
 
 def check_rematch_key(rating_key, uuid, tracking):
+    """docstring placeholder."""
     method_name = "check_rematch_key"
     known_key = False
 
@@ -424,6 +444,7 @@ def check_rematch_key(rating_key, uuid, tracking):
     return known_key
 
 def reset_rematch_tracking():
+    """docstring placeholder."""
     method_name = "reset_rematch_tracking"
     try:
         sqlite_connection = get_connection()
@@ -446,6 +467,7 @@ def reset_rematch_tracking():
 
 # Track artwork reset completion
 def art_reset_tracking_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS art_reset_completed_keys (
                                         rating_key TEXT,
                                         uuid TEXT,
@@ -455,6 +477,7 @@ def art_reset_tracking_table_create_query():
                                         );'''
 
 def add_art_reset_key(rating_key, uuid, source, tracking):
+    """docstring placeholder."""
     method_name = "add_art_reset_key"
     if tracking:
         try:
@@ -484,6 +507,7 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
                 sqlite_connection.close()
 
 def check_art_reset_key(rating_key, uuid, source, tracking):
+    """docstring placeholder."""
     method_name = "check_art_reset_key"
     known_key = False
 
@@ -517,6 +541,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
     return known_key
 
 def reset_art_reset_tracking():
+    """docstring placeholder."""
     method_name = "reset_art_reset_tracking"
     try:
         sqlite_connection = get_connection()
@@ -539,6 +564,7 @@ def reset_art_reset_tracking():
 
 # grab-all-ids
 def media_keys_table_create_query():
+    """docstring placeholder."""
     return '''CREATE TABLE IF NOT EXISTS keys (
                                         guid TEXT,
                                         imdb TEXT,
@@ -553,6 +579,7 @@ def media_keys_table_create_query():
                                         );'''
 
 def get_completed():
+    """docstring placeholder."""
     method_name = "get_completed"
     records = None
 
@@ -581,6 +608,7 @@ def get_completed():
     return records
 
 def get_count():
+    """docstring placeholder."""
     method_name = "get_count"
     record_count = 0
 
@@ -612,6 +640,7 @@ def get_count():
     return record_count
 
 def get_media_key(target_guid):
+    """docstring placeholder."""
     method_name = "check_media_key"
     result = None
 
@@ -643,6 +672,7 @@ def get_media_key(target_guid):
     return result
 
 def insert_record(payload):
+    """docstring placeholder."""
     method_name = "insert_record"
 
     try:
@@ -672,6 +702,7 @@ def insert_record(payload):
             sqlite_connection.close()
 
 def update_record(payload):
+    """docstring placeholder."""
     method_name = "update_record"
 
     try:
@@ -701,6 +732,7 @@ def update_record(payload):
             sqlite_connection.close()
 
 def get_diffs(payload):
+    """docstring placeholder."""
 
     diffs = {
         'new': False,
