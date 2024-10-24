@@ -128,7 +128,7 @@ def media_details_table_create_query():
                                         aspect_ratio_calc TEXT
                                         );'''
 
-def add_media_details(m_path, m_title, m_type, m_height, m_width, m_aspect_ratio, m_aspect_ratio_calc): # pylint: disable=too-many-arguments
+def add_media_details(m_path, m_title, m_type, m_height, m_width, m_aspect_ratio, m_aspect_ratio_calc): # pylint: disable=too-many-arguments, too-many-positional-arguments
     """docstring placeholder."""
     method_name = "add_media_details"
     try:
@@ -334,8 +334,7 @@ def check_key(rating_key, uuid, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, ))
             records = cursor.fetchall()
 
-            for row in records:
-                known_key = True
+            known_url = len(records) > 0
 
             cursor.close()
 
@@ -430,8 +429,7 @@ def check_rematch_key(rating_key, uuid, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, ))
             records = cursor.fetchall()
 
-            for row in records:
-                known_key = True
+            known_url = len(records) > 0
 
             cursor.close()
 
@@ -486,7 +484,7 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
                                                             sqlite3.PARSE_COLNAMES)
             cursor = sqlite_connection.cursor()
 
-            sqlite_create_table_query = reset_tracking_table_create_query()
+            sqlite_create_table_query = art_reset_tracking_table_create_query()
 
             cursor = sqlite_connection.cursor()
             cursor.execute(sqlite_create_table_query)
@@ -527,8 +525,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
             cursor.execute(sqlite_select_query, (rating_key, uuid, source))
             records = cursor.fetchall()
 
-            for row in records:
-                known_key = True
+            known_url = len(records) > 0
 
             cursor.close()
 
