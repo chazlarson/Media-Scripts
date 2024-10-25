@@ -99,8 +99,8 @@ def get_path(library, item, season=False):
     """docstring placeholder"""
     ret1 = "Collection"
     ret2 = item.title
-    if item.type != "collection":
-        if library.type == "movie": # pylint: disable=too-many-nested-blocks
+    if item.type != "collection": # pylint: disable=too-many-nested-blocks
+        if library.type == "movie":
             for media in item.media:
                 for part in media.parts:
                     ret1 = Path(part.file).parent
@@ -314,7 +314,7 @@ def get_xml_libraries(plex_url, plex_token):
 
     return media_output
 
-def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'): # pylint: disable=too-many-arguments
+def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'): # pylint: disable=too-many-locals
     """docstring placeholder"""
     output_array =[]
 

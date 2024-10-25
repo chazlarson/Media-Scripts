@@ -36,15 +36,15 @@ ASSET_DIR=assets                             # top-level directory for those ass
 
 ## Scripts:
 1. [clean_overlay_backup.py](#clean_overlay_backuppy) - clean out leftover overlay backup art
-1. [extract-collections.py](#extract-collectionspy) - extract collections from a library
-1. [overlay-default-posters.py](#overlay-default-posterspy) - apply overlays to default collection posters
-1. [kometa-trakt-auth.py](#kometa-trakt-authpy) - generate trakt auth block for Kometa config.yml
-1. [kometa-mal-auth.py](#kometa-mal-authpy) - generate mal auth block for Kometa config.yml
-1. [original-to-assets.py](#original-to-assetspy) - Copy image files from an "Original Posters" directory to an asset directory
+1. [extract_collections.py](#extract_collectionspy) - extract collections from a library
+1. [overlay_default_posters.py](#overlay_default_posterspy) - apply overlays to default collection posters
+1. [kometa_trakt_auth.py](#kometa_trakt_authpy) - generate trakt auth block for Kometa config.yml
+1. [kometa_mal_auth.py](#kometa_mal_authpy) - generate mal auth block for Kometa config.yml
+1. [original_to_assets.py](#original_to_assetspy) - Copy image files from an "Original Posters" directory to an asset directory
 1. [metadata_extractor.py](#metadata_extractorpy) - Extract all metadata from libraries into a Kometa-compatible metadata YAML file
 
 ### OBSOLETE
-1. [top-n-actor-coll.py](#top-n-actor-collpy) - generate collections for the top *n* actors in a library
+1. [top_n_actor_coll.py](#top_n_actor_collpy) - generate collections for the top *n* actors in a library
 
 ## clean_overlay_backup.py
 
@@ -85,7 +85,7 @@ They might be items that are not intended to have overlays
 ...
 ```
 
-## extract-collections.py
+## extract_collections.py
 
 You're getting started with Kometa and you want to export your existing collections
 
@@ -93,7 +93,7 @@ Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
 ### Usage
 1. setup as above
-2. Run with `python extract-collections.py`
+2. Run with `python extract_collections.py`
 
 The script will grab some details from each collection and write a metadata file that you could use with Kometa.  It also grabs artwork and background.
 
@@ -117,7 +117,7 @@ collections:
           - The Good Doctor
 ```
 
-## overlay-default-posters.py
+## overlay_default_posters.py
 
 You want to apply an overlay to the default collection posters; perhaps for branding, perhaps you don't like the separators, whatever
 
@@ -126,7 +126,7 @@ Here is a basic script to do that.
 ### Usage
 1. setup as above
 1. create overlay images in `default_collection_overlays` [see README in that folder for notes.]
-1. Run with `overlay-default-posters.py`
+1. Run with `overlay_default_posters.py`
 
 The script will clone or update the `Kometa-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Kometa-Images-Overlaid`, ready for you to use with the Kometa Asset Directory [after moving them to that directory] or via template variables.
 
@@ -167,7 +167,7 @@ Applying overlays |████████████████████�
 Kometa-Images/genre/Sword & Sandal.jpg
 ```
 
-## kometa-trakt-auth.py
+## kometa_trakt_auth.py
 
 Perhaps you're running Kometa in a docker or something where getting it into interactive mode to authentication trakt is a hassle.
 
@@ -178,7 +178,7 @@ You can run this on a completely separate machine to where Kometa is running.
 There is an online version available [here](https://metamanager.wiki/en/latest/config/auth/).
 
 ### Usage
-1. Run with `python kometa-trakt-auth.py`
+1. Run with `python kometa_trakt_auth.py`
 
 
 You'll be asked for your trakt Client ID and Client Secret then taken to a trakt web page.
@@ -216,7 +216,7 @@ trakt:
 ############################################
 ```
 
-## kometa-mal-auth.py
+## kometa_mal_auth.py
 
 This little script will generate the `mal` section for your Kometa config file.  Most of this code is pulled from Kometa's own MAL authentication; it's just been simplified to do the one thing.
 
@@ -227,7 +227,7 @@ There is an online version available [here](https://metamanager.wiki/en/latest/c
 ### Usage
 1. `python3 -m pip install pyopenssl`
 1. `python3 -m pip install requests secrets`
-1. Run it with `python3 kometa-mal-auth.py`.
+1. Run it with `python3 kometa_mal_auth.py`.
 
 You'll be asked for your MyAnimeList Client ID and Client Secret then taken to a MyAnimeList web page.
 
@@ -270,7 +270,7 @@ mal:
 
 ```
 
-## original-to-assets.py
+## original_to_assets.py
 
 You've applied overlays to a library and want to seed an asset directory with the "Original Posters".
 
@@ -278,7 +278,7 @@ Here is a basic script to do that.
 
 ### Usage
 1. setup as above
-1. Run with `original-to-assets.py`
+1. Run with `original_to_assets.py`
 
 The script will copy the contents of the "Original Posters" directory to an asset directory.
 
@@ -378,7 +378,7 @@ metadata-items
 
 ## OBSOLETE SCRIPTS
 
-## top-n-actor-coll.py
+## top_n_actor_coll.py
 
 This has been obsoleted by "Dynamic Collections" in Kometa; it's left here for historical reference.
 
@@ -406,7 +406,7 @@ TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
 
 ### Usage
 1. setup as above
-1. Run with `python top-n-actor-coll.py`
+1. Run with `python top_n_actor_coll.py`
 
 ```
 connecting...

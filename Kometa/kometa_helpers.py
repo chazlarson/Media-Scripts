@@ -1,37 +1,44 @@
+"""general helper functions"""
+
+from ast import literal_eval
 import itertools
-import requests
 import os
 import shutil
 from pathlib import Path
+import requests
 from pathvalidate import is_valid_filename, sanitize_filename
 import plexapi
-from plexapi import utils
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
-from tmdbapis import TMDbAPIs
+# from tmdbapis import TMDbAPIs
 from dotenv import load_dotenv, set_key, unset_key
 from PIL import Image
 
 def has_overlay(image_path):
+    """docstring placeholder"""
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
     return (0x04bc in exif_tags and exif_tags[0x04bc] == "overlay")
 
 def booler(thing):
-    if type(thing) == str:
-        thing = eval(thing)
+    """docstring placeholder"""
+    if isinstance(thing, str):
+        thing = literal_eval(thing)
     return bool(thing)
 
 def redact(thing, badthing):
+    """docstring placeholder"""
     return thing.replace(badthing, "(REDACTED)")
 
-def redact(the_url, str_list):
+def redact(the_url, str_list): # pylint: disable=function-redefined
+    """docstring placeholder"""
     ret_val = the_url
     for thing in str_list:
         ret_val = ret_val.replace(thing, '[REDACTED]')
     return ret_val
 
 def get_plex(user_token=None):
+    """docstring placeholder"""
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
     plex = None
     try:
@@ -39,9 +46,9 @@ def get_plex(user_token=None):
             plex = PlexServer(token=user_token)
         else:
             plex = PlexServer()
-    except Unauthorized:
+    except Unauthorized as exc:
         print("Plex Error: Plex token is invalid")
-        raise Unauthorized
+        raise Unauthorized from exc
     except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"Plex Error: {ex.args}")
         raise ex
@@ -52,7 +59,8 @@ IMDB_STR = "imdb://"
 TMDB_STR = "tmdb://"
 TVDB_STR = "tvdb://"
 
-def get_ids(the_list, TMDB_KEY):
+def get_ids(the_list):
+    """docstring placeholder"""
     imdbid = None
     tmid = None
     tvid = None
@@ -66,38 +74,41 @@ def get_ids(the_list, TMDB_KEY):
 
     return imdbid, tmid, tvid
 
-def imdb_from_tmdb(tmdb_id, TMDB_KEY):
-    tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-    # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
+# def imdb_from_tmdb(tmdb_id, tmdb_key):
+#     """docstring placeholder"""
+#     tmdb = TMDbAPIs(tmdb_key, language="en")
+#     url = f"https://api.themoviedb.org/3/movie/{tmdb_id}/external_ids?api_key={tmdb_key}"
 
 def validate_filename(filename):
+    """docstring placeholder"""
     # return filename
     if is_valid_filename(filename):
         return filename, None
-    else:
-        mapping_name = sanitize_filename(filename)
-        stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
-        return mapping_name, stat_string
+
+    mapping_name = sanitize_filename(filename)
+    stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
+    return mapping_name, stat_string
 
 def get_path(library, item, season=False):
-    if item.type == "collection":
-        return "Collection", item.title
-    else:
+    """docstring placeholder"""
+    ret1 = "Collection"
+    ret2 = item.title
+    if item.type != "collection": # pylint: disable=too-many-nested-blocks
         if library.type == "movie":
             for media in item.media:
                 for part in media.parts:
-                    return Path(part.file).parent, Path(part.file).stem
+                    ret1 = Path(part.file).parent
+                    ret2 = Path(part.file).stem
         elif library.type == "show":
             for episode in item.episodes():
                 for media in episode.media:
                     for part in media.parts:
+                        ret1 = Path(part.file).parent.parent
+                        ret2 = Path(part.file).parent.parent.stem
                         if season:
-                            return Path(part.file).parent, Path(part.file).stem
-                        return (
-                            Path(part.file).parent.parent,
-                            Path(part.file).parent.parent.stem,
-                        )
+                            ret1 = Path(part.file).parent
+                            ret2 = Path(part.file).stem
+    return ret1, ret2
 
 def normalise_environment(key_values):
     """Converts denormalised dict of (string -> string) pairs, where the first string
@@ -137,9 +148,11 @@ def normalise_environment(key_values):
     separator = "__"
 
     def get_first_component(key):
+        """docstring placeholder"""
         return key.split(separator)[0]
 
     def get_later_components(key):
+        """docstring placeholder"""
         return separator.join(key.split(separator)[1:])
 
     without_more_components = {
@@ -151,7 +164,9 @@ def normalise_environment(key_values):
     }
 
     def grouped_by_first_component(items):
+        """docstring placeholder"""
         def by_first_component(item):
+            """docstring placeholder"""
             return get_first_component(item[0])
 
         # groupby requires the items to be sorted by the grouping key
@@ -161,6 +176,7 @@ def normalise_environment(key_values):
         )
 
     def items_with_first_component(items, first_component):
+        """docstring placeholder"""
         return {
             get_later_components(key): value
             for key, value in items
@@ -180,16 +196,19 @@ def normalise_environment(key_values):
     }
 
     def all_keys_are_ints():
+        """docstring placeholder"""
         def is_int(string):
+            """docstring placeholder"""
             try:
                 int(string)
                 return True
             except ValueError:
                 return False
 
-        return all([is_int(key) for key, value in nested_structured_dict.items()])
+        return all(is_int(key) for key, value in nested_structured_dict.items())
 
     def list_sorted_by_int_key():
+        """docstring placeholder"""
         return [
             value
             for key, value in sorted(
@@ -199,24 +218,26 @@ def normalise_environment(key_values):
 
     return list_sorted_by_int_key() if all_keys_are_ints() else nested_structured_dict
 
-def get_type(type):
-    if type == 'movie':
+def get_type(type_str):
+    """docstring placeholder"""
+    if type_str == 'movie':
         return plexapi.video.Movie
-    if type == 'show':
+    if type_str == 'show':
         return plexapi.video.Show
-    if type == 'episode':
+    if type_str == 'episode':
         return plexapi.video.Episode
     return None
 
-def get_size(the_lib, tgt_class=None, filter=None):
+def get_size(the_lib, tgt_class=None, tgt_filter=None):
+    """docstring placeholder"""
     lib_size = the_lib.totalViewSize()
     item_class = the_lib.type
 
     if tgt_class is not None:
         item_class = tgt_class
 
-    if filter is not None:
-        temp_var = the_lib.search(libtype=item_class, filters=filter)
+    if tgt_filter is not None:
+        temp_var = the_lib.search(libtype=item_class, filters=tgt_filter)
         lib_size = len(temp_var)
     else:
         temp_var = the_lib.search(libtype=item_class)
@@ -224,22 +245,21 @@ def get_size(the_lib, tgt_class=None, filter=None):
 
     return lib_size
 
-def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
+def get_all_from_library(the_lib, tgt_class=None, tgt_filter=None):
+    """docstring placeholder"""
     lib_size = the_lib.totalViewSize()
-    lib_type = get_type(the_lib.type)
     item_class = the_lib.type
 
     if tgt_class is not None:
         item_class = tgt_class
         lib_size = the_lib.totalViewSize(libtype=tgt_class)
 
-    key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
     c_start = 0
     c_size = 500
     results = []
     while lib_size is None or c_start <= lib_size:
-        if filter is not None:
-            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
+        if tgt_filter is not None:
+            results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=tgt_filter))
         else:
             results.extend(the_lib.search(libtype=item_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
 
@@ -249,7 +269,8 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
             c_start = lib_size + 1
     return results
 
-def get_overlay_status(plex, the_lib):
+def get_overlay_status(the_lib):
+    """docstring placeholder"""
     overlay_items = the_lib.search(label="Overlay")
 
     ret_val = len(overlay_items) > 0
@@ -257,6 +278,7 @@ def get_overlay_status(plex, the_lib):
     return ret_val
 
 def get_xml(plex_url, plex_token, lib_index):
+    """docstring placeholder"""
     ssn = requests.Session()
     ssn.headers.update({'Accept': 'application/json'})
     ssn.params.update({'X-Plex-Token': plex_token})
@@ -264,22 +286,24 @@ def get_xml(plex_url, plex_token, lib_index):
     return media_output
 
 def get_xml_libraries(plex_url, plex_token):
+    """docstring placeholder"""
     media_output = None
     try:
         ssn = requests.Session()
         ssn.headers.update({'Accept': 'application/json'})
         ssn.params.update({'X-Plex-Token': plex_token})
-        print(f"- making request")
+        print("- making request")
         raw_output = ssn.get(f'{plex_url}/library/sections/')
         if raw_output.status_code == 200:
-            print(f"- success")
+            print("- success")
             media_output = raw_output.json()
     except Exception as ex: # pylint: disable=broad-exception-caught
         print(f"- problem getting libraries: {ex}")
 
     return media_output
 
-def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
+def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'): # pylint: disable=too-many-locals
+    """docstring placeholder"""
     output_array =[]
 
     ssn = requests.Session()
@@ -287,7 +311,7 @@ def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
     ssn.params.update({'X-Plex-Token': plex_token})
     media_output = ssn.get(f'{plex_url}/library/sections/{lib_index}/all?viewCount>=1').json()
 
-    if 'Metadata' in media_output['MediaContainer'].keys():
+    if 'Metadata' in media_output['MediaContainer'].keys(): # pylint: disable=too-many-nested-blocks
         if lib_type == 'movie':
             #library is a movie lib; loop through every movie
             movie_count = len(media_output['MediaContainer']['Metadata'])
@@ -321,8 +345,7 @@ def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
     return output_array
 
 def get_media_details(plex_url, plex_token, rating_key):
-    output_array =[]
-
+    """docstring placeholder"""
     ssn = requests.Session()
     ssn.headers.update({'Accept': 'application/json'})
     ssn.params.update({'X-Plex-Token': plex_token})
@@ -330,15 +353,16 @@ def get_media_details(plex_url, plex_token, rating_key):
 
     return media_output
 
-def get_all_watched(plex, the_lib):
-    lib_size = the_lib.totalViewSize()
+def get_all_watched(the_lib):
+    """docstring placeholder"""
+    # lib_size = the_lib.totalViewSize()
     results = the_lib.search(unwatched=False)
     return results
 
 def char_range(c1, c2):
     """Generates the characters from `c1` to `c2`, inclusive."""
-    for c in range(ord(c1), ord(c2)+1):
-        yield chr(c)
+    for cx in range(ord(c1), ord(c2)+1):
+        yield chr(cx)
 
 ALPHABET = []
 NUMBERS = []
@@ -350,6 +374,7 @@ for c in char_range('0', '9'):
     NUMBERS.append(c)
 
 def remove_articles(thing):
+    """docstring placeholder"""
     if thing.startswith('The '):
         thing = thing.replace('The ','')
     if thing.startswith('A '):
@@ -362,6 +387,7 @@ def remove_articles(thing):
     return thing
 
 def get_letter_dir(thing):
+    """docstring placeholder"""
     ret_val = "Other"
 
     thing = remove_articles(thing)
@@ -377,19 +403,20 @@ def get_letter_dir(thing):
     return ret_val
 
 def load_and_upgrade_env(file_path):
+    """docstring placeholder"""
     status = 0
 
     if os.path.exists(file_path):
         load_dotenv(dotenv_path=file_path)
     else:
-        print(f"No environment [.env] file.  Creating base file.")
+        print("No environment [.env] file.  Creating base file.")
         if os.path.exists('.env.example'):
             src_file = os.path.join('.', '.env.example')
             tgt_file = os.path.join('.','.env')
             shutil.copyfile(src_file, tgt_file)
-            print(f"Please edit .env file to suit and rerun script.")
+            print("Please edit .env file to suit and rerun script.")
         else:
-            print(f"No example [.env.example] file.  Cannot create base file.")
+            print("No example [.env.example] file.  Cannot create base file.")
         status = -1
 
     plex_url = os.getenv("PLEX_URL")
@@ -399,8 +426,8 @@ def load_and_upgrade_env(file_path):
         # Add the PLEXAPI env vars
         set_key(dotenv_path=file_path, key_to_set="PLEXAPI_PLEXAPI_TIMEOUT", value_to_set="360")
 
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_BASEURL", value_to_set=PLEX_URL)
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_TOKEN", value_to_set=PLEX_TOKEN)
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_BASEURL", value_to_set=plex_url)
+        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_TOKEN", value_to_set=plex_token)
         unset_key(dotenv_path=file_path, key_to_unset="PLEX_URL", quote_mode='always', encoding='utf-8')
         unset_key(dotenv_path=file_path, key_to_unset="PLEX_TOKEN", quote_mode='always', encoding='utf-8')
 
@@ -416,11 +443,11 @@ def load_and_upgrade_env(file_path):
         status = 1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
+        print("You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.", 'info', 'a')
         status = -1
 
     if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
-        print(f"You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
+        print("You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", 'info', 'a')
         status = -1
 
     return status

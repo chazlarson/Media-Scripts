@@ -1,3 +1,4 @@
+""" docstring placeholder """
 # This little script needs only Python 3.9 and a couple requirements, and will generate the MAL section for your Kometa config file.
 # Most of this code is pulled from Kometa's own MAL authentication; it's just been simplified to do
 # the one thing and not rely on any Kometa code.
@@ -20,11 +21,12 @@
 #
 # Some yaml will be printed, ready to copy-paste into your Kometa config.yml.
 
-import requests
 import webbrowser
 import secrets
 import re
 import os
+import sys
+import requests
 
 urls = {
     "oauth_token": "https://myanimelist.net/v1/oauth2/token",
@@ -38,9 +40,9 @@ client_id = input("MyAnimeList Client ID: ").strip()
 client_secret = input("MyAnimeList Client Secret: ").strip()
 
 code_verifier = secrets.token_urlsafe(100)[:128]
-url = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_challenge={code_verifier}"
+URL = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_challenge={code_verifier}"
 
-print(f"We're going to open {url}{os.linesep}{os.linesep}")
+print(f"We're going to open {URL}{os.linesep}{os.linesep}")
 print(f"Log in and click the Allow option.{os.linesep}")
 print(
     f"You will be redirected to a localhost url that probably won't load.{os.linesep}"
@@ -48,14 +50,14 @@ print(
 print(f"That's fine.  Copy that localhost URL and paste it below.{os.linesep}")
 tmpVar = input("Hit enter when ready: ").strip()
 
-webbrowser.open(url, new=2)
+webbrowser.open(URL, new=2)
 
 url = input("URL: ").strip()
 
 match = re.search("code=([^&]+)", str(url))
 if not match:
     print(f"Couldn't find the required code in that URL.{os.linesep}")
-    exit()
+    sys.exit()
 
 code = match.group(1)
 
@@ -71,7 +73,7 @@ new_authorization = session.post(urls["oauth_token"], data=data).json()
 
 if "error" in new_authorization:
     print(f"ERROR: invalid code.{os.linesep}")
-    exit()
+    sys.exit()
 
 print(f"{os.linesep}{os.linesep}Copy the following into your Kometa config.yml:")
 print("############################################")

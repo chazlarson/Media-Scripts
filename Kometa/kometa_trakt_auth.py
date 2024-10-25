@@ -1,3 +1,4 @@
+"""docstring placeholder"""
 # This little script needs only Python 3.9 and requests, and will generate the trakt section for your Kometa config file.
 # Most of this code is pulled from Kometa's own trakt authentication; it's just been simplified to do
 # the one thing and not rely on any Kometa code.
@@ -12,33 +13,34 @@
 #
 # Some yaml will be printed, ready to copy-paste into your Kometa config.yml.
 
-import requests
 import webbrowser
+import requests
 
-redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
-redirect_uri_encoded = redirect_uri.replace(":", "%3A")
-base_url = "https://api.trakt.tv"
+REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
+REDIRECT_URI_ENCODED = REDIRECT_URI.replace(":", "%3A")
+BASE_URL = "https://api.trakt.tv"
 
 print("Let's authenticate against Trakt!\n\n")
 
-client_id = input("Trakt Client ID: ").strip()
-client_secret = input("Trakt Client Secret: ").strip()
+CLIENT_ID = input("Trakt Client ID: ").strip()
+CLIENT_SECRET = input("Trakt Client Secret: ").strip()
 
-url = f"https://trakt.tv/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri_encoded}"
+URL = f"https://trakt.tv/oauth/authorize?response_type=code&client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI_ENCODED}"
 print(
-    f"Taking you to: {url}\n\nIf you get an OAuth error your Client ID or Client Secret is invalid\n\nIf a browser window doesn't open go to that URL manually.\n\n"
+    f"Taking you to: {URL}\n\nIf you get an OAuth error your Client ID or Client Secret is invalid\n\nIf a browser window doesn't open go to that URL manually.\n\n"
 )
-webbrowser.open(url, new=2)
+webbrowser.open(URL, new=2)
 pin = input("Enter the Trakt pin from that web page: ").strip()
 json = {
     "code": pin,
-    "client_id": client_id,
-    "client_secret": client_secret,
-    "redirect_uri": redirect_uri,
+    "client_id": CLIENT_ID,
+    "client_secret": CLIENT_SECRET,
+    "redirect_uri": REDIRECT_URI,
     "grant_type": "authorization_code",
 }
 response = requests.post(
-    f"{base_url}/oauth/token", json=json, headers={"Content-Type": "application/json"}
+    f"{BASE_URL}/oauth/token", json=json, headers={"Content-Type": "application/json"},
+    timeout=30
 )
 
 if response.status_code != 200:
@@ -52,18 +54,20 @@ else:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {response.json()['access_token']}",
         "trakt-api-version": "2",
-        "trakt-api-key": client_id,
+        "trakt-api-key": CLIENT_ID,
     }
 
-    validation_response = requests.get(f"{base_url}/users/settings", headers=headers)
+    validation_response = requests.get(f"{BASE_URL}/users/settings",
+        headers=headers,
+        timeout=30)
     if validation_response.status_code == 423:
         print("Trakt Error: Account is locked; please contact Trakt Support")
     else:
         print("Copy the following into your Kometa config.yml:")
         print("############################################")
         print("trakt:")
-        print(f"  client_id: {client_id}")
-        print(f"  client_secret: {client_secret}")
+        print(f"  client_id: {CLIENT_ID}")
+        print(f"  client_secret: {CLIENT_SECRET}")
         print("  authorization:")
         print(f"    access_token: {response.json()['access_token']}")
         print(f"    token_type: {response.json()['token_type']}")
