@@ -1,15 +1,15 @@
+""" Delete collections from a Plex library """
 #!/usr/bin/env python
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
+import sys
 import time
-from helpers import get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger, blogger, logger
-
 from pathlib import Path
 from datetime import datetime
+from helpers import get_plex, load_and_upgrade_env
+from alive_progress import alive_bar
+
+from logs import setup_logger, plogger
+
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -30,7 +30,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -58,7 +58,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type in ('movie', 'show'):
             LIB_ARRAY.append(lib.title.strip())
 
 coll_obj = {}
@@ -66,6 +66,7 @@ coll_obj["collections"] = {}
 
 
 def get_sort_text(argument):
+    """ Get the sort text """
     switcher = {0: "release", 1: "alpha", 2: "custom"}
     return switcher.get(argument, "invalid-sort")
 
@@ -74,7 +75,6 @@ for lib in LIB_ARRAY:
     items = the_lib.collections()
     item_total = len(items)
     print(f"{item_total} collection(s) retrieved...")
-    item_count = 1
     with alive_bar(item_total, dual_line=True, title="Collection delete - Plex") as bar:
         for item in items:
             title = item.title
@@ -86,6 +86,6 @@ for lib in LIB_ARRAY:
                 item.delete()
 
             bar() # pylint: disable=not-callable
- 
+
             # Wait between items in case hammering the Plex server turns out badly.
             time.sleep(DELAY)

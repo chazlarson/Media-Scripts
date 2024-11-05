@@ -1,20 +1,11 @@
+""" set user rating on a movie in a Plex library """
 #!/usr/bin/env python
-from plexapi.exceptions import Unauthorized
-from logs import setup_logger, plogger
-
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
-import os
-
-from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 from pathlib import Path
-import random
-
-from pathlib import Path
-
 from datetime import datetime
-
 import random
+import sys
+from logs import setup_logger, plogger
+from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 
 # current dateTime
 now = datetime.now()
@@ -34,7 +25,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 plex = get_plex()
 plogger("connection success", 'info', 'a')
@@ -42,7 +33,7 @@ plogger(f"Plex version {plex.version}", 'info', 'a')
 
 new_rating = round(random.random() * 10, 1)
 
-the_lib = plex.library.section('Test-Movies')
+the_lib = plex.library.section('Kometa-One-Movie')
 the_type = the_lib.type
 
 print(f"getting first item from the {the_type} library [{the_lib.title}]...")

@@ -1,16 +1,14 @@
+""" List all libraries in Plex server """
 #!/usr/bin/env python
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from ruamel import yaml
 import os
-from pathlib import Path, PurePath
-from dotenv import load_dotenv
+import sys
+from pathlib import Path
 import time
+from datetime import datetime
 from tabulate import tabulate
 from helpers import get_plex, load_and_upgrade_env
+from alive_progress import alive_bar
 
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -20,7 +18,7 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 env_file_path = Path(".env")
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 DELAY = int(os.getenv('DELAY'))
 
@@ -33,6 +31,7 @@ coll_obj = {}
 coll_obj['libraries'] = {}
 
 def get_sort_text(argument):
+    """ Function to return the sort text """
     switcher = {
         0: "release",
         1: "alpha",
@@ -41,10 +40,10 @@ def get_sort_text(argument):
     return switcher.get(argument, "invalid-sort")
 
 sections = plex.library.sections()
-item_total = len(sections)
+ITEM_TOTAL = len(sections)
 table = [['Name', 'Type', 'Size']]
 
-with alive_bar(item_total, dual_line=True, title='Library list - Plex') as bar:
+with alive_bar(ITEM_TOTAL, dual_line=True, title='Library list - Plex') as bar:
     for section in sections:
         info = []
         info.append(section.title)
@@ -54,9 +53,8 @@ with alive_bar(item_total, dual_line=True, title='Library list - Plex') as bar:
         table.append(info)
 
         bar() # pylint: disable=not-callable
- 
+
         # Wait between items in case hammering the Plex server turns out badly.
         time.sleep(DELAY)
 
 print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
-

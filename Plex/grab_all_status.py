@@ -1,18 +1,16 @@
+""" Grab all status from Plex """
 #!/usr/bin/env python
-from plexapi.server import PlexServer
 import os
 import json
-from dotenv import load_dotenv
-from alive_progress import alive_bar
-
 import sys
 import textwrap
 
-from helpers import get_all_from_library, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
-
-from logs import setup_logger, plogger, blogger, logger
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
+from logs import setup_logger, plogger
+from helpers import get_plex, get_xml_watched, get_xml_libraries, load_and_upgrade_env
+from alive_progress import alive_bar
+
 # current dateTime
 now = datetime.now()
 
@@ -33,7 +31,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 TARGET_URL_VAR = 'PLEX_URL'
 plex_url = os.getenv(TARGET_URL_VAR)
@@ -49,11 +47,11 @@ if plex_token is None:
 
 if plex_url is None or plex_url == 'https://plex.domain.tld':
     plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
-    exit()
+    sys.exit()
 
 if plex_token is None or plex_token == 'PLEX-TOKEN':
     plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
-    exit()
+    sys.exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
@@ -61,126 +59,129 @@ LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 
 try:
     lib_map = json.loads(LIBRARY_MAP)
-except:
-    plogger(f"LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+except: # pylint: disable=bare-except
+    plogger("LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
     lib_map = json.loads("{}")
 
 
 def progress(count, total, status=""):
+    """ Progress bar """
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = "=" * filled_len + "-" * (bar_len - filled_len)
+    p_bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=80)
 
-    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
+    sys.stdout.write(f"[{p_bar}] {percents}% ... {stat_str.ljust(80)}\r")
     sys.stdout.flush()
 
-
-def get_user_acct(acct_list, username):
+def get_user_acct(acct_list, username): # pylint: disable=inconsistent-return-statements
+    "" "Get the user account" ""
     for acct in acct_list:
         if acct.username == username:
             return acct
 
-
-def get_data_line(username, type, section, video):
+def get_data_line(username, p_type, section, video):
+    """ Get the data line """
     file_line = ""
-    contentRating = video['contentRating'] if 'contentRating' in video.keys() else 'NONE'
-    episodeNum = video['index'] if 'index' in video.keys() else video['duration']
-    if type == "show":
-        file_line = f"{username}\t{type}\t{section}\t{video['grandparentTitle']}\ts{video['parentIndex']:02}e{episodeNum:02}\t{video['title']}"
-    elif type == "movie":
-        file_line = f"{username}\t{type}\t{section}\t{video['title']}\t{video['year']}\t{contentRating}"
+    content_rating = video['contentRating'] if 'contentRating' in video.keys() else 'NONE'
+    episode_num = video['index'] if 'index' in video.keys() else video['duration']
+    if p_type == "show":
+        file_line = f"{username}\t{p_type}\t{section}\t{video['grandparentTitle']}\ts{video['parentIndex']:02}e{episode_num:02}\t{video['title']}"
+    elif p_type == "movie":
+        file_line = f"{username}\t{p_type}\t{section}\t{video['title']}\t{video['year']}\t{content_rating}"
     return file_line
 
 
-def filter_for_unwatched(list):
-    watched = [x for x in list if x.isPlayed]
+def filter_for_unwatched(tgt_list):
+    """ Filter for unwatched items """
+    watched = [x for x in tgt_list if x.isPlayed]
     return watched
 
-def process_section(username, section):
+def process_section(username, section): # pylint: disable=inconsistent-return-statements
+    """ Process a section """
     items = []
     file_string = ""
 
     print(f"------------ {section['title']} ------------")
     items = get_xml_watched(plex_url, plex_token, section['key'], section['type'])
     if len(items) > 0:
-        with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+        with alive_bar(len(items), dual_line=True, title="Saving status") as a_bar:
             for video in items:
                 status_text = get_data_line(username, section['type'], section['title'], video)
-                file_string = (f"{file_string}{status_text}{os.linesep}")
-                bar() # pylint: disable=not-callable
+                file_string = f"{file_string}{status_text}{os.linesep}"
+                a_bar() # pylint: disable=not-callable
         return file_string
 
-padwidth = 95
-count = 0
+PADWIDTH = 95
+COUNT = 0
 connected_plex_user = PLEX_OWNER
-connected_plex_library = ""
+CONNECTED_PLEX_LIBRARY = ""
 
 plex = get_plex()
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
 all_users = account.users()
-item = None
-file_string = ""
+ITEM = None
+FILE_STRING = ""
 DO_NOTHING = False
 
 print(f"------------ {account.username} ------------")
 try:
     # plex_sections = plex.library.sections()
-    print(f"------------ getting libraries -------------")
-    plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+    print("------------ getting libraries -------------")
+    plex_sections = get_xml_libraries(plex_url, plex_token)
 
     if plex_sections is not None:
         for plex_section in plex_sections['MediaContainer']['Directory']:
             if not DO_NOTHING:
                 if plex_section['type'] != "artist":
                     print(f"- processing {plex_section['type']} library: {plex_section['title']}")
-                    status_text = process_section(account.username, plex_section)
-                    file_string = (f"{file_string}{status_text}{os.linesep}")
+                    STATUS_TEXT = process_section(account.username, plex_section)
+                    FILE_STRING = f"{FILE_STRING}{STATUS_TEXT}{os.linesep}"
                 else:
-                    file_line = f"Skipping {plex_section['title']}"
-                    print(file_line)
-                    file_string = file_string + f"{file_line}{os.linesep}"
+                    FILE_LINE = f"Skipping {plex_section['title']}"
+                    print(FILE_LINE)
+                    FILE_STRING = FILE_STRING + f"{FILE_LINE}{os.linesep}"
     else:
         print(f"Could not retrieve libraries for {account.username}")
 
 except Exception as ex: # pylint: disable=broad-exception-caught
-    file_line = f"Exception processing {account.username} - {ex}"
-    print(file_line)
-    file_string = file_string + f"{file_line}{os.linesep}"
+    FILE_LINE = f"Exception processing {account.username} - {ex}"
+    print(FILE_LINE)
+    FILE_STRING = FILE_STRING + f"{FILE_LINE}{os.linesep}"
 
 user_ct = len(all_users)
-user_idx = 0
+USER_IDX = 0
 for plex_user in all_users:
     user_acct = account.user(plex_user.title)
-    user_idx += 1
-    print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
+    USER_IDX += 1
+    print(f"------------ {plex_user.title} {USER_IDX}/{user_ct} ------------")
     try:
         plex_token = user_acct.get_token(plex.machineIdentifier)
-        print(f"------------ getting libraries -------------")
-        plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+        print("------------ getting libraries -------------")
+        plex_sections = get_xml_libraries(plex_url, plex_token)
         if plex_sections is not None:
             for plex_section in plex_sections['MediaContainer']['Directory']:
                 if not DO_NOTHING:
                     if plex_section['type'] != "artist":
-                        status_text = process_section(plex_user.title, plex_section)
-                        file_string = (f"{file_string}{status_text}{os.linesep}")
+                        STATUS_TEXT = process_section(plex_user.title, plex_section)
+                        FILE_STRING = f"{FILE_STRING}{STATUS_TEXT}{os.linesep}"
                     else:
-                        file_line = f"Skipping {plex_section['title']}"
-                        file_string = file_string + f"{file_line}{os.linesep}"
-                        print(file_line)
+                        FILE_LINE = f"Skipping {plex_section['title']}"
+                        FILE_STRING = FILE_STRING + f"{FILE_LINE}{os.linesep}"
+                        print(FILE_LINE)
         else:
             print(f"Could not retrieve libraries for {plex_user.title}")
 
     except Exception as ex: # pylint: disable=broad-exception-caught
-        file_line = f"Exception processing {plex_user.title} - {ex}"
-        file_string = file_string + f"{file_line}{os.linesep}"
-        print(file_line)
+        FILE_LINE = f"Exception processing {plex_user.title} - {ex}"
+        FILE_STRING = FILE_STRING + f"{FILE_LINE}{os.linesep}"
+        print(FILE_LINE)
 
 print(f"{os.linesep}")
-if len(file_string) > 0:
+if len(FILE_STRING) > 0:
     with open("status.txt", "w", encoding="utf-8") as myfile:
-        myfile.write(f"{file_string}{os.linesep}")
+        myfile.write(f"{FILE_STRING}{os.linesep}")

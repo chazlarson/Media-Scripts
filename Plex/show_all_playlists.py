@@ -1,13 +1,12 @@
+""" Show all playlists for all users in Plex """
 #!/usr/bin/env python
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
+from pathlib import Path
+from datetime import datetime
 import os
-from dotenv import load_dotenv
+import sys
+import logging
 from helpers import get_plex, load_and_upgrade_env
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -28,11 +27,12 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+LOG_STR = f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}"
+logging.info(LOG_STR)
+print(LOG_STR)
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")
 
@@ -42,15 +42,15 @@ PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
 all_users = account.users()
-item = None
+ITEM = None
 
 user_ct = len(all_users)
-user_idx = 0
+USER_IDX = 0
 for plex_user in all_users:
     user_acct = account.user(plex_user.title)
-    user_idx += 1
+    USER_IDX += 1
     try:
-        user_plex = get_plex(PLEX_URL, user_acct.get_token(PMI))
+        user_plex = get_plex(user_acct.get_token(PMI))
 
         playlists = user_plex.playlists()
         if len(playlists) > 0:
@@ -61,13 +61,13 @@ for plex_user in all_users:
                     f"------------ {plex_user.title} playlist: {pl.title} ------------"
                 )
                 items = pl.items()
-                for item in items:
-                    typestr = f"{item.type}".ljust(7)
-                    output = item.title
-                    if item.type == "episode":
-                        output = (
-                            f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
+                for ITEM in items:
+                    TYPESTR = f"{ITEM.type}".ljust(7)
+                    OUTPUT = ITEM.title
+                    if ITEM.type == "episode":
+                        OUTPUT = (
+                            f"{ITEM.grandparentTitle} {ITEM.seasonEpisode} {ITEM.title}"
                         )
-                    print(f"{typestr} - {output}")
+                    print(f"{TYPESTR} - {OUTPUT}")
     except Exception as ex: # pylint: disable=broad-exception-caught
-        handle_this_silently = "please"
+        print(f"ERROR on {plex_user.title}: {ex}")

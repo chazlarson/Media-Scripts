@@ -1,16 +1,13 @@
+""" List all collections in a Plex library """
 #!/usr/bin/env python
 import logging
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from ruamel import yaml
 import os
-from pathlib import Path, PurePath
-from dotenv import load_dotenv
+import sys
+from pathlib import Path
 import time
+from datetime import datetime
 from helpers import get_plex, load_and_upgrade_env
-
-from datetime import datetime, timedelta
+from alive_progress import alive_bar
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -31,11 +28,12 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+START_STR = f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}"
+logging.info(START_STR)
+print(START_STR)
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv('LIBRARY_NAME')
 LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
@@ -55,6 +53,7 @@ coll_obj = {}
 coll_obj['collections'] = {}
 
 def get_sort_text(argument):
+    """ Function to return the sort text for the given sort value """
     switcher = {
         0: "release",
         1: "alpha",
@@ -68,14 +67,13 @@ for lib in lib_array:
     items = movies.collections()
     item_total = len(items)
     print(f"{item_total} collection(s) retrieved...")
-    item_count = 1
+
     with alive_bar(item_total, dual_line=True, title='Collection list - Plex') as bar:
         for item in items:
             title = item.title
             print(f"{title}")
 
             bar() # pylint: disable=not-callable
- 
+
             # Wait between items in case hammering the Plex server turns out badly.
             time.sleep(DELAY)
-

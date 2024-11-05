@@ -1,28 +1,27 @@
+""" module to reset posters and labels for Plex items using TMDB data """
 #!/usr/bin/env python
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
-from logs import setup_logger, plogger, blogger, logger
-
+from datetime import datetime
 import os
-from dotenv import load_dotenv
-from tmdbapis import TMDbAPIs
-import requests
+import sys
+
 import pathlib
 from pathlib import Path
 import platform
 from timeit import default_timer as timer
 import time
-import validators
 import random
+import validators
+import requests
 
-from helpers import booler, get_all_from_library, get_ids, get_plex, load_and_upgrade_env, get_overlay_status
+from tmdbapis import TMDbAPIs
+from alive_progress import alive_bar
+from logs import setup_logger, plogger, blogger, logger
+from helpers import booler, get_all_from_library, get_ids_local, get_plex, load_and_upgrade_env, get_overlay_status
 
 # import tvdb_v4_official
 
 start = timer()
 
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -43,7 +42,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -52,8 +51,8 @@ TVDB_KEY = os.getenv("TVDB_KEY")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
 
 if TARGET_LABELS == 'this label, that label':
-    print(f"TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
-    exit()
+    print("TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
+    sys.exit()
 
 TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
 CLEAR_RESET_STATUS = booler(os.getenv("CLEAR_RESET_STATUS", ))
@@ -71,7 +70,7 @@ OVERRIDE_OVERLAY_STATUS = booler(os.getenv("OVERRIDE_OVERLAY_STATUS"))
 DELAY = 0
 try:
     DELAY = int(os.getenv("DELAY"))
-except:
+except: # pylint: disable=bare-except
     DELAY = 0
 
 if TARGET_LABELS:
@@ -101,18 +100,18 @@ movie_dir = os.path.join(os.getcwd(), "movies")
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
 
-def localFilePath(tgt_dir, rating_key):
+def local_file_path(target_dir, rating_key):
+    """ get the local file path for the poster """
     for ext in ["jpg", "png"]:
-        local_file = os.path.join(tgt_dir, f"{library_item.ratingKey}.{ext}")
+        local_file = os.path.join(target_dir, f"{rating_key}.{ext}")
         if os.path.exists(local_file):
             return local_file
     return None
 
-
 print("tmdb config...")
 
 base_url = tmdb.configuration().secure_base_image_url
-size_str = "original"
+SIZE_STR = "original"
 
 plex = get_plex()
 
@@ -122,10 +121,11 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type in ('movie', 'show'):
             LIB_ARRAY.append(lib.title.strip())
 
 def sleep_for_a_while():
+    """ sleep for a random amount of time """
     sleeptime = DELAY
     if DELAY == 99:
         sleeptime = random.uniform(0, 1)
@@ -133,6 +133,7 @@ def sleep_for_a_while():
     time.sleep(sleeptime)
 
 def plex_knows_this_image(item, source, path):
+    """ check if Plex knows about this image """
     logger((f"Retrieving posters for Plex {item.type}: {item.title} "), 'info', 'a')
     # item.reload()
     attempts = 0
@@ -144,7 +145,6 @@ def plex_knows_this_image(item, source, path):
             for poster in list_of_posters:
                 if poster.provider == source:
                     if poster.key == path:
-                        logger((f"This is one of Plex' posters: {posterURL}"), 'info', 'a')
                         return poster
             attempts = 6
         except Exception as ex: # pylint: disable=broad-exception-caught
@@ -153,59 +153,62 @@ def plex_knows_this_image(item, source, path):
 
     return None
 
-def get_tmdb_item(tmdb_id, tvdb_id):
-    tmdb_item = None
+def get_tmdb_item(item_tmdb_id, item_tvdb_id):
+    """ get the tmdb item """
+    rv_tmdb_item = None
 
-    if tmdb_id is None and tvdb_id is None:
-        return tmdb_item
+    if item_tmdb_id is None and item_tvdb_id is None:
+        return rv_tmdb_item
 
     if library_item.TYPE == "show":
-        if tmdb_id is not None:
-            logger((f"{item_title}: tmdb_id: {tmdb_id} - getting tv_show"), 'info', 'a')
-            tmdb_item = tmdb.tv_show(tmdb_id)
-            logger((f"{item_title}: tmdb_id: {tmdb_id} - FOUND {tmdb_item.title}"), 'info', 'a')
+        if item_tmdb_id is not None:
+            logger((f"{item_title}: tmdb_id: {item_tmdb_id} - getting tv_show"), 'info', 'a')
+            rv_tmdb_item = tmdb.tv_show(item_tmdb_id)
+            logger((f"{item_title}: tmdb_id: {item_tmdb_id} - FOUND {rv_tmdb_item.title}"), 'info', 'a')
         else:
             logger((f"{item_title}: no tmdb_id, trying tvdb_id"), 'info', 'a')
-            if tvdb_id is not None:
-                logger((f"{item_title}: tvdb_id: {tvdb_id} - SEARCHING FOR tv_show"), 'info', 'a')
+            if item_tvdb_id is not None:
+                logger((f"{item_title}: tvdb_id: {item_tvdb_id} - SEARCHING FOR tv_show"), 'info', 'a')
                 tmdb_search = (
-                    tmdb.find_by_id(tvdb_id=tvdb_id)
+                    tmdb.find_by_id(tvdb_id=item_tvdb_id)
                 )
                 if len(tmdb_search.tv_results) > 0:
-                    tmdb_item = tmdb_search.tv_results[0]
-                    logger((f"{item_title}: tvdb_id: {tvdb_id} - FOUND {tmdb_item.title}"), 'info', 'a')
+                    rv_tmdb_item = tmdb_search.tv_results[0]
+                    logger((f"{item_title}: tvdb_id: {item_tvdb_id} - FOUND {rv_tmdb_item.title}"), 'info', 'a')
             else:
                 logger((f"{item_title}: no tvdb_id specified"), 'info', 'a')
 
 
     else:
-        if tmdb_id is not None:
-            logger((f"{item_title}: tmdb_id: {tmdb_id} - getting movie"), 'info', 'a')
-            tmdb_item = tmdb.movie(tmdb_id)
-            logger((f"{item_title}: tmdb_id: {tmdb_id} - FOUND {tmdb_item.title}"), 'info', 'a')
+        if item_tmdb_id is not None:
+            logger((f"{item_title}: tmdb_id: {item_tmdb_id} - getting movie"), 'info', 'a')
+            rv_tmdb_item = tmdb.movie(item_tmdb_id)
+            logger((f"{item_title}: tmdb_id: {item_tmdb_id} - FOUND {rv_tmdb_item.title}"), 'info', 'a')
 
-    return tmdb_item
+    return rv_tmdb_item
 
-def get_base_tmdb_image(item_title, tmdb_id):
+def get_base_tmdb_image(p_item_title, item_tmdb_id):
+    """ get the base tmdb image """
     tmdb_base = None
 
-    logger((f"{item_title}: tmdb_id: {tmdb_id} - NO LOCAL FILE"), 'info', 'a')
+    logger((f"{p_item_title}: tmdb_id: {item_tmdb_id} - NO LOCAL FILE"), 'info', 'a')
     try:
-        logger((f"{item_title}: tmdb_id: {tmdb_id} - RELOADING ITEM"), 'info', 'a')
+        logger((f"{p_item_title}: tmdb_id: {item_tmdb_id} - RELOADING ITEM"), 'info', 'a')
         tmdb_item.reload()
-        tmdb_base = tmdb_item.poster_path
+        tmdb_base = tmdb_item.POSTER_PATH
     except Exception as ex: # pylint: disable=broad-exception-caught
-        logger((f"{item_title}: tmdb_id: {tmdb_id} - EXCEPTION {ex}"), 'info', 'a')
+        logger((f"{p_item_title}: tmdb_id: {item_tmdb_id} - EXCEPTION {ex}"), 'info', 'a')
         tmdb_base = None
 
     return tmdb_base
 
-def set_or_upload_image(bar, item, plex_poster, local_source):
-    if plex_poster is not None:
-        blogger(f"-> SETTING poster for {item.type} {item.title} to {plex_poster.key}", 'info', 'a', bar)
-        item.setPoster(plex_poster)
+def set_or_upload_image(p_bar, item, p_plex_poster, local_source):
+    """ set or upload the image """
+    if p_plex_poster is not None:
+        blogger(f"-> SETTING poster for {item.type} {item.title} to {p_plex_poster.key}", 'info', 'a', p_bar)
+        item.setPoster(p_plex_poster)
     else:
-        blogger(f"-> UPLOADING poster for {item.type} {item.title} from {local_source}", 'info', 'a', bar)
+        blogger(f"-> UPLOADING poster for {item.type} {item.title} from {local_source}", 'info', 'a', p_bar)
         if not DRY_RUN:
             if not validators.url(local_source):
                 logger((f"{local_source}: appears to be a file"), 'info', 'a')
@@ -214,15 +217,16 @@ def set_or_upload_image(bar, item, plex_poster, local_source):
                 logger((f"{local_source}: appears to be a URL"), 'info', 'a')
                 item.uploadPoster(url=local_source)
         else:
-            logger((f"DRY_RUN - NO ACTION TAKEN"), 'info', 'a')
+            logger(("DRY_RUN - NO ACTION TAKEN"), 'info', 'a')
 
     sleep_for_a_while()
 
-def get_art_source(bar, item, local_file, poster_path, dl_URL):
-    art_source = None
+def get_art_source(p_bar, item, local_file, poster_path, dl_url):
+    """ get the art source """
+    art_src = None
 
     if LOCAL_RESET_ARCHIVE:
-        blogger(f"Checking local archive for {item.title}-{item.ratingKey}", 'info', 'a', bar)
+        blogger(f"Checking local archive for {item.title}-{item.ratingKey}", 'info', 'a', p_bar)
 
         if local_file is None or not os.path.exists(local_file):
             ext = pathlib.Path(poster_path).suffix
@@ -233,28 +237,30 @@ def get_art_source(bar, item, local_file, poster_path, dl_URL):
                 local_file = os.path.join(tgt_dir,f"{item.ratingKey}-S{item.seasonNumber}E{item.episodeNumber}.{ext}",)
 
         if not os.path.exists(local_file):
-            blogger(f"-> no local_file, downloading: {dl_URL}", 'info', 'a', bar)
+            blogger(f"-> no LOCAL_FILE, downloading: {dl_url}", 'info', 'a', p_bar)
             if not DRY_RUN:
-                r = requests.get(dl_URL, allow_redirects=True)
+                r = requests.get(dl_url, allow_redirects=True, timeout=30)
                 # should be checking status
-                open(f"{local_file}", "wb").write(r.content)
+                with open(f"{local_file}", "wb") as lf:
+                    lf.write(r.content)
             else:
-                logger((f"DRY_RUN - NO ACTION TAKEN"), 'info', 'a')
+                logger(("DRY_RUN - NO ACTION TAKEN"), 'info', 'a')
 
-        art_source = local_file
+        art_src = local_file
     else:
-        art_source = dl_URL
+        art_src = dl_url
 
-    return art_source
+    return art_src
 
-def track_completion(id_array, status_file, item_id):
-    id_array.append(f"{item_id}")
+def track_completion(the_id_array, the_status_file, item_id):
+    """ track the completion """
+    the_id_array.append(f"{item_id}")
 
     if not DRY_RUN:
-        with open(status_file, "a", encoding="utf-8") as sf:
+        with open(the_status_file, "a", encoding="utf-8") as sf:
             sf.write(f"{item_id}{os.linesep}")
 
-item_count = 1
+ITEM_COUNT = 1
 
 for lib in LIB_ARRAY:
     id_array = []
@@ -262,7 +268,7 @@ for lib in LIB_ARRAY:
     status_file_name = the_lib.uuid + ".txt"
     status_file = Path(status_file_name)
 
-    if get_overlay_status(plex, the_lib) and not OVERRIDE_OVERLAY_STATUS:
+    if get_overlay_status(the_lib) and not OVERRIDE_OVERLAY_STATUS:
         print("==================== ATTENTION ====================")
         print(f"Library: {lib}")
         print("This library appears to have Kometa overlays applied.")
@@ -281,7 +287,7 @@ for lib in LIB_ARRAY:
         if FLUSH_STATUS_AT_START and not DRY_RUN:
             status_file.unlink()
         else:
-            with open(f"{status_file_name}") as fp:
+            with open(f"{status_file_name}", encoding="utf-8") as fp:
                 for line in fp:
                     id_array.append(line.strip())
 
@@ -297,46 +303,46 @@ for lib in LIB_ARRAY:
             library_items = the_lib.search(label=lbl)
         item_total = len(library_items)
         plogger(f"{item_total} item(s) retrieved...", 'info', 'a')
-        item_count = 1
+        ITEM_COUNT = 1
         with alive_bar(item_total, dual_line=True, title="Poster Reset - TMDB") as bar:
             for library_item in library_items:
-                item_count = item_count + 1
+                ITEM_COUNT = ITEM_COUNT + 1
                 item_key = library_item.ratingKey
                 item_title = library_item.title
-                imdbid, tmdb_id, tvdb_id = get_ids(library_item.guids, TMDB_KEY)
+                imdbid, tmdb_id, tvdb_id = get_ids_local(library_item.guids)
                 logger((f"{item_title}: ratingKey: {item_key} imdbid: {imdbid} tmdb_id: {tmdb_id} tvdb_id: {tvdb_id}"), 'info', 'a')
                 try:
                     blogger(f"-> starting: {item_title}", 'info', 'a', bar)
-                    poster_path = None
-                    local_file = None
+                    POSTER_PATH = None
+                    LOCAL_FILE = None
                     tmdb_item = get_tmdb_item(tmdb_id, tvdb_id)
 
                     tgt_dir = show_dir if library_item.TYPE == "show" else movie_dir
 
                     if LOCAL_RESET_ARCHIVE:
-                        local_file = localFilePath(tgt_dir, item_key)
-                        poster_path = local_file
+                        LOCAL_FILE = local_file_path(tgt_dir, item_key)
+                        POSTER_PATH = LOCAL_FILE
 
-                    if local_file is None:
-                        poster_path = get_base_tmdb_image(item_title, tmdb_id)
+                    if LOCAL_FILE is None:
+                        POSTER_PATH = get_base_tmdb_image(item_title, tmdb_id)
 
-                    if poster_path is not None:
-                        seriesPosterURL = f"{base_url}{size_str}{poster_path}"
-                        logger((f"top-level poster URL: {seriesPosterURL}"), 'info', 'a')
+                    if POSTER_PATH is not None:
+                        SERIES_POSTER_URL = f"{base_url}{SIZE_STR}{POSTER_PATH}"
+                        logger((f"top-level poster URL: {SERIES_POSTER_URL}"), 'info', 'a')
 
                         if id_array.count(f"{item_key}-top") == 0:
                             logger((f"{item_title}: haven't reset this yet"), 'info', 'a')
 
-                            if poster_path is not None:
-                                dl_URL = seriesPosterURL
+                            if POSTER_PATH is not None:
+                                DL_URL = SERIES_POSTER_URL
 
-                                blogger(f"-> checking if Plex knows about this image: {seriesPosterURL}", 'info', 'a', bar)
-                                plex_poster = plex_knows_this_image(library_item, 'tmdb', seriesPosterURL)
+                                blogger(f"-> checking if Plex knows about this image: {SERIES_POSTER_URL}", 'info', 'a', bar)
+                                plex_poster = plex_knows_this_image(library_item, 'tmdb', SERIES_POSTER_URL)
                                 if plex_poster is not None:
-                                    dl_URL = plex_poster.key
-                                    blogger(f"-> poster will come from plex: {dl_URL}", 'info', 'a', bar)
+                                    DL_URL = plex_poster.key
+                                    blogger(f"-> poster will come from plex: {DL_URL}", 'info', 'a', bar)
 
-                                art_source = get_art_source(bar, library_item, local_file, poster_path, dl_URL)
+                                art_source = get_art_source(bar, library_item, LOCAL_FILE, POSTER_PATH, DL_URL)
 
                                 set_or_upload_image(bar, library_item, plex_poster, art_source)
 
@@ -358,52 +364,52 @@ for lib in LIB_ARRAY:
                                 for plex_season in plex_seasons:
                                     plex_s_id = plex_season.seasonNumber
                                     plex_s_key = plex_season.ratingKey
-                                    plex_s_found = False
+                                    PLEX_S_FOUND = False
 
                                     blogger(f"Processing {item_title}-{item_key} Season {plex_s_id}", 'info', 'a', bar)
 
                                     for tmdb_season in tmdb_seasons:
                                         tmdb_season.reload()
 
-                                        if tmdb_season.season_number == plex_s_id and not plex_s_found:
+                                        if tmdb_season.season_number == plex_s_id and not PLEX_S_FOUND:
                                             blogger(f"{item_title}-{item_key} Season {plex_s_id} found matching season at TMDB", 'info', 'a', bar)
-                                            plex_s_found = True
+                                            PLEX_S_FOUND = True
 
                                             if id_array.count(f"{plex_s_key}") == 0:
-                                                poster_path = tmdb_season.poster_path
-                                                poster_url = None
+                                                POSTER_PATH = tmdb_season.POSTER_PATH
+                                                POSTER_URL = None
 
-                                                if poster_path is None and RESET_SEASONS_WITH_SERIES:
-                                                    posterURL = seriesPosterURL
-                                                    poster_path = posterURL.rsplit("/", 1)[-1]
+                                                if POSTER_PATH is None and RESET_SEASONS_WITH_SERIES:
+                                                    POSTER_URL_2 = SERIES_POSTER_URL
+                                                    POSTER_PATH = POSTER_URL_2.rsplit("/", 1)[-1]
 
-                                                if poster_path is not None:
-                                                    if poster_url is None:
-                                                        poster_url = (
-                                                            f"{base_url}{size_str}{poster_path}"
+                                                if POSTER_PATH is not None:
+                                                    if POSTER_URL is None:
+                                                        POSTER_URL = (
+                                                            f"{base_url}{SIZE_STR}{POSTER_PATH}"
                                                         )
-                                                    local_file = localFilePath(
-                                                        tgt_dir, f"{item_key}-S{plex_s_id}"
+                                                    LOCAL_FILE = local_file_path(
+                                                        tgt_dir, f"{item_key}"
                                                     )
-                                                    logger((f"season poster_url: {poster_url}"), 'info', 'a')
+                                                    logger((f"season POSTER_URL: {POSTER_URL}"), 'info', 'a')
 
-                                                    dl_URL = poster_url
+                                                    DL_URL = POSTER_URL
 
-                                                    blogger(f"-> checking if Plex knows about this image: {poster_url}", 'info', 'a', bar)
-                                                    plex_poster = plex_knows_this_image(plex_season, 'tmdb', poster_url)
+                                                    blogger(f"-> checking if Plex knows about this image: {POSTER_URL}", 'info', 'a', bar)
+                                                    plex_poster = plex_knows_this_image(plex_season, 'tmdb', POSTER_URL)
 
                                                     if plex_poster is not None:
-                                                        dl_URL = plex_poster.key
-                                                        blogger(f"-> poster will come from plex: {dl_URL}", 'info', 'a', bar)
+                                                        DL_URL = plex_poster.key
+                                                        blogger(f"-> poster will come from plex: {DL_URL}", 'info', 'a', bar)
 
-                                                    art_source = get_art_source(bar, plex_season, local_file, poster_path, dl_URL)
+                                                    art_source = get_art_source(bar, plex_season, LOCAL_FILE, POSTER_PATH, DL_URL)
 
                                                     set_or_upload_image(bar, plex_season, plex_poster, art_source)
 
                                                     track_completion(id_array, status_file, f"{plex_s_key}")
 
                                                 else:
-                                                    blogger(f"NO SEASON POSTER ON TMDB and RESET_SEASONS_WITH_SERIES turned off; PLEX ART WILL NOT BE TOUCHED", 'info', 'a', bar)
+                                                    blogger("NO SEASON POSTER ON TMDB and RESET_SEASONS_WITH_SERIES turned off; PLEX ART WILL NOT BE TOUCHED", 'info', 'a', bar)
 
                                             else:
                                                 blogger(f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key}: already reset", 'info', 'a', bar)
@@ -420,40 +426,40 @@ for lib in LIB_ARRAY:
                                                 episodes = plex_season.episodes()
                                                 sleep_for_a_while()
 
-                                                blogger(f"Looping over Plex episodes:", 'info', 'a', bar)
+                                                blogger("Looping over Plex episodes:", 'info', 'a', bar)
                                                 for plex_ep in episodes:
                                                     plex_e_id = plex_ep.episodeNumber
                                                     plex_e_key = plex_ep.ratingKey
-                                                    plex_e_found = False
+                                                    PLEX_E_FOUND = False
                                                     if id_array.count(f"{plex_e_key}") == 0:
-                                                        blogger(f"Looping over TMDB episodes:", 'info', 'a', bar)
+                                                        blogger("Looping over TMDB episodes:", 'info', 'a', bar)
                                                         for tmdb_ep in tmdb_episodes:
-                                                            tmdb_s_id = None
-                                                            tmdb_e_id = None
+                                                            TMDB_S_ID = None
+                                                            TMDB_E_ID = None
                                                             try:
-                                                                tmdb_s_id = tmdb_ep.season_number
-                                                                tmdb_e_id = tmdb_ep.episode_number
+                                                                TMDB_S_ID = tmdb_ep.season_number
+                                                                TMDB_E_ID = tmdb_ep.episode_number
                                                             except Exception as ex: # pylint: disable=broad-exception-caught
                                                                 blogger(f"-> EXCEPTION getting TMDB season or episode ID: {ex}", 'info', 'a', bar)
 
-                                                            if tmdb_s_id is not None and tmdb_e_id is not None:
-                                                                if not plex_e_found and tmdb_s_id == plex_s_id and tmdb_e_id == plex_e_id:
+                                                            if TMDB_S_ID is not None and TMDB_E_ID is not None:
+                                                                if not PLEX_E_FOUND and TMDB_S_ID == plex_s_id and TMDB_E_ID == plex_e_id:
                                                                     blogger(f"Found episode S{plex_s_id} E{plex_e_id}", 'info', 'a', bar)
                                                                     #  that's the one
-                                                                    plex_e_found = True
-                                                                    poster_path = tmdb_ep.still_path
+                                                                    PLEX_E_FOUND = True
+                                                                    POSTER_PATH = tmdb_ep.still_path
 
-                                                                    if poster_path is not None:
-                                                                        blogger(f"-> poster_path: {poster_path}", 'info', 'a', bar)
-                                                                        posterURL = f"{base_url}{size_str}{poster_path}"
-                                                                        local_file = localFilePath(tgt_dir,f"{item_key}-S{plex_s_id}E{plex_e_id}",)
+                                                                    if POSTER_PATH is not None:
+                                                                        blogger(f"-> POSTER_PATH: {POSTER_PATH}", 'info', 'a', bar)
+                                                                        POSTER_URL_2 = f"{base_url}{SIZE_STR}{POSTER_PATH}"
+                                                                        LOCAL_FILE = local_file_path(tgt_dir,f"{item_key}")
 
-                                                                        dl_URL = posterURL
+                                                                        DL_URL = POSTER_URL_2
 
-                                                                        blogger(f"-> checking if Plex knows about this image: {posterURL}", 'info', 'a', bar)
-                                                                        plex_poster = plex_knows_this_image(plex_ep, 'tmdb', posterURL)
+                                                                        blogger(f"-> checking if Plex knows about this image: {POSTER_URL_2}", 'info', 'a', bar)
+                                                                        plex_poster = plex_knows_this_image(plex_ep, 'tmdb', POSTER_URL_2)
 
-                                                                        art_source = get_art_source(bar, plex_ep, local_file, poster_path, dl_URL)
+                                                                        art_source = get_art_source(bar, plex_ep, LOCAL_FILE, POSTER_PATH, DL_URL)
 
                                                                         set_or_upload_image(bar, plex_ep, plex_poster, art_source)
 
@@ -464,19 +470,18 @@ for lib in LIB_ARRAY:
                                                                             plex_ep.removeLabel(lbl, True)
 
                                                                     else:
-                                                                        blogger(f"NO EPISODE POSTER ON TMDB; PLEX ART WILL NOT BE TOUCHED", 'info', 'a', bar)
-
+                                                                        blogger("NO EPISODE POSTER ON TMDB; PLEX ART WILL NOT BE TOUCHED", 'info', 'a', bar)
 
                                                             else:
-                                                                blogger(f"-> Couldn't get some episode details", 'info', 'a', bar)
+                                                                blogger("-> Couldn't get some episode details", 'info', 'a', bar)
 
-                                                        if not plex_e_found:
+                                                        if not PLEX_E_FOUND:
                                                             blogger(f"NO TMDB match found for Plex episode {plex_s_id}-{plex_e_id}", 'info', 'a', bar)
 
                                                     else:
-                                                        blogger(f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key} Episode {plex_e_id}-{plex_e_key}: already reset", 'info', 'a', bar)
+                                                        blogger(f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key} Episode {plex_e_id}-{plex_e_key}: already reset", 'info', 'a', bar) # pylint: disable=line-too-long
 
-                                    if not plex_s_found:
+                                    if not PLEX_S_FOUND:
                                         blogger(f"NO TMDB match found for Plex season {plex_s_id}", 'info', 'a', bar)
 
                         if REMOVE_LABELS:
@@ -490,7 +495,7 @@ for lib in LIB_ARRAY:
                     # there's a 500 in the season poster upload
 
                 bar() # pylint: disable=not-callable
- 
+
                 logger((f'COMPLETE processing on {item_title}'), 'info', 'a')
 
         if REMOVE_LABELS:
@@ -505,4 +510,4 @@ for lib in LIB_ARRAY:
 
 end = timer()
 elapsed = end - start
-plogger(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed:.2f} seconds.", 'info', 'a')
+plogger(f"{os.linesep}{os.linesep}processed {ITEM_COUNT - 1} items in {elapsed:.2f} seconds.", 'info', 'a')

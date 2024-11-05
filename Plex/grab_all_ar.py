@@ -1,34 +1,23 @@
 #!/usr/bin/env python
-import json
 import logging
 import os
 import pickle
 import platform
-import re
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import filetype
 import piexif
 import piexif.helper
-import plexapi
-import requests
-from alive_progress import alive_bar, alive_it
-from dotenv import load_dotenv
+from alive_progress import alive_bar
 from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename, load_and_upgrade_env)
-from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
+                     redact, validate_filename, load_and_upgrade_env)
 from plexapi.utils import download
 
-from database import add_last_run, get_last_run, add_media_details
+from database import add_media_details
 
 # TODO: Track Collection status in SQLITE with guid
 # TODO: store stuff in sqlite tables rather than text or pickle files.
@@ -115,7 +104,7 @@ logging.basicConfig(
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit() 
 
 lib_stats = {}
 
@@ -152,7 +141,7 @@ if POSTER_DIR is None:
 
 try:
     POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
-except:
+except: # pylint: disable=bare-except
     POSTER_DEPTH = 0
 
 POSTER_DOWNLOAD = booler(os.getenv("POSTER_DOWNLOAD"))
@@ -279,9 +268,24 @@ IMDB_STR = "imdb://"
 TMDB_STR = "tmdb://"
 TVDB_STR = "tvdb://"
 
+TARGET_URL_VAR = 'PLEX_URL'
+plex_url = os.getenv(TARGET_URL_VAR)
+if plex_url is None:
+    TARGET_URL_VAR = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    plex_url = os.getenv(TARGET_URL_VAR)
+
+# strip a trailing slash
+plex_url = plex_url.rstrip("/")
+
+TARGET_TOKEN_VAR = 'PLEX_TOKEN'
+plex_token = os.getenv(TARGET_TOKEN_VAR)
+if plex_token is None:
+    TARGET_TOKEN_VAR = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    plex_token = os.getenv(TARGET_TOKEN_VAR)
+
 redaction_list = []
-redaction_list.append(PLEX_URL)
-redaction_list.append(PLEX_TOKEN)
+redaction_list.append(plex_url)
+redaction_list.append(plex_token)
 
 KNOWN_STATED_ASPECT_RATIOS = {}
 KNOWN_CALCED_ASPECT_RATIOS = {}
@@ -478,18 +482,18 @@ def check_for_images(file_path):
     if dat_here:
         try:
             os.remove(file_path)
-        except:
+        except: # pylint: disable=bare-except
             plogger(f"Can't find {file_path} even though it was here a moment ago", 'info', 'd')
 
     if jpg_here and png_here:
         try:
             os.remove(jpg_path)
-        except:
+        except: # pylint: disable=bare-except
             plogger(f"Can't find {jpg_path} even though it was here a moment ago", 'info', 'd')
 
         try:
             os.remove(png_path)
-        except:
+        except: # pylint: disable=bare-except
             plogger(f"Can't find {png_path} even though it was here a moment ago", 'info', 'd')
 
     if jpg_here or png_here:
@@ -563,7 +567,7 @@ def process_the_thing(params):
                     try:
                         THUMBPATH = download(
                             f"{src_URL}",
-                            PLEX_TOKEN,
+                            plex_token,
                             filename=tgt_filename,
                             savepath=folder_path,
                         )
@@ -706,12 +710,12 @@ def get_art(item, artwork_path, tmid, tvid):
 
                         try:
                             art_params['seasonNumber'] = item.seasonNumber
-                        except:
+                        except: # pylint: disable=bare-except
                             art_params['seasonNumber'] = None
 
                         try:
                             art_params['episodeNumber'] = item.episodeNumber
-                        except:
+                        except: # pylint: disable=bare-except
                             art_params['episodeNumber'] = None
 
                         art_params['se_str'] = get_SE_str(item)
@@ -881,12 +885,12 @@ def get_posters(lib, item):
 
                     try:
                         art_params['seasonNumber'] = item.seasonNumber
-                    except:
+                    except: # pylint: disable=bare-except
                         art_params['seasonNumber'] = None
 
                     try:
                         art_params['episodeNumber'] = item.episodeNumber
-                    except:
+                    except: # pylint: disable=bare-except
                         art_params['episodeNumber'] = None
 
                     art_params['se_str'] = get_SE_str(item)
@@ -926,11 +930,12 @@ def get_posters(lib, item):
         get_art(item, artwork_path, tmid, tvid)
 
 def rename_by_type(target):
+    """ Rename a file based on its type """
     p = Path(target)
 
     kind = filetype.guess(target)
     if kind is None:
-        with open(target, 'r') as file:
+        with open(target, 'r') as file: # pylint: disable=unspecified-encoding
             content = file.read()
 	    	# check if string present or not
             if '404 Not Found' in content:
@@ -953,16 +958,17 @@ def rename_by_type(target):
 
     return new_name
 
-def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
+def add_script_line(artwork_path, poster_file_path, src_url_with_token):
+    """ Add a line to the script to download the image """
     if IS_WINDOWS:
-        script_line = f'{os.linesep}mkdir "{artwork_path}"{os.linesep}curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
+        script_line = f'{os.linesep}mkdir "{artwork_path}"{os.linesep}curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_url_with_token}'
     else:
-        script_line = f'{os.linesep}mkdir -p "{artwork_path}" && curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
+        script_line = f'{os.linesep}mkdir -p "{artwork_path}" && curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_url_with_token}'
     return f"{script_line}{os.linesep}"
 
 for lib in LIB_ARRAY:
     try:
-        highwater = 0
+        HIGHWATER = 0
         # start_queue_length = len(my_futures)
 
         # if len(my_futures) > 0:
@@ -1004,27 +1010,27 @@ for lib in LIB_ARRAY:
 
         # SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
 
-        lib_key = f"{the_uuid}-aspect"
+        LIB_KEY = f"{the_uuid}-aspect"
 
         items = []
 
         plogger(f"Loading {the_lib.TYPE}s new since {last_run_lib} ...", 'info', 'a')
         if the_lib.TYPE == "movie":
-            items = get_all_from_library(plex, the_lib, None, {"addedAt>>": last_run_lib})
+            item_total, items = get_all_from_library(the_lib, None, {"addedAt>>": last_run_lib}) # pylint: disable=too-many-function-args
             last_run_lib = datetime.now()
 
         if the_lib.TYPE == "show":
             last_run_episode = fallback_date
 
             plogger(f"Loading episodes new since {last_run_episode} ...", 'info', 'a')
-            episodes = get_all_from_library(plex, the_lib, 'episode', {"addedAt>>": last_run_episode})
+            episode_total, episodes = get_all_from_library(the_lib, 'episode', {"addedAt>>": last_run_episode}) # pylint: disable=too-many-function-args
             last_run_episode = datetime.now()
             items.extend(episodes)
+            item_total = item_total + episode_total
 
-        item_total = len(items)
         if item_total > 0:
             logger(f"looping over {item_total} items...", 'info', 'a')
-            item_count = 0
+            ITEM_COUNT = 0
 
             plex_links = []
             external_links = []
@@ -1039,15 +1045,15 @@ for lib in LIB_ARRAY:
 
                             for part in mediaParts:
                                 try:
-                                    arc = str(round(part.width/part.height, 2))
-                                except:
-                                    arc = "None"
-                                add_media_details(part.parts[0].file, item.title, the_lib.TYPE, part.height, part.width, part.aspectRatio, arc)
+                                    ARC = str(round(part.width/part.height, 2))
+                                except: # pylint: disable=bare-except
+                                    ARC = "None"
+                                add_media_details(part.parts[0].file, item.title, the_lib.TYPE, part.height, part.width, part.aspectRatio, ARC)
 
                         else:
                             blogger(f"SKIPPING {item.title}; status complete", 'info', 'a', bar)
 
-                        item_count += 1
+                        ITEM_COUNT += 1
                     except Exception as ex: # pylint: disable=broad-exception-caught
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
@@ -1059,19 +1065,19 @@ for lib in LIB_ARRAY:
                     if stop_file.is_file() or skip_file.is_file():
                         raise StopIteration
 
-            plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
-            lib_stats[lib_key] = item_count
+            plogger(f"Processed {ITEM_COUNT} of {item_total}", 'info', 'a')
+            lib_stats[LIB_KEY] = ITEM_COUNT
 
-        progress_str = "COMPLETE"
-        logger(progress_str, 'info', 'a')
+        PROGRESS_STR = "COMPLETE"
+        logger(PROGRESS_STR, 'info', 'a')
 
     except StopIteration:
         if stop_file.is_file():
-            progress_str = f"stop file found, leaving loop"
+            PROGRESS_STR = "stop file found, leaving loop"
         if skip_file.is_file():
-            progress_str = f"skip file found, skipping library"
+            PROGRESS_STR = "skip file found, skipping library"
 
-        plogger(progress_str, 'info', 'a')
+        plogger(PROGRESS_STR, 'info', 'a')
 
         if stop_file.is_file():
             stop_file.unlink()
@@ -1080,9 +1086,8 @@ for lib in LIB_ARRAY:
             skip_file.unlink()
 
     except Exception as ex: # pylint: disable=broad-exception-caught
-        progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, 'info', 'a')
+        plogger(f"Problem processing {lib}; {ex}", 'info', 'a')
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')
 # shutdown the thread pool
 executor.shutdown() # blocks

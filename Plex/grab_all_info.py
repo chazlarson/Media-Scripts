@@ -25,7 +25,7 @@ from plexapi.server import PlexServer
 from plexapi.utils import download
 from sqlalchemy.dialects.sqlite import insert
 
-from helpers import booler, get_all_from_library, get_ids, get_plex, validate_filename, load_and_upgrade_env
+from helpers import booler, get_all_from_library, get_ids_local, get_plex, validate_filename, load_and_upgrade_env
 
 import logging
 from pathlib import Path
@@ -54,7 +54,7 @@ logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit() 
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -193,7 +193,7 @@ def get_IDs(type, item):
                 try:
                     if item.type != 'collection':
                         logging.info("Getting IDs")
-                        imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
+                        imdbid, tmid, tvid = get_ids_local(item.guids, TMDB_KEY)
                         complete = imdbid is not None and tmid is not None and tvid is not None
                         payload = {
                             'guid': guid,

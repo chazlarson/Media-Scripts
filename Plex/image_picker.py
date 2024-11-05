@@ -1,9 +1,11 @@
-from flask import Flask, render_template, send_from_directory, jsonify, Response
-from PIL import Image
+""" A simple web interface to help pick images for Plex libraries """
+# pylint: disable=too-many-locals, fixme
 import os
 import shutil
 import json
 import re
+from flask import Flask, render_template, send_from_directory, jsonify
+from PIL import Image
 
 # TODO: Store stuff in the mediascripts.sqlite
 # TODO: Make it prettier
@@ -16,8 +18,9 @@ import re
 # 0.1.0: Initial release
 # 0.1.1: Use os.path to build paths
 #        Deal with NA category as appropriate
+# 0.1.2: pylint cleanup
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 app = Flask(__name__    )
 
@@ -64,18 +67,19 @@ def get_directories(path):
 
 @app.route('/')
 def home():
+    """ Show the libraries """
     libraries = get_directories(ASSETS_DIR)
     return render_template('home.html', libraries=libraries, asset_dir=asset_path, active_dir=active_path)
 
 def update_tracking_info(library_name, category_name, show_name, filename):
     """Update the tracking information for the current show or movie."""
     try:
-        with open(TRACKING_FILE, 'r') as file:
+        with open(TRACKING_FILE, 'r') as file: # pylint: disable=unspecified-encoding
             tracking_info = json.load(file)
     except FileNotFoundError:
         tracking_info = {}
 
-    type_pattern = re.compile("(.*)-\d\d\d.*")
+    type_pattern = re.compile("(.*)-\d\d\d.*") # pylint: disable=anomalous-backslash-in-string
     match = type_pattern.match(filename)
 
     target_type = None
@@ -101,14 +105,14 @@ def update_tracking_info(library_name, category_name, show_name, filename):
 
     tracking_info[key]['images'] = new_list
 
-    with open(TRACKING_FILE, 'w') as file:
+    with open(TRACKING_FILE, 'w') as file: # pylint: disable=unspecified-encoding
         json.dump(tracking_info, file)
 
 def get_image_type(filename):
+    """ Get the type of image based on the filename """
     image_type = None
 
-    for pattern in IMAGE_PATTERNS:
-        target_pattern = IMAGE_PATTERNS[pattern]
+    for pattern, target_pattern in IMAGE_PATTERNS.items(): # pylint: disable=unused-variable
         match = target_pattern.match(filename)
 
         if match:
@@ -117,16 +121,16 @@ def get_image_type(filename):
     return image_type
 
 def get_target_image(filename):
+    """ Get the target image name based on the filename """
 
-    image_type = get_image_type(filename)
+    # image_type = get_image_type(filename)
     season_number = None
     episode_number = None
     extension = filename.split('.')[-1]
-    format_key = ""
+    # format_key = ""
     target_format = ASSET_FILENAMES['item']
 
-    for pattern in IMAGE_PATTERNS:
-        target_pattern = IMAGE_PATTERNS[pattern]
+    for pattern, target_pattern in IMAGE_PATTERNS.items(): # pylint: disable=unused-variable
         match = target_pattern.match(filename)
 
         background_pattern = re.compile(r'^.*background.*$')
@@ -176,6 +180,7 @@ def get_target_image(filename):
 
 @app.route('/library/<library_name>/')
 def library(library_name):
+    """ Show the categories or shows in the selected library """
     library_path = os.path.join(ASSETS_DIR, library_name)
     directories = get_directories(library_path)
 
@@ -183,21 +188,23 @@ def library(library_name):
     if directories and directory_contains_images(os.path.join(library_path, directories[0])):
         shows = directories
         return render_template('direct_shows.html', library_name=library_name, shows=shows)
-    else:
-        categories = directories
-        return render_template('library.html', library_name=library_name, categories=categories, asset_dir=ASSETS_DIR, active_dir=ACTIVE_ASSETS_DIR)
+
+    categories = directories
+    return render_template('library.html', library_name=library_name, categories=categories, asset_dir=ASSETS_DIR, active_dir=ACTIVE_ASSETS_DIR)
 
 @app.route('/library/<library_name>/<category_name>/')
 def category(library_name, category_name):
+    """ Show the shows or movies in the selected category """
     category_path = os.path.join(ASSETS_DIR, library_name, category_name)
     shows = get_directories(category_path)
     return render_template('category.html', library_name=library_name, category_name=category_name, shows=shows)
 
 def get_active_image_list(target_key):
+    """Retrieve the active images for a show/movie, if any."""
     try:
-        with open(TRACKING_FILE, 'r') as file:
+        with open(TRACKING_FILE, 'r') as file: # pylint: disable=unspecified-encoding
             active_images = json.load(file)
-    except Exception as e:
+    except Exception: # pylint: disable=broad-except
         return None
 
     image_list = active_images.get(target_key)
@@ -219,6 +226,7 @@ def get_active_images(library_name, category_name, show_name):
 
 @app.route('/copy_image/<library_name>/<category_name>/<show_name>/<filename>')
 def copy_image(library_name, category_name, show_name, filename):
+    """Copy the selected image to the active assets directory."""
 
     image_type = get_image_type(filename)
 
@@ -248,7 +256,7 @@ def copy_image(library_name, category_name, show_name, filename):
 def get_copied_image(library_name, category_name, show_name):
     """Retrieve the copied image for a show/movie, if any."""
     try:
-        with open(TRACKING_FILE, 'r') as file:
+        with open(TRACKING_FILE, 'r') as file: # pylint: disable=unspecified-encoding
             copied_images = json.load(file)
     except FileNotFoundError:
         return None
@@ -258,6 +266,7 @@ def get_copied_image(library_name, category_name, show_name):
 
 @app.route('/show/<library_name>/<category_name>/<show_name>/')
 def show(library_name, category_name, show_name):
+    """ Show the images for the selected show or movie """
     show_path = os.path.join(ASSETS_DIR, library_name, category_name, show_name)
     category_path = os.path.join(ASSETS_DIR, library_name, category_name)
     image_url = f"{library_name}/{category_name}/{show_name}"
@@ -283,10 +292,18 @@ def show(library_name, category_name, show_name):
 
     next_show = shows[current_index + 1] if current_index < len(shows) - 1 else None
 
-    return render_template('show.html', library_name=library_name, category_name=category_name, show_name=show_name, images_info=new_images_info, prev_show=prev_show, next_show=next_show, image_url=image_url)
+    return render_template('show.html',
+                           library_name=library_name,
+                           category_name=category_name,
+                           show_name=show_name,
+                           images_info=new_images_info,
+                           prev_show=prev_show,
+                           next_show=next_show,
+                           image_url=image_url)
 
 @app.route('/images/<library_name>/<category_name>/<show_name>/<filename>')
 def image(library_name, category_name, show_name, filename):
+    """ Return the image """
     image_path = os.path.join(ASSETS_DIR, library_name, category_name, show_name)
     if category_name == 'NA':
         image_path = os.path.join(ASSETS_DIR, library_name, show_name)
@@ -295,10 +312,10 @@ def image(library_name, category_name, show_name, filename):
 
 @app.route('/loader')
 def loader():
+    """ Return the loader image """
     image_path = os.path.join(".")
 
     return send_from_directory(image_path, "loading.gif")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
-

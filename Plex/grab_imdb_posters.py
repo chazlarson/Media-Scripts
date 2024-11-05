@@ -1,17 +1,14 @@
+# pylint: disable=invalid-name
 #!/usr/bin/env python
 import logging
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
 import os
-import imdb
-from dotenv import load_dotenv
 import sys
 import textwrap
+from datetime import datetime
+from pathlib import Path
+import imdb
 from helpers import booler, get_ids, get_plex, load_and_upgrade_env
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -31,11 +28,11 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit() 
 
 tmdb_key = os.getenv("TMDB_KEY")
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -91,7 +88,7 @@ for lib in lib_array:
 
     for item in items:
         item_count = item_count + 1
-        imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
+        imdb_id, tmdb_id, tvdb_id = get_ids(item.guids)
 
         tmpDict = {}
         tmpDict["title"] = item.title

@@ -1,19 +1,17 @@
+""" Rematch items in a Plex library """
 #!/usr/bin/env python
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
 import logging
+from pathlib import Path
+from datetime import datetime
 import urllib3.exceptions
-from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
 from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
-from logs import setup_logger, plogger, blogger, logger
-from pathlib import Path
-from datetime import datetime, timedelta
+from logs import setup_logger, plogger
 # current dateTime
 now = datetime.now()
 
@@ -35,7 +33,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -51,14 +49,15 @@ TVDB_STR = "tvdb://"
 
 
 def progress(count, total, status=""):
+    """ Progress bar """
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = "=" * filled_len + "-" * (bar_len - filled_len)
+    p_bar = "=" * filled_len + "-" * (bar_len - filled_len)
     stat_str = textwrap.shorten(status, width=80)
 
-    sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
+    sys.stdout.write(f"[{p_bar}] {percents}% ... {stat_str.ljust(80)}\r")
     sys.stdout.flush()
 
 
@@ -68,7 +67,7 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type in ('movie', 'show'):
             LIB_ARRAY.append(lib.title.strip())
 
 for lib in LIB_ARRAY:
@@ -82,7 +81,7 @@ for lib in LIB_ARRAY:
         item_total, items = get_all_from_library(the_lib)
 
     plogger(f"looping over {item_total} items...", 'info', 'a')
-    item_count = 0
+    ITEM_COUNT = 0
 
     plex_links = []
     external_links = []
@@ -119,35 +118,30 @@ for lib in LIB_ARRAY:
         ]
 
 
-    with alive_bar(len(items), dual_line=True, title=f"Rematching") as bar:
+    with alive_bar(len(items), dual_line=True, title="Rematching") as bar:
         for item in items:
             tmpDict = {}
-            item_count = item_count + 1
-            matched_it = False
+            ITEM_COUNT = ITEM_COUNT + 1
+            MATCHED_IT = False
 
             for agt in agents:
-                if not matched_it:
+                if not MATCHED_IT:
                     try:
-                        progress_str = f"{item.title} - agent {agt}"
-                        bar.text(progress_str)
+                        bar.text(f"{item.title} - agent {agt}")
 
                         item.fixMatch(auto=True, agent=agt)
 
-                        matched_it = True
+                        MATCHED_IT = True
 
-                        progress_str = f"{item.title} - DONE"
-                        bar.text(progress_str)
+                        bar.text(f"{item.title} - DONE")
 
                     except urllib3.exceptions.ReadTimeoutError:
-                        progress(item_count, item_total, "ReadTimeoutError: " + item.title)
+                        progress(ITEM_COUNT, item_total, "ReadTimeoutError: " + item.title)
                     except urllib3.exceptions.HTTPError:
-                        progress(item_count, item_total, "HTTPError: " + item.title)
-                    except ReadTimeoutError:
-                        progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
+                        progress(ITEM_COUNT, item_total, "HTTPError: " + item.title)
                     except ReadTimeout:
-                        progress(item_count, item_total, "ReadTimeout: " + item.title)
+                        progress(ITEM_COUNT, item_total, "ReadTimeout: " + item.title)
                     except Exception as ex: # pylint: disable=broad-exception-caught
-                        progress(item_count, item_total, "EX: " + item.title)
+                        progress(ITEM_COUNT, item_total, "EX: " + item.title)
                         logging.error(ex)
             bar() # pylint: disable=not-callable
- 

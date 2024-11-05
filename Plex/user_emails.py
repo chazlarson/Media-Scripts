@@ -1,12 +1,11 @@
+""" user_emails.py """
 #!/usr/bin/env python
-from plexapi.server import PlexServer
-from dotenv import load_dotenv
-import os
-from helpers import get_plex, load_and_upgrade_env
-
+import sys
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
+from helpers import get_plex, load_and_upgrade_env
+
 # current dateTime
 now = datetime.now()
 
@@ -26,11 +25,12 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+LOG_STR = f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}"
+logging.info(LOG_STR)
+print(LOG_STR)
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 print("connecting...")
 plex = get_plex()

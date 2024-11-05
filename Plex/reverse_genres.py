@@ -1,19 +1,17 @@
+""" reverse the genres on all movies or shows in a library """
 #!/usr/bin/env python
-import logging
 import os
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
-
-import piexif.helper
-from alive_progress import alive_bar
-from dotenv import load_dotenv
-
-from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger, blogger, logger
+import sys
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from helpers import get_all_from_library, get_plex, load_and_upgrade_env
+
+from logs import setup_logger, plogger, logger
+
+from alive_progress import alive_bar
+
 # current dateTime
 now = datetime.now()
 
@@ -32,7 +30,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -48,37 +46,38 @@ plex = get_plex()
 
 logger(("connection success"), 'info', 'a')
 
-def reverse_genres(item):
+def reverse_genres(tgt_item):
+    """ reverse the genres on a movie or show """
     reversed_list = []
 
-    item.reload()
-    genres = item.genres
+    tgt_item.reload()
+    genres = tgt_item.genres
 
-    print(f"{item.title} before: {genres}")
+    print(f"{tgt_item.title} before: {genres}")
 
-    item.removeGenre(genres)
+    tgt_item.removeGenre(genres)
 
     for genre in genres:
         reversed_list.insert(0, genre)
 
-    print(f"{item.title} reversed: {reversed_list}")
+    print(f"{tgt_item.title} reversed: {reversed_list}")
 
     for genre in reversed_list:
-        print(f"{item.title} adding: {genre}")
-        item.addGenre(genre)
-        item.reload()
+        print(f"{tgt_item.title} adding: {genre}")
+        tgt_item.addGenre(genre)
+        tgt_item.reload()
 
-    item.reload()
-    new_genres = item.genres
+    tgt_item.reload()
+    new_genres = tgt_item.genres
 
-    print(f"{item.title} after: {new_genres}")
+    print(f"{tgt_item.title} after: {new_genres}")
 
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type in ('movie', 'show'):
             LIB_ARRAY.append(lib.title.strip())
 
 for lib in LIB_ARRAY:
@@ -91,7 +90,7 @@ for lib in LIB_ARRAY:
         logger((f"getting {count} {the_lib.type}s from [{lib}]..."), 'info', 'a')
         item_total, items = get_all_from_library(the_lib)
         logger((f"looping over {item_total} items..."), 'info', 'a')
-        item_count = 1
+        ITEM_COUNT = 1
 
         plex_links = []
         external_links = []
@@ -104,16 +103,12 @@ for lib in LIB_ARRAY:
                 reverse_genres(item)
 
                 bar() # pylint: disable=not-callable
- 
-        progress_str = "COMPLETE"
-        logger((progress_str), 'info', 'a')
 
-        bar.text = progress_str
+        logger(("COMPLETE"), 'info', 'a')
+        bar.text = "COMPLETE"
 
         print(os.linesep)
 
     except Exception as ex: # pylint: disable=broad-exception-caught
-        progress_str = f"Problem processing {lib}; {ex}"
-        logger((progress_str), 'info', 'a')
-
-        print(progress_str)
+        logger((f"Problem processing {lib}; {ex}"), 'info', 'a')
+        print(f"Problem processing {lib}; {ex}")

@@ -1,34 +1,15 @@
+""" module to adjust added dates to match release dates """
 #!/usr/bin/env python
-import json
 import os
-import pickle
-import platform
-import re
 import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tmdbapis import TMDbAPIs
+from alive_progress import alive_bar
 from logs import setup_logger, plogger, blogger, logger
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
-from alive_progress import alive_bar, alive_it
-from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename, load_and_upgrade_env)
-from pathvalidate import ValidationError, validate_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from plexapi.video import Episode
+from helpers import (booler, get_all_from_library, get_ids_local, get_plex,
+                    load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -52,7 +33,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 plex = get_plex()
 
@@ -82,12 +63,13 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type in ('movie', 'show'):
             LIB_ARRAY.append(lib.title.strip())
 
 plogger(f"Acting on libraries: {LIB_ARRAY}", 'info', 'a')
 
 def is_epoch(the_date):
+    """docstring placeholder"""
     ret_val = False
 
     if the_date is not None:
@@ -116,7 +98,7 @@ for lib in LIB_ARRAY:
 
         if item_count > 0:
             logger(f"looping over {item_count} items...", 'info', 'a')
-            items_processed = 0
+            ITEMS_PROCESSED = 0
 
             plex_links = []
             external_links = []
@@ -124,9 +106,9 @@ for lib in LIB_ARRAY:
             with alive_bar(item_count, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
                 for item in items:
                     try:
-                        items_processed += 1
-                        added_too_far_apart = False
-                        orig_too_far_apart = False
+                        ITEMS_PROCESSED += 1
+                        ADDED_TOO_FAR_APART = False
+                        ORIG_TOO_FAR_APART = False
                         sub_items = [item]
 
                         if is_show:
@@ -135,7 +117,7 @@ for lib in LIB_ARRAY:
 
                         for sub_item in sub_items:
                             try:
-                                imdbid, tmid, tvid = get_ids(sub_item.guids, None)
+                                imdbid, tmid, tvid = get_ids_local(sub_item.guids)
 
                                 if is_movie:
                                     tmdb_item = tmdb.movie(tmid)
@@ -146,7 +128,7 @@ for lib in LIB_ARRAY:
                                         release_date = tmdb_item.first_air_date
                                     else:
                                         parent_show = sub_item.show()
-                                        imdbid, tmid, tvid = get_ids(parent_show.guids, None)
+                                        imdbid, tmid, tvid = get_ids_local(parent_show.guids)
                                         season_num = sub_item.seasonNumber
                                         episode_num = sub_item.episodeNumber
 
@@ -159,24 +141,24 @@ for lib in LIB_ARRAY:
                                 if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
                                     try:
                                         delta = added_date - release_date
-                                        added_too_far_apart = abs(delta.days) > 1
-                                    except:
-                                        added_too_far_apart = added_date is None and release_date is not None
+                                        ADDED_TOO_FAR_APART = abs(delta.days) > 1
+                                    except: # pylint: disable=bare-except
+                                        ADDED_TOO_FAR_APART = added_date is None and release_date is not None
 
                                     try:
                                         delta = orig_date - release_date
-                                        orig_too_far_apart = abs(delta.days) > 1
-                                    except:
-                                        orig_too_far_apart = orig_date is None and release_date is not None
+                                        ORIG_TOO_FAR_APART = abs(delta.days) > 1
+                                    except: # pylint: disable=bare-except
+                                        ORIG_TOO_FAR_APART = orig_date is None and release_date is not None
 
-                                    if added_too_far_apart:
+                                    if ADDED_TOO_FAR_APART:
                                         try:
                                             item.addedAt = release_date
                                             blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
                                         except Exception as ex: # pylint: disable=broad-exception-caught
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
-                                    if orig_too_far_apart:
+                                    if ORIG_TOO_FAR_APART:
                                         try:
                                             item.originallyAvailableAt = release_date
                                             blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
@@ -193,12 +175,10 @@ for lib in LIB_ARRAY:
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                     bar() # pylint: disable=not-callable
- 
-            plogger(f"Processed {items_processed} of {item_count}", 'info', 'a')
 
-        progress_str = "COMPLETE"
-        logger(progress_str, 'info', 'a')
+            plogger(f"Processed {ITEMS_PROCESSED} of {item_count}", 'info', 'a')
+
+        logger("COMPLETE", 'info', 'a')
 
     except Exception as ex: # pylint: disable=broad-exception-caught
-        progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, 'info', 'a')
+        plogger(f"Problem processing {lib}; {ex}", 'info', 'a')

@@ -1,17 +1,17 @@
+""" Import the IDs from the changes file """
 #!/usr/bin/env python
 import os
 import ast
-import logging
+import sys
 from pathlib import Path
+from datetime import datetime
+import logging
 
 import sqlalchemy as db
 from alive_progress import alive_bar
 from dotenv import load_dotenv
 from sqlalchemy.dialects.sqlite import insert
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -32,22 +32,24 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
+PRG_STRING = f"Starting {SCRIPT_NAME}"
+logging.info(PRG_STRING)
+print(PRG_STRING)
 
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
 
 def get_connection():
+    """ Get the connection to the database """
     engine = db.create_engine('sqlite:///ids.sqlite')
     metadata = db.MetaData()
 
     connection = engine.connect()
 
     try:
-        ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    except db.exc.NoSuchTableError as nste:
-        defaultitem = db.Table('keys', metadata,
+        ids = db.Table('keys', metadata, autoload=True, autoload_with=engine) # pylint: disable=unused-variable
+    except db.exc.NoSuchTableError:
+        defaultitem = db.Table('keys', metadata, # pylint: disable=unused-variable
                 db.Column('guid', db.String(25), primary_key=True),
                 db.Column('imdb', db.String(25), nullable=True),
                 db.Column('tmdb', db.String(25), nullable=True),
@@ -63,93 +65,100 @@ def get_connection():
     return engine, metadata, connection
 
 def get_completed():
+    """ Get the completed records """
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
-    query = db.select(keys).where(keys.columns.complete == True)
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
+    query = db.select(keys).where(keys.columns.complete is True)
+    result_proxy = connection.execute(query)
+    result_set = result_proxy.fetchall()
 
     connection.close()
 
-    return ResultSet
+    return result_set
 
 def get_current(the_guid):
+    """ Get the current record """
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
     query = db.select(keys).where(keys.columns.guid == the_guid)
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
+    result_proxy = connection.execute(query)
+    result_set = result_proxy.fetchall()
 
     connection.close()
 
-    return ResultSet
+    return result_set
 
 def get_count():
+    """ Get the count of records """
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
     query = db.select(keys)
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
-    count = len(ResultSet)
+    result_proxy = connection.execute(query)
+    result_set = result_proxy.fetchall()
+    count = len(result_set)
 
     connection.close()
 
     return count
 
-def insert_record(payload):
+def insert_record(p_payload):
+    """ Insert a record into the database """
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'],
-                                    imdb=payload['imdb'],
-                                    tmdb=payload['tmdb'],
-                                    tvdb=payload['tvdb'],
-                                    title=payload['title'],
-                                    year=payload['year'],
-                                    type=payload['type'],
-                                    complete=payload['complete'])
+    stmt = insert(keys).values(guid=p_payload['guid'],
+                                    imdb=p_payload['imdb'],
+                                    tmdb=p_payload['tmdb'],
+                                    tvdb=p_payload['tvdb'],
+                                    title=p_payload['title'],
+                                    year=p_payload['year'],
+                                    type=p_payload['type'],
+                                    complete=p_payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
-        set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], year=payload['year'], type=payload['type'], complete=payload['complete'])
+        set = { "imdb":     p_payload['imdb'],
+                "tmdb":     p_payload['tmdb'],
+                "tvdb":     p_payload['tvdb'],
+                "title":    p_payload['title'],
+                "year":     p_payload['year'],
+                "type":     p_payload['type'],
+                "complete": p_payload['complete']
+                }
     )
 
-    result = connection.execute(do_update_stmt)
-
-    # for Sql
-    # print(do_update_stmt.compile(compile_kwargs={"literal_binds": True}))
-    # INSERT INTO keys (guid, imdb, tmdb, tvdb, title, type, complete) VALUES ('5d77709531d95e001f1a5216', NULL, '557680', NULL, '"Eiyuu" Kaitai', 'movie', 0) ON CONFLICT (guid) DO UPDATE SET imdb = ?, tmdb = ?, tvdb = ?, title = ?, type = ?, complete = ?
-    # need to update that second set of '?'
+    result = connection.execute(do_update_stmt) # pylint: disable=unused-variable
 
     connection.close()
 
-def get_diffs(payload):
+def get_diffs(p_payload):
+    """ Get the differences between the current record and the new record """
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
-    query = db.select(keys).where(keys.columns.guid == payload['guid'])
-    ResultProxy = connection.execute(query)
-    ResultSet = ResultProxy.fetchall()
+    query = db.select(keys).where(keys.columns.guid == p_payload['guid'])
+    result_proxy = connection.execute(query)
+    result_set = result_proxy.fetchall()
     diffs = {
         'new': False,
         'updated': False,
         'changes': {}
     }
-    if len(ResultSet) > 0:
-        if ResultSet[0]['imdb'] != payload['imdb']:
-            diffs['changes']['imdb']= payload['imdb']
-        if ResultSet[0]['tmdb'] != payload['tmdb']:
-            diffs['changes']['tmdb']= payload['tmdb']
-        if ResultSet[0]['tmdb'] != payload['tmdb']:
-            diffs['changes']['tmdb']= payload['tmdb']
+    if len(result_set) > 0:
+        if result_set[0]['imdb'] != p_payload['imdb']:
+            diffs['changes']['imdb']= p_payload['imdb']
+        if result_set[0]['tmdb'] != p_payload['tmdb']:
+            diffs['changes']['tmdb']= p_payload['tmdb']
+        if result_set[0]['tmdb'] != p_payload['tmdb']:
+            diffs['changes']['tmdb']= p_payload['tmdb']
         diffs['updated'] = len(diffs['changes']) > 0
     else:
         diffs['new'] = True
-        diffs['changes']['imdb']= payload['imdb']
-        diffs['changes']['tmdb']= payload['tmdb']
-        diffs['changes']['tmdb']= payload['tmdb']
-        diffs['changes']['year']= payload['year']
+        diffs['changes']['imdb']= p_payload['imdb']
+        diffs['changes']['tmdb']= p_payload['tmdb']
+        diffs['changes']['tmdb']= p_payload['tmdb']
+        diffs['changes']['year']= p_payload['year']
 
     return diffs
 
@@ -163,11 +172,11 @@ logging.basicConfig(
 if os.path.exists(".env"):
     load_dotenv()
 else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
-    exit()
+    logging.info("No environment [.env] file.  Exiting.")
+    print("No environment [.env] file.  Exiting.")
+    sys.exit()
 
-change_records = None
+CHANGE_RECORDS = None
 
 COMPLETE_ARRAY = []
 
@@ -191,8 +200,10 @@ with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
             action = parts[0]
             values = ast.literal_eval(parts[1])
             logging.info("================================")
-            logging.info(f"Importing {action} {values['guid']}")
-            bar.text = f"Importing {action} {values['guid']}"
+            BAR_TEXT = f"Importing {action} {values['guid']}"
+            logging.info(BAR_TEXT)
+            bar.text = BAR_TEXT
+
             payload = {}
 
             for key in values.keys():
@@ -202,7 +213,7 @@ with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
 
             payload['complete'] = is_complete
 
-            logging.info(f"{payload}")
+            logging.info(payload)
 
             insert_record(payload)
 

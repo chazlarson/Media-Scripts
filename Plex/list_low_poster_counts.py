@@ -1,14 +1,14 @@
+""" Script to list libraries with low poster counts in Plex libraries """
 #!/usr/bin/env python
 import os
+import sys
 import platform
 from datetime import datetime
 from pathlib import Path
 from logs import setup_logger, plogger, logger
 
-import piexif.helper
 from alive_progress import alive_bar
 from helpers import (get_all_from_library, get_plex, load_and_upgrade_env)
-
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -32,7 +32,7 @@ setup_logger('activity_log', ACTIVITY_LOG)
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 
 if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+    sys.exit()
 
 ID_FILES = True
 
@@ -54,11 +54,11 @@ if plex_token is None:
 
 if plex_url is None or plex_url == 'https://plex.domain.tld':
     plogger(f"You must specify {TARGET_URL_VAR} in the .env file.", 'info', 'a')
-    exit()
+    sys.exit()
 
 if plex_token is None or plex_token == 'PLEX-TOKEN':
     plogger(f"You must specify {TARGET_TOKEN_VAR} in the .env file.", 'info', 'a')
-    exit()
+    sys.exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
@@ -89,8 +89,9 @@ plex = get_plex()
 
 logger("Plex connection succeeded", 'info', 'a')
 
-def lib_type_supported(lib):
-    return(lib.type == 'movie' or lib.type == 'show')
+def lib_type_supported(tgt_lib):
+    """ Check if the library type is supported """
+    return tgt_lib.type in ('movie', 'show')
 
 ALL_LIBS = plex.library.sections()
 ALL_LIB_NAMES = []
@@ -109,8 +110,9 @@ if LIBRARY_NAMES == 'ALL_LIBRARIES':
 TOPLEVEL_TMID = ""
 TOPLEVEL_TVID = ""
 
-def get_lib_setting(the_lib, the_setting):
-    settings = the_lib.settings()
+def get_lib_setting(tgt_lib, the_setting): # pylint: disable=inconsistent-return-statements
+    """ Get a library setting """
+    settings = tgt_lib.settings()
     for setting in settings:
         if setting.id == the_setting:
             return setting.value
@@ -118,7 +120,7 @@ def get_lib_setting(the_lib, the_setting):
 for lib in LIB_ARRAY:
     if lib in ALL_LIB_NAMES:
         try:
-            highwater = 0
+            HIGHWATER = 0
 
             plogger(f"Loading {lib} ...", 'info', 'a')
             the_lib = plex.library.section(lib)
@@ -131,7 +133,7 @@ for lib in LIB_ARRAY:
 
             if item_total > 0:
                 logger(f"looping over {item_total} items...", 'info', 'a')
-                item_count = 0
+                ITEM_COUNT = 0
 
                 plex_links = []
                 external_links = []
@@ -143,21 +145,19 @@ for lib in LIB_ARRAY:
                             if len(all_posters) < POSTER_THRESHOLD:
                                 plogger(f"{item.title} poster count: {len(all_posters)}", 'info', 'a')
 
-                            item_count += 1
+                            ITEM_COUNT += 1
                         except Exception as ex: # pylint: disable=broad-exception-caught
                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                         bar() # pylint: disable=not-callable
- 
-                plogger(f"Processed {item_count} of {item_total}", 'info', 'a')
 
-            progress_str = "COMPLETE"
-            logger(progress_str, 'info', 'a')
+                plogger(f"Processed {ITEM_COUNT} of {item_total}", 'info', 'a')
+
+            logger("COMPLETE", 'info', 'a')
 
         except Exception as ex: # pylint: disable=broad-exception-caught
-            progress_str = f"Problem processing {lib}; {ex}"
-            plogger(progress_str, 'info', 'a')
+            plogger(f"Problem processing {lib}; {ex}", 'info', 'a')
     else:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')

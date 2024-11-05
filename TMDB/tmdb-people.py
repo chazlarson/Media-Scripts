@@ -15,8 +15,7 @@ POSTER_DIR = os.getenv("POSTER_DIR")
 PERSON_DEPTH = 0
 try:
     PERSON_DEPTH = int(os.getenv("PERSON_DEPTH"))
-except:
-    PERSON_DEPTH = 0
+except: # pylint: disable=bare-except    PERSON_DEPTH = 0
 
 
 TMDb = TMDbAPIs(tmdb_key, language="en")

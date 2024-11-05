@@ -36,13 +36,13 @@ LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries
 
 # IMAGE DOWNLOAD ENV VARS
 ## what-to-grab
-GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
-GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
-GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
-ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
+GRAB_SEASONS=1                               # should get_all_posters retrieve season posters?
+GRAB_EPISODES=1                              # should get_all_posters retrieve episode posters? [requires GRAB_SEASONS]
+GRAB_BACKGROUNDS=1                           # should get_all_posters retrieve backgrounds?
+ONLY_CURRENT=0                               # should get_all_posters retrieve ONLY current artwork?
 ARTWORK=1                                    # current background is downloaded with current poster
-INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
-ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+INCLUDE_COLLECTION_ARTWORK=1                 # should get_all_posters retrieve collection posters?
+ONLY_COLLECTION_ARTWORK=0                    # should get_all_posters retrieve ONLY collection posters?
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
@@ -52,7 +52,7 @@ RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kome
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+USE_ASSET_NAMING=1                           # should grab_all_posters name images to match Kometa's Asset Directory requirements?
 USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
@@ -86,16 +86,16 @@ LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
                                              # In apply_all_status, map libraries according to this JSON.
 
 # RESET-POSTERS ENV VARS
-TRACK_RESET_STATUS=1                         # should reset-posters-* keep track of status and pick up where it left off?
-LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
+TRACK_RESET_STATUS=1                         # should reset_posters-* keep track of status and pick up where it left off?
+LOCAL_RESET_ARCHIVE=1                        # should reset_posters_tmdb keep a local archive of posters?
 TARGET_LABELS=this label, that label         # comma-separated list of labels to reset posters on
 REMOVE_LABELS=0                              # attempt to remove the TARGET_LABELs from items after resetting the poster
-RESET_SEASONS=1                              # reset-posters-* resets season artwork as well in TV libraries
-RESET_EPISODES=1                             # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+RESET_SEASONS=1                              # reset_posters-* resets season artwork as well in TV libraries
+RESET_EPISODES=1                             # reset_posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 RETAIN_RESET_STATUS_FILE=0                   # Don't delete the reset progress file at the end
 FLUSH_STATUS_AT_START=0                      # Delete the reset progress file at the start instead of reading it
 RESET_SEASONS_WITH_SERIES=0                  # If there isn't a season poster, use the series poster
-DRY_RUN=0                                    # [currently only works with reset-posters-*]; don't actually do anything, just log
+DRY_RUN=0                                    # [currently only works with reset_posters-*]; don't actually do anything, just log
 
 # LIST ITEM IDS ENV VARS
 INCLUDE_COLLECTION_MEMBERS=0
@@ -137,25 +137,25 @@ SHOW_JOBS=0
 ```
 
 ## Scripts:
-1. [adjust-added-dates.py](#adjust-added-datespy) - fix broken added and perhaps originally available dates in your library
-1. [user-emails.py](#user-emailspy) - extract user emails from your shares
-1. [reset-posters-tmdb.py](#reset-posters-tmdbpy) - reset all artwork in a library to TMDB default
-1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
-1. [grab-all-IDs.py](#grab-all-IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
-1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
-1. [image_picker.py](#image_pickerpy) - simple web app to make choosing active art from the images downloaded by grab-all-posters simpler
-1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
-1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
-1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
-1. [delete-collections.py](#delete-collectionspy) - delete most or all collections from one or more libraries
-1. [refresh-metadata.py](#refresh-metadatapy) - Refresh metadata individually on items in a library
-1. [list-item-ids.py](#list-item-idspy) - Generate a list of IDs in libraries and/or collections
-1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
-1. [crew-count.py](#crew-countpy) - Generate a list of crew credit counts
-1. [list-low-poster-counts.py](#list-low-poster-countspy) - Generate a list of items that have fewer than some number of posters in Plex
+1. [adjust_added_dates.py](#adjust_added_datespy) - fix broken added and perhaps originally available dates in your library
+1. [user_emails.py](#user_emailspy) - extract user emails from your shares
+1. [reset_posters_tmdb.py](#reset_posters_tmdbpy) - reset all artwork in a library to TMDB default
+1. [reset_posters_plex.py](#reset_posters_plexpy) - reset all artwork in a library to Plex default
+1. [grab_all_IDs.py](#grab_all_IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
+1. [grab_all_posters.py](#grab_all_posterspy) - grab some or all of the artwork for a library from plex
+1. [image_picker.py](#image_pickerpy) - simple web app to make choosing active art from the images downloaded by grab_all_posters simpler
+1. [grab_all_status.py](#grab_all_statuspy) - grab watch status for all users all libraries from plex
+1. [apply_all_status.py](#apply_all_statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
+1. [show_all_playlists.py](#show_all_playlistspy) - Show contents of all user playlists
+1. [delete_collections.py](#delete_collectionspy) - delete most or all collections from one or more libraries
+1. [refresh_metadata.py](#refresh_metadatapy) - Refresh metadata individually on items in a library
+1. [list_item_ids.py](#list_item_idspy) - Generate a list of IDs in libraries and/or collections
+1. [actor_count.py](#actor_countpy) - Generate a list of actor credit counts
+1. [crew_count.py](#crew_countpy) - Generate a list of crew credit counts
+1. [list_low_poster_counts.py](#list_low_poster_countspy) - Generate a list of items that have fewer than some number of posters in Plex
 
 
-## adjust-added-dates.py
+## adjust_added_dates.py
 
 You have things in your library that show up added in the future, or way in the past.
 
@@ -169,10 +169,10 @@ ADJUST_DATE_EPOCH_ONLY=1        # Only adjust items that have "originally availa
 
 ### Usage
 1. setup as above
-2. Run with `python adjust-added-dates.py`
+2. Run with `python adjust_added_dates.py`
 
 
-## user-emails.py
+## user_emails.py
 
 You want a list of email addresses for all the people you share with.
 
@@ -180,7 +180,7 @@ Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
 ### Usage
 1. setup as above
-2. Run with `python user-emails.py`
+2. Run with `python user_emails.py`
 
 The script will loop through all the shared users on your account and spit out username and email address.
 
@@ -194,7 +194,7 @@ boingster - boing@gmail.com
 ...
 ```
 
-## reset-posters-tmdb.py
+## reset_posters_tmdb.py
 
 Perhaps you want to reset all the posters in a library
 
@@ -208,10 +208,10 @@ TRACK_RESET_STATUS=1                            # pick up where the script left 
 LOCAL_RESET_ARCHIVE=1                           # keep a local archive of posters
 TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
 REMOVE_LABELS=1                                 # remove labels when done [NOT RECOMMENDED]
-RESET_SEASONS=1                                 # reset-posters-plex resets season artwork as well in TV libraries
-RESET_EPISODES=1                                # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+RESET_SEASONS=1                                 # reset_posters_plex resets season artwork as well in TV libraries
+RESET_EPISODES=1                                # reset_posters_plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 RETAIN_RESET_STATUS_FILE=0                      # Don't delete the reset progress file at the end
-DRY_RUN=0                                       # [currently only works with reset-posters-*]; don't actually do anything, just log
+DRY_RUN=0                                       # [currently only works with reset_posters-*]; don't actually do anything, just log
 FLUSH_STATUS_AT_START=0                         # Delete the reset progress file at the start instead of reading them
 RESET_SEASONS_WITH_SERIES=0                     # If there isn't a season poster, use the series poster
 ```
@@ -264,7 +264,7 @@ If no artwork is found at TMDB for a thing, no action is taken.
 
 ### Usage
 1. setup as above
-2. Run with `python reset-posters-tmdb.py`
+2. Run with `python reset_posters_tmdb.py`
 
 ```
 tmdb config...
@@ -276,7 +276,7 @@ looping over 876 items...
 
 At this time, there is no configuration aside from library name; it replaces all posters.  It does not delete any posters from Plex, just grabs a URL and uses the API to set the poster to the URL.
 
-## reset-posters-plex.py
+## reset_posters_plex.py
 
 Script-specific variables in .env:
 ```
@@ -284,26 +284,26 @@ TRACK_RESET_STATUS=1                            # pick up where the script left 
 LOCAL_RESET_ARCHIVE=1                           # keep a local archive of posters
 TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
 REMOVE_LABELS=1                                 # remove labels when done [NOT RECOMMENDED]
-RESET_SEASONS=1                                 # reset-posters-plex resets season artwork as well in TV libraries
-RESET_EPISODES=1                                # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+RESET_SEASONS=1                                 # reset_posters_plex resets season artwork as well in TV libraries
+RESET_EPISODES=1                                # reset_posters_plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
 RETAIN_RESET_STATUS_FILE=0                      # Don't delete the reset progress file at the end
-DRY_RUN=0                                       # [currently only works with reset-posters-*]; don't actually do anything, just log
+DRY_RUN=0                                       # [currently only works with reset_posters-*]; don't actually do anything, just log
 FLUSH_STATUS_AT_START=0                         # Delete the reset progress file at the start instead of reading them
 RESET_SEASONS_WITH_SERIES=0                     # If there isn't a season poster, use the series poster
 ```
 
-Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
+Same as `reset_posters_tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
 
 With `RESET_SEASONS_WITH_SERIES=1`, if the season doesn't have artwork the series artwork will be used instead.
 
-## grab-all-IDs.py
+## grab_all_IDs.py
 
 Perhaps you want to gather all the IDs for everything in a library.
 
 This script will go through a library and grab PLex RatingKey [which may be unique], IMDB ID, TMDB ID, and TVDB ID for everything in the list of libraries specified in the `.env`.  It stores the data in a sqlite database called `ids.sqlite`; the repo copy of this file contains that data for 105871 movies and 26699 TV Shows.
 
 
-## grab-all-posters.py
+## grab_all_posters.py
 
 Perhaps you want to get local copies of some or all the posters Plex knows about for everything in a library.
 
@@ -325,13 +325,13 @@ Script-specific variables in .env:
 ```shell
 # IMAGE DOWNLOAD ENV VARS
 ## what-to-grab
-GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
-GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
-GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
-ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
+GRAB_SEASONS=1                               # should get_all_posters retrieve season posters?
+GRAB_EPISODES=1                              # should get_all_posters retrieve episode posters? [requires GRAB_SEASONS]
+GRAB_BACKGROUNDS=1                           # should get_all_posters retrieve backgrounds?
+ONLY_CURRENT=0                               # should get_all_posters retrieve ONLY current artwork?
 ARTWORK=1                                    # current background is downloaded with current poster
-INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
-ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
+INCLUDE_COLLECTION_ARTWORK=1                 # should get_all_posters retrieve collection posters?
+ONLY_COLLECTION_ARTWORK=0                    # should get_all_posters retrieve ONLY collection posters?
 ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
 POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
@@ -341,7 +341,7 @@ RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kome
 RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+USE_ASSET_NAMING=1                           # should grab_all_posters name images to match Kometa's Asset Directory requirements?
 USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
@@ -402,7 +402,7 @@ If you want to reset all libraries and clear all history, delete `mediascripts.s
 
 For example:
 
-You run `grab-all-posters` with `DEFAULT_YEARS_BACK=2`; it downloads posters for half your "Movies" library.  Now you want to grab all the rest.  You change that to `DEFAULT_YEARS_BACK=0` and run `grab-all-posters` again.  Nothing new will be downloaded since the last run date is now the time of that first run, and nothing has been added to Plex since then.  If you want to grab all posters from the beginning of time for that library, set:
+You run `grab_all_posters` with `DEFAULT_YEARS_BACK=2`; it downloads posters for half your "Movies" library.  Now you want to grab all the rest.  You change that to `DEFAULT_YEARS_BACK=0` and run `grab_all_posters` again.  Nothing new will be downloaded since the last run date is now the time of that first run, and nothing has been added to Plex since then.  If you want to grab all posters from the beginning of time for that library, set:
 ```
 DEFAULT_YEARS_BACK=0
 RESET_LIBRARIES=Movies
@@ -422,7 +422,7 @@ NOTE: `ONLY_CURRENT` and `POSTER_DEPTH` do not take these images into account, m
 ONLY_CURRENT=1
 RETAIN_KOMETA_OVERLAID_IMAGES=0
 ```
-Then nothing will be retained for items with overlaid posters.  `grab-all-posters` will download the current art, find that it has an overlay, delete it, then go to the next movie/show.
+Then nothing will be retained for items with overlaid posters.  `grab_all_posters` will download the current art, find that it has an overlay, delete it, then go to the next movie/show.
 
 Similarly:
 ```
@@ -434,7 +434,7 @@ This won't grab images until you have 20 downloaded.  It will grab 20 images, an
 
 ### Usage
 1. setup as above
-2. Run with `python grab-all-posters.py`
+2. Run with `python grab_all_posters.py`
 
 The posters will be sorted by library [if enabled] with each poster getting an incremented number, like this:
 
@@ -633,11 +633,11 @@ assets
 
 ## image_picker.py
 
-You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
+You've run grab_all_posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
 
 This script does not use anything from the `.env`, but it does make some assumptions:
 
-It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
+It presents a web UI that lets you scroll through the images that `grab_all_posters` downloaded, selecting the one you want by clicking on it.
 
 When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the Kometa asset directory.
 
@@ -646,7 +646,7 @@ You can then copy that `active_assets` directory to the Kometa config dir ready 
 It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
 
 ### Assumptions:
-1. You are working with a directory of images produced by `grab-all-posters`
+1. You are working with a directory of images produced by `grab_all_posters`
 2. That directory is named `assets` and is in this directory next to this script.
 3. You can run a web server on the machine that listens on port 5001
 
@@ -657,7 +657,7 @@ It keeps track of which images have been chosen on a show/movie basis [is a json
 
 In this case I'm running it on a server in my home:
 ```
-python image-picker.py
+python image_picker.py
  * Serving Flask app 'image-picker'
  * Debug mode: off
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
@@ -709,7 +709,7 @@ active_assets/Movies/
 
 TV works the same way except that there are also Season and Episode images.
 
-## grab-all-status.py
+## grab_all_status.py
 
 Perhaps you want to move or restore watch status from one server to another [or to a rebuild]
 
@@ -722,7 +722,7 @@ PLEX_OWNER=yournamehere                      # account name of the server owner
 
 ### Usage
 1. setup as above
-2. Run with `python grab-all-status.py`
+2. Run with `python grab_all_status.py`
 
 ```shell
 Connecting to https://cp1.DOMAIN.TLD...
@@ -752,7 +752,7 @@ chazlarson      movie   Movies - 4K DV  Mad Max: Fury Road      2015    R
 ...
 ```
 
-## apply-all-status.py
+## apply_all_status.py
 
 This script reads the file produces by the previous script and applies the watched status for each user/library/item
 
@@ -777,7 +777,7 @@ And any records from the status.txt file that came from the "TV - 1080p" library
 
 ### Usage
 1. setup as above
-2. Run with `python apply-all-status.py`
+2. Run with `python apply_all_status.py`
 
 ```shell
 connecting to https://cp1.DOMAIN.TLD...
@@ -790,7 +790,7 @@ Searching for It Comes at Night                                                 
 There might be a problem with special characters in titles.
 
 
-## show-all-playlists.py
+## show_all_playlists.py
 
 Perhaps you want to creep on your users and see what they have on their playlists
 
@@ -804,7 +804,7 @@ NONE
 ****
 ### Usage
 1. setup as above
-2. Run with `python show-all-playlists.py`
+2. Run with `python show_all_playlists.py`
 
 ```shell
 connecting to https://cp1.DOMAIN.TLD...
@@ -834,7 +834,7 @@ movie   - Ace Ventura: When Nature Calls
 ...
 ```
 
-## delete-collections.py
+## delete_collections.py
 
 Perhaps you want to delete all the collections in one or more libraries
 
@@ -847,7 +847,7 @@ KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collec
 ****
 ### Usage
 1. setup as above
-2. Run with `python delete-collections.py`
+2. Run with `python delete_collections.py`
 
 ```shell
 39 collection(s) retrieved...****
@@ -855,7 +855,7 @@ Collection delete - Plex |█████████▎                        
 -> deleting: 98 Best Action Movies Of All Time
 ```
 
-## refresh-metadata.py
+## refresh_metadata.py
 
 Perhaps you want to refresh metadata in one or more libraries; there are situations where refreshing the whole library doesn't work so you have to do it in groups, which can be tiring.
 
@@ -868,7 +868,7 @@ NONE
 ****
 ### Usage
 1. setup as above
-2. Run with `python refresh-metadata.py`
+2. Run with `python refresh_metadata.py`
 
 ```shell
 getting items from [TV Shows - 4K]...
@@ -880,7 +880,7 @@ looping over 2964 items...
 [========================================] 100.0% ... Ōkami Shōnen Ken - DONE
 ```
 
-## list-item-ids.py
+## list_item_ids.py
 
 Perhaps you want a list of all the IDs of everything in your libraries or collections.
 
@@ -899,7 +899,7 @@ on 5783: INFO: 11/05/2023 05:07:49 PM tem  5783/ 5786 | TMDb ID: 329833    | IMD
 on 5784: INFO: 11/05/2023 05:07:49 PM tem  5784/ 5786 | TMDb ID: 269149    | IMDb ID:  tt2948356  | Zootopia
 ```
 
-env vars are the same as grab-all-posters.py for the most part [where they apply], except for:
+env vars are the same as grab_all_posters.py for the most part [where they apply], except for:
 ```
 INCLUDE_COLLECTION_MEMBERS=0
 ONLY_COLLECTION_MEMBERS=0
@@ -909,9 +909,9 @@ Which probably do about what you'd expect.
 
 ### Usage
 1. setup as above
-2. Run with `python list-item-ids.py`
+2. Run with `python list_item_ids.py`
 
-## actor-count.py
+## actor_count.py
 
 Perhaps you want a list of actors with a count of how many movies from your libraries they have been in.
 
@@ -951,7 +951,7 @@ Actors are sorted into lists by the four genders recorded at TMDB.  The top `MIN
 If the four `MIN_GENDER_*` sum to more than `NUM_COLLECTIONS`, the script exists with an error.
 ### Usage
 1. setup as above
-1. Run with `python actor-count.py`
+1. Run with `python actor_count.py`
 
 ```shell
 connecting to https://plex.bing.bang...
@@ -997,7 +997,7 @@ TOP_COUNT=10
 
 Note that the top ten changed dramatically due to looking deeper into the cast lists.
 
-## crew-count.py
+## crew_count.py
 
 Perhaps you want a list of crew members with a count of how many movies from your libraries they have been credited in.
 
@@ -1020,7 +1020,7 @@ If `SHOW_JOBS` is set to 1, the script will also output a list of all the jobs i
 
 ### Usage
 1. setup as above
-1. Run with `python crew-count.py`
+1. Run with `python crew_count.py`
 
 ```shell
 connecting to Plex...
@@ -1098,7 +1098,7 @@ Top 22 Director in [Test-Movies]:
 
 Note that the list changed due to the different depth; apparently Robert Wise's Director credit is more than 5 entries into the list.
 
-## list-low-poster-counts.py
+## list_low_poster_counts.py
 
 Perhaps you want to know which movies have fewer than 4 posters avaiable in Plex.
 
@@ -1109,7 +1109,7 @@ POSTER_THRESHOLD=10  # report items with fewer posters than this
 
 ### Usage
 1. setup as above
-2. Run with `python list-low-poster-counts.py`
+2. Run with `python list_low_poster_counts.py`
 
 Starting list-low-poster-counts 0.1.0 at 2023-12-07 09:35:45
 connecting to https://plex.bing.bang...
