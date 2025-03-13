@@ -7,6 +7,7 @@ pyopenssl
 python-dotenv
 requests
 ruamel.yaml
+setuptools
 tmdbapis
 tmdbsimple
 tmdbv3api
