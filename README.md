@@ -22,7 +22,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 ### if you don't use [`direnv`](https://github.com/direnv/direnv):
 1. install direnv
 2. go to the previous section
-   
+
 ok no
 
 1. clone repo
@@ -34,7 +34,7 @@ ok no
    cd Media-Scripts
    ```
 1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-   
+
    Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Kometa wiki.
 
 ### After you've done one of the above:
@@ -46,7 +46,7 @@ Once you have the requirements installed via whatever means, you are ready to se
    cd Plex
    ```
 1. Copy `.env.example` to `.env`
-   
+
    Linux or Mac:
    ```
    cp .env.example .env
@@ -54,7 +54,7 @@ Once you have the requirements installed via whatever means, you are ready to se
    Windows:
    ```
    copy .env.example .env
-   ```  
+   ```
 1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
 
    Edit the file with whatever text editor you wish.
@@ -71,7 +71,6 @@ All these scripts use the same `.env` and requirements.
 1. reset-posters-plex.py - reset all artwork in a library to Plex default
 1. grab-all-IDs.py - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. grab-all-posters.py - grab some or all of the artwork for a library from plex
-1. image_picker.py - simple web app to make choosing active art from the images downloaded by grab-all-posters simpler
 1. grab-all-status.py - grab watch status for all users all libraries from plex
 1. apply-all-status.py - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. show-all-playlists.py - Show contents of all user playlists
@@ -99,6 +98,12 @@ See the [Kometa Scripts README](Kometa/README.md) for details.
 1. tmdb-people.py - retrieve TMDB images for a list of people
 
 See the [TMDB Scripts README](TMDB/README.md) for details.
+
+## Plex Image Picker
+
+This presents a web UI that lets you scroll through the images that Plex provides for each item [movie, show, season, episode], selecting the one you want by clicking a button, which downloads it to an asset directory
+
+See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
 
 # Other script repos of interest
 
