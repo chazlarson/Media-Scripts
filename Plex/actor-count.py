@@ -1,16 +1,16 @@
 #!/usr/bin/env python
+import os
+import platform
+import time
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-import platform
-import time
 from timeit import default_timer as timer
-from alive_progress import alive_bar
-import os
-from tmdbapis import TMDbAPIs
 
+from alive_progress import alive_bar
 from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
-from logs import setup_logger, plogger
+from logs import plogger, setup_logger
+from tmdbapis import TMDbAPIs
 
 TMDB_GENDER_NOT_SET = 0
 TMDB_GENDER_FEMALE = 1

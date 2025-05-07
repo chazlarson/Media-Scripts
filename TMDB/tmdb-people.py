@@ -1,10 +1,11 @@
-import requests
-from dotenv import load_dotenv
-from alive_progress import alive_bar
 import os
-from tmdbapis import TMDbAPIs
 from pathlib import Path
 from timeit import default_timer as timer
+
+import requests
+from alive_progress import alive_bar
+from dotenv import load_dotenv
+from tmdbapis import TMDbAPIs
 
 start = timer()
 

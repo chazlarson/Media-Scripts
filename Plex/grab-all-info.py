@@ -1,18 +1,13 @@
 #!/usr/bin/env python
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
-
-from sqlalchemy.dialects.sqlite import insert
-
 from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
-
-import logging
-from pathlib import Path
-from datetime import datetime
+from sqlalchemy.dialects.sqlite import insert
 
 # current dateTime
 now = datetime.now()

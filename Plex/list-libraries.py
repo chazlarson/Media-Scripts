@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-from alive_progress import alive_bar
 import os
-from pathlib import Path
 import time
-from tabulate import tabulate
-from helpers import get_plex, load_and_upgrade_env
-
 from datetime import datetime
+from pathlib import Path
+
+from alive_progress import alive_bar
+from helpers import get_plex, load_and_upgrade_env
+from tabulate import tabulate
 
 # current dateTime
 now = datetime.now()

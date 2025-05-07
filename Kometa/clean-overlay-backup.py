@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import os
+from datetime import datetime
 from os import listdir
 from os.path import isfile, join
-from datetime import datetime
 from pathlib import Path
-from logs import setup_logger, plogger, blogger, logger
 
 from alive_progress import alive_bar
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
+from logs import blogger, logger, plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 

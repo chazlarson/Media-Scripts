@@ -1,27 +1,26 @@
 #!/usr/bin/env python
-from alive_progress import alive_bar
-from logs import setup_logger, plogger, blogger, logger
-
 import os
-from datetime import datetime
-from tmdbapis import TMDbAPIs
-import requests
 import pathlib
-from pathlib import Path
 import platform
-from timeit import default_timer as timer
-import time
-import validators
 import random
+import time
+from datetime import datetime
+from pathlib import Path
+from timeit import default_timer as timer
 
+import requests
+import validators
+from alive_progress import alive_bar
 from helpers import (
     booler,
     get_all_from_library,
     get_ids,
+    get_overlay_status,
     get_plex,
     load_and_upgrade_env,
-    get_overlay_status,
 )
+from logs import blogger, logger, plogger, setup_logger
+from tmdbapis import TMDbAPIs
 
 # import tvdb_v4_official
 

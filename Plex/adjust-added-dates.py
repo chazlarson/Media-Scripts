@@ -2,8 +2,6 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from tmdbapis import TMDbAPIs
-from logs import setup_logger, plogger, blogger, logger
 
 from alive_progress import alive_bar
 from helpers import (
@@ -13,6 +11,8 @@ from helpers import (
     get_plex,
     load_and_upgrade_env,
 )
+from logs import blogger, logger, plogger, setup_logger
+from tmdbapis import TMDbAPIs
 
 SCRIPT_NAME = Path(__file__).stem
 

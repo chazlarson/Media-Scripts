@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import logging
 import os
-import imdb
 import sys
 import textwrap
-from helpers import booler, get_ids, get_plex, load_and_upgrade_env
-
-import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import imdb
+from helpers import booler, get_ids, get_plex, load_and_upgrade_env
 
 # current dateTime
 now = datetime.now()

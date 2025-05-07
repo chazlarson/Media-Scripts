@@ -4,16 +4,16 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path, PurePath
-from logs import setup_logger, plogger, logger
 
 from alive_progress import alive_bar
 from helpers import (
     booler,
     get_all_from_library,
     get_plex,
-    validate_filename,
     load_and_upgrade_env,
+    validate_filename,
 )
+from logs import logger, plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 

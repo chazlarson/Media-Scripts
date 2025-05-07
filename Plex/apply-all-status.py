@@ -4,13 +4,11 @@ import os
 import re
 import sys
 import textwrap
-from helpers import get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger
-
+from datetime import datetime
 from pathlib import Path
 
-from datetime import datetime
+from helpers import get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 

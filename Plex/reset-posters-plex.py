@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 
-from alive_progress import alive_bar
-from datetime import datetime
-from helpers import (
-    booler,
-    get_all_from_library,
-    get_plex,
-    load_and_upgrade_env,
-    get_overlay_status,
-)
-from logs import setup_logger, plogger, blogger
-from pathlib import Path
-from timeit import default_timer as timer
 import os
 import random
 import time
+from datetime import datetime
+from pathlib import Path
+from timeit import default_timer as timer
+
+from alive_progress import alive_bar
+from helpers import (
+    booler,
+    get_all_from_library,
+    get_overlay_status,
+    get_plex,
+    load_and_upgrade_env,
+)
+from logs import blogger, plogger, setup_logger
 
 start = timer()
 

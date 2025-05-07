@@ -1,15 +1,15 @@
-from pathlib import Path
-from pathvalidate import is_valid_filename, sanitize_filename
 import itertools
+import os
+import shutil
+from pathlib import Path
+
 import plexapi
+import requests
+from dotenv import load_dotenv, set_key, unset_key
+from pathvalidate import is_valid_filename, sanitize_filename
+from PIL import Image
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
-import requests
-
-import os
-from dotenv import load_dotenv, set_key, unset_key
-import shutil
-from PIL import Image
 
 
 def has_overlay(image_path):

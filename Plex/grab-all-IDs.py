@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-
+from database import get_completed, get_count, get_diffs, insert_record, update_record
 from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
-
-import logging
-from pathlib import Path
-from datetime import datetime
-
-from database import get_completed, get_count, insert_record, update_record, get_diffs
 
 # current dateTime
 now = datetime.now()

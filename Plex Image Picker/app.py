@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from plexapi.server import PlexServer
 import os
+
 import requests
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from plexapi.server import PlexServer
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)

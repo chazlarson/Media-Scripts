@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-from alive_progress import alive_bar
 import os
 import time
-from helpers import get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger
-
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from alive_progress import alive_bar
+from helpers import get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 

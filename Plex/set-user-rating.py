@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-from logs import setup_logger, plogger
+import random
+from datetime import datetime
+from pathlib import Path
 
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
-from pathlib import Path
-import random
-
-from datetime import datetime
+from logs import plogger, setup_logger
 
 # current dateTime
 now = datetime.now()

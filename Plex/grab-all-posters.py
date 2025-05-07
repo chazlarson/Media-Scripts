@@ -7,28 +7,25 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
-from logs import setup_logger, plogger, blogger, logger
 
 import filetype
-
 from alive_progress import alive_bar
-
+from database import add_key, add_last_run, add_url, check_key, check_url, get_last_run
 from helpers import (
     booler,
+    check_for_images,
     get_all_from_library,
     get_ids,
     get_letter_dir,
     get_plex,
     has_overlay,
+    load_and_upgrade_env,
     redact,
     validate_filename,
-    load_and_upgrade_env,
-    check_for_images,
 )
+from logs import blogger, logger, plogger, setup_logger
 from pathvalidate import sanitize_filename
 from plexapi.utils import download
-
-from database import add_last_run, get_last_run, add_url, check_url, add_key, check_key
 
 # TODO: lib_stats[lib_key] = item_count in sqlite
 # TODO: Track Collection status in sqlite with guid

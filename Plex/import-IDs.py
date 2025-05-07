@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-import os
 import ast
 import logging
+import os
+from datetime import datetime
 from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
 from dotenv import load_dotenv
 from sqlalchemy.dialects.sqlite import insert
-
-from datetime import datetime
 
 # current dateTime
 now = datetime.now()

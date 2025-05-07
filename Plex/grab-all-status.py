@@ -1,16 +1,14 @@
 #!/usr/bin/env python
-import os
 import json
-from alive_progress import alive_bar
-
+import os
 import sys
 import textwrap
-
-from helpers import get_plex, get_xml_watched, get_xml_libraries, load_and_upgrade_env
-
-from logs import setup_logger, plogger
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from alive_progress import alive_bar
+from helpers import get_plex, get_xml_libraries, get_xml_watched, load_and_upgrade_env
+from logs import plogger, setup_logger
 
 # current dateTime
 now = datetime.now()

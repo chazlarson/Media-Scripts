@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 import os
+from datetime import datetime
+from pathlib import Path
 
 from alive_progress import alive_bar
-
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger, logger
-
-from pathlib import Path
-from datetime import datetime
+from logs import logger, plogger, setup_logger
 
 # current dateTime
 now = datetime.now()

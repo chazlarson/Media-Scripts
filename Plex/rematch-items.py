@@ -1,17 +1,17 @@
 #!/usr/bin/env python
+import logging
 import os
 import sys
 import textwrap
-import logging
-import urllib3.exceptions
-from urllib3.exceptions import ReadTimeoutError
-from requests import ReadTimeout
-from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
-from alive_progress import alive_bar
-
-from logs import setup_logger, plogger
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import urllib3.exceptions
+from alive_progress import alive_bar
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
+from requests import ReadTimeout
+from urllib3.exceptions import ReadTimeoutError
 
 # current dateTime
 now = datetime.now()

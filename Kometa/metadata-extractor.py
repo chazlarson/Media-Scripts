@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 import logging
-from plexapi.utils import download
 import os
 import sys
 import textwrap
-import logging
-from pathlib import Path
 from datetime import datetime
-from tmdbapis import TMDbAPIs
 from pathlib import Path
 from timeit import default_timer as timer
-from helpers import get_ids, get_plex, load_and_upgrade_env
+
 import yaml
-from logs import setup_logger, plogger, blogger, logger
 from alive_progress import alive_bar
+from helpers import get_ids, get_plex, load_and_upgrade_env
+from logs import blogger, logger, plogger, setup_logger
+from plexapi.utils import download
+from tmdbapis import TMDbAPIs
 
 # import tvdb_v4_official
 

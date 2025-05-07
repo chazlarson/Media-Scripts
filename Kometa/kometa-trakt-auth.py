@@ -12,8 +12,9 @@
 #
 # Some yaml will be printed, ready to copy-paste into your Kometa config.yml.
 
-import requests
 import webbrowser
+
+import requests
 
 redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
 redirect_uri_encoded = redirect_uri.replace(":", "%3A")

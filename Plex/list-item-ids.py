@@ -3,7 +3,6 @@ import os
 import platform
 from datetime import datetime
 from pathlib import Path
-from logs import setup_logger, plogger, logger
 
 from alive_progress import alive_bar
 from helpers import (
@@ -13,6 +12,7 @@ from helpers import (
     get_plex,
     load_and_upgrade_env,
 )
+from logs import logger, plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 

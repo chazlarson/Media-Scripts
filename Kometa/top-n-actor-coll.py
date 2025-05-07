@@ -1,9 +1,10 @@
-from collections import Counter
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
+from collections import Counter
+
+from dotenv import load_dotenv
+from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
 
 load_dotenv()

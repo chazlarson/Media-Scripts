@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-from helpers import get_plex, load_and_upgrade_env
-
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from helpers import get_plex, load_and_upgrade_env
 
 # current dateTime
 now = datetime.now()

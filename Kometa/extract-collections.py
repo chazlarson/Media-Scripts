@@ -1,13 +1,14 @@
-from alive_progress import alive_bar
-from ruamel import yaml
-from datetime import datetime
 import os
 import platform
 import re
+from datetime import datetime
 from pathlib import Path
-from plexapi.utils import download
-from logs import setup_logger, plogger
+
+from alive_progress import alive_bar
 from helpers import get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
+from plexapi.utils import download
+from ruamel import yaml
 
 SCRIPT_NAME = Path(__file__).stem
 

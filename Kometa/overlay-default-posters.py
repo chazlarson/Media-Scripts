@@ -1,6 +1,7 @@
-from alive_progress import alive_bar
 import pathlib
 from pathlib import Path
+
+from alive_progress import alive_bar
 from git.repo.base import Repo
 from PIL import Image
 
