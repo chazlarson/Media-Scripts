@@ -7,6 +7,7 @@ pyopenssl
 python-dotenv
 requests
 ruamel.yaml
+setuptools
 tmdbapis
 tmdbsimple
 tmdbv3api
@@ -22,5 +23,4 @@ Flask
 GitPython
 num2words
 retrying
-
 ruff

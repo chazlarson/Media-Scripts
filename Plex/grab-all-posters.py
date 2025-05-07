@@ -78,6 +78,7 @@ from plexapi.utils import download
 #      0.8.9a don't report a spurious error due to missing collection
 #      0.8.9b change one blogger to plogger since there's no bar in that context
 #      0.8.9c use sanitize_filename on illegal names and actually use that name
+#      0.8.9d add JUNK reason to filename for visibility outside superchat
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -679,8 +680,8 @@ def process_the_thing(params):
                     local_file = str(rename_by_type(final_file_path))
 
                     if not KEEP_JUNK:
-                        if local_file.find(".del") > 0:
-                            superchat(f"deleting {local_file}", "info", "a")
+                        if local_file.find('.del') > 0:
+                            plogger(f"deleting junk file {local_file}", 'info', 'a')
                             os.remove(local_file)
 
                     if ADD_SOURCE_EXIF_COMMENT:
@@ -1181,9 +1182,9 @@ def rename_by_type(target):
         with open(target, "r") as file:
             content = file.read()
             # check if string present or not
-            if "404 Not Found" in content:
-                logger("Contains 404, deleting", "info", "a")
-                extension = ".del"
+            if '404 Not Found' in content:
+                logger('Contains 404, deleting', 'info', 'a')
+                extension = ".NOT_FOUND.del"
             else:
                 logger("Cannot guess file type; using txt", "info", "a")
                 extension = ".txt"
@@ -1202,11 +1203,11 @@ def rename_by_type(target):
             )
 
         if not RETAIN_KOMETA_OVERLAID_IMAGES and kometa_overlay:
-            logger(f"Marking as JUNK: Kometa-overlaid image: {target}", "info", "a")
-            extension = ".del"
+            logger(f"Marking as JUNK: Kometa-overlaid image: {target}", 'info', 'a')
+            extension = ".kometa-overlay.del"
         if not RETAIN_TCM_OVERLAID_IMAGES and tcm_overlay:
-            logger(f"Marking as JUNK: TCM-overlaid image: {target}", "info", "a")
-            extension = ".del"
+            logger(f"Marking as JUNK: TCM-overlaid image: {target}", 'info', 'a')
+            extension = ".tcm-overlay.del"
 
     new_name = p.with_suffix(extension)
 

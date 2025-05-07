@@ -1,4 +1,4 @@
-# Plex-Meta Manager scripts
+# Kometa scripts
 
 Misc scripts and tools. Undocumented scripts probably do what I need them to but aren't finished yet.
 
@@ -328,7 +328,7 @@ The script will read all metadata from one of more libraries and format it into 
 
 IMPORTANT NOTES:
 
-This script backs up all Kometa-supported metadata [with a few minor exceptions], which includes things you may not have changed.  It also includes the "Overlay" label.  It backs up this label because it *also* backsup the current art, which might be overlaid.  You will probably want to edit or trim this file before using it to restore.
+This script backs up all Kometa-supported metadata [with a few minor exceptions], which includes things you may not have changed.  It also includes the "Overlay" label.  It backs up this label because it *also* backs up the current art, which might be overlaid.  You will probably want to edit or trim this file before using it to restore.
 
 Metadata not backed up:
 ```
