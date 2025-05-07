@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
 import logging
@@ -11,9 +9,9 @@ from requests import ReadTimeout
 from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
 from alive_progress import alive_bar
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -119,7 +117,7 @@ for lib in LIB_ARRAY:
         ]
 
 
-    with alive_bar(len(items), dual_line=True, title=f"Rematching") as bar:
+    with alive_bar(len(items), dual_line=True, title="Rematching") as bar:
         for item in items:
             tmpDict = {}
             item_count = item_count + 1

@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import time
 from helpers import get_plex, load_and_upgrade_env
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger
 
 from pathlib import Path
 from datetime import datetime

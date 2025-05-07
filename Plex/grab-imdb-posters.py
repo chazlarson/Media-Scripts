@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 import logging
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
 import os
 import imdb
-from dotenv import load_dotenv
 import sys
 import textwrap
 from helpers import booler, get_ids, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 

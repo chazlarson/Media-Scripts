@@ -9,9 +9,7 @@ from alive_progress import alive_bar
 from dotenv import load_dotenv
 from sqlalchemy.dialects.sqlite import insert
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -43,10 +41,11 @@ def get_connection():
     metadata = db.MetaData()
 
     connection = engine.connect()
-        
+
     try:
         ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    except db.exc.NoSuchTableError as nste:
+        ids = ids
+    except db.exc.NoSuchTableError:
         defaultitem = db.Table('keys', metadata,
                 db.Column('guid', db.String(25), primary_key=True),
                 db.Column('imdb', db.String(25), nullable=True),
@@ -58,6 +57,7 @@ def get_connection():
                 db.Column('type', db.String(25), nullable=False),
                 db.Column('complete', db.Boolean),
                 )
+        defaultitem = defaultitem
         metadata.create_all(engine)
 
     return engine, metadata, connection
@@ -66,7 +66,7 @@ def get_completed():
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
-    query = db.select(keys).where(keys.columns.complete == True)
+    query = db.select(keys).where(keys.columns.complete)
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
 
@@ -94,7 +94,7 @@ def get_count():
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
     count = len(ResultSet)
-    
+
     connection.close()
 
     return count
@@ -102,20 +102,20 @@ def get_count():
 def insert_record(payload):
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'], 
-                                    imdb=payload['imdb'], 
-                                    tmdb=payload['tmdb'], 
-                                    tvdb=payload['tvdb'], 
-                                    title=payload['title'], 
-                                    year=payload['year'], 
-                                    type=payload['type'], 
+    stmt = insert(keys).values(guid=payload['guid'],
+                                    imdb=payload['imdb'],
+                                    tmdb=payload['tmdb'],
+                                    tvdb=payload['tvdb'],
+                                    title=payload['title'],
+                                    year=payload['year'],
+                                    type=payload['type'],
                                     complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
         set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], year=payload['year'], type=payload['type'], complete=payload['complete'])
     )
 
-    result = connection.execute(do_update_stmt)
+    connection.execute(do_update_stmt)
 
     # for Sql
     # print(do_update_stmt.compile(compile_kwargs={"literal_binds": True}))
@@ -150,7 +150,7 @@ def get_diffs(payload):
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['year']= payload['year']
-    
+
     return diffs
 
 logging.basicConfig(
@@ -163,8 +163,8 @@ logging.basicConfig(
 if os.path.exists(".env"):
     load_dotenv()
 else:
-    logging.info(f"No environment [.env] file.  Exiting.")
-    print(f"No environment [.env] file.  Exiting.")
+    logging.info("No environment [.env] file.  Exiting.")
+    print("No environment [.env] file.  Exiting.")
     exit()
 
 change_records = None
@@ -197,11 +197,11 @@ with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
 
             for key in values.keys():
                 payload[key] = values[key]
-                        
+
             is_complete = payload['imdb'] is not None and payload['tmdb'] is not None and payload['tvdb'] is not None and payload['year'] is not None
-            
+
             payload['complete'] = is_complete
-            
+
             logging.info(f"{payload}")
 
             insert_record(payload)

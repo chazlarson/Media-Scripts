@@ -6,15 +6,11 @@ import platform
 import time
 from timeit import default_timer as timer
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
-import sys
-import textwrap
 from tmdbapis import TMDbAPIs
 
-from helpers import booler, get_size, get_all_from_library, get_ids, get_letter_dir, get_plex, redact, validate_filename, load_and_upgrade_env
-from logs import setup_logger, plogger, blogger, logger
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from logs import setup_logger, plogger
 
 TMDB_GENDER_NOT_SET = 0
 TMDB_GENDER_FEMALE = 1
@@ -230,7 +226,7 @@ for lib in LIB_ARRAY:
                                 track_gender(the_key, person.gender)
                             credit_count += 1
                             bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
-            except Exception as ex:
+            except Exception:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
             bar()
@@ -305,7 +301,7 @@ for lib in LIB_ARRAY:
                 if person[0] not in top_people.keys():
                     top_people[person[0]] = person[1]
 
-        print(f"--------------------------------")
+        print("--------------------------------")
         collection_string = "- default: actor\n  template_variables:\n    include:\n"
         print(f"Top {NUM_COLLECTIONS} people with genders accounted for")
         for person in sorted(top_people.items(), key=lambda x: x[1], reverse=True):
@@ -315,7 +311,7 @@ for lib in LIB_ARRAY:
                 collection_string = f"{collection_string}        - {bits[0]}\n"
                 count = count + 1
 
-        print(f"--------------------------------")
+        print("--------------------------------")
         
         print(f"Creating {NUM_COLLECTIONS} with:")
         print(f"Minimum {MIN_GENDER_FEMALE} female people if possible")
@@ -323,8 +319,8 @@ for lib in LIB_ARRAY:
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
         print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
         
-        print(f"--- YAML FOR Kometa config.yml ----")
+        print("--- YAML FOR Kometa config.yml ----")
         
         print(collection_string)
 
-        print(f"--- END YAML -------------------")
+        print("--- END YAML -------------------")

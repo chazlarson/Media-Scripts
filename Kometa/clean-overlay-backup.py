@@ -1,34 +1,14 @@
 #!/usr/bin/env python
 
-import json
 import os
 from os import listdir
 from os.path import isfile, join
-import pickle
-import platform
-import re
-import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
+from datetime import datetime
 from pathlib import Path
 from logs import setup_logger, plogger, blogger, logger
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
-from alive_progress import alive_bar, alive_it
-from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
-from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
+from alive_progress import alive_bar
+from helpers import (get_all_from_library, get_plex, load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -51,27 +31,18 @@ plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+PLEX_URL = os.getenv('PLEX_URL') if os.getenv('PLEX_URL') else os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')
+PLEX_TOKEN = os.getenv('PLEX_TOKEN') if os.getenv('PLEX_TOKEN') else os.getenv('PLEXAPI_AUTH_SERVER_TOKEN')
 
-# strip a trailing slash
-PLEX_URL = PLEX_URL.rstrip("/")
-
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+if PLEX_URL.endswith('/'):
+    PLEX_URL = PLEX_URL[:-1]
 
 if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+    plogger("You must specify PLEX URL in the .env file.", 'info', 'a')
     exit()
 
 if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+    plogger("You must specify PLEX TOKEN in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -80,7 +51,7 @@ LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 KOMETA_CONFIG_DIR = os.getenv("KOMETA_CONFIG_DIR")
 
 if KOMETA_CONFIG_DIR is None:
-    plogger(f"You must specify KOMETA_CONFIG_DIR in the .env file.", 'info', 'a')
+    plogger("You must specify KOMETA_CONFIG_DIR in the .env file.", 'info', 'a')
     exit()
 
 DELAY = int(os.getenv("DELAY"))
@@ -120,7 +91,7 @@ def get_SE_str(item):
     elif item.TYPE == "episode":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
     else:
-        ret_val = f""
+        ret_val = ""
 
     return ret_val
 
@@ -158,7 +129,7 @@ for lib in LIB_ARRAY:
 
             ID_ARRAY = []
             the_title = the_lib.title
-            
+
             plogger(f"Loading {the_lib.TYPE}s from {lib}  ...", 'info', 'a')
             item_count, items = get_all_from_library(the_lib, None, None)
 
@@ -223,10 +194,10 @@ for lib in LIB_ARRAY:
 
                 if len(backup_dict)> 0:
                     plogger(f"{len(backup_dict)} items could not be deleted", 'info', 'a')
-            
+
             plogger(f"{len(missing_dict)} items in Plex with no backup art", 'info', 'a')
-            plogger(f"These might be items added to Plex since the last overlay run", 'info', 'a')
-            plogger(f"They might be items that are not intended to have overlays", 'info', 'a')
+            plogger("These might be items added to Plex since the last overlay run", 'info', 'a')
+            plogger("They might be items that are not intended to have overlays", 'info', 'a')
 
             progress_str = "COMPLETE"
             logger(progress_str, 'info', 'a')
@@ -238,4 +209,4 @@ for lib in LIB_ARRAY:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')
 
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')

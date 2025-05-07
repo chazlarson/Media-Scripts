@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
 import time
@@ -10,12 +8,12 @@ import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
 from requests import ReadTimeout
 from helpers import get_plex, load_and_upgrade_env, get_all_from_library, booler
-from alive_progress import alive_bar, alive_it
+from alive_progress import alive_bar
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger, logger
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # current dateTime
 now = datetime.now()
@@ -98,7 +96,7 @@ for lib in LIB_ARRAY:
                     logger(progress_str, 'info', 'a')
 
                     item.refresh()
-                    
+
                     time.sleep(DELAY)
                     progress_str = f"{item.title} - DONE"
                     progress(item_count, item_total, progress_str)

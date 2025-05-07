@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from ruamel import yaml
 import os
-from pathlib import Path, PurePath
-from dotenv import load_dotenv
+from pathlib import Path
 import time
 from tabulate import tabulate
 from helpers import get_plex, load_and_upgrade_env
 
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -57,6 +53,6 @@ with alive_bar(item_total, dual_line=True, title='Library list - Plex') as bar:
 
         # Wait between items in case hammering the Plex server turns out badly.
         time.sleep(DELAY)
-    
+
 print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 

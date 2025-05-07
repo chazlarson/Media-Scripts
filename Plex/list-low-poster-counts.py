@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 from logs import setup_logger, plogger, logger
 
-import piexif.helper
 from alive_progress import alive_bar
 from helpers import (get_all_from_library, get_plex, load_and_upgrade_env)
 
@@ -160,4 +159,4 @@ for lib in LIB_ARRAY:
     else:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')

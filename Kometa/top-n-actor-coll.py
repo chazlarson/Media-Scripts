@@ -94,7 +94,7 @@ for lib in lib_array:
                     if actor.known_for_department == "Acting":
                         tmpDict[f"{actor.id}-{actor.name}"] = 1
             actors.update(tmpDict)
-        except Exception as ex:
+        except Exception:
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")

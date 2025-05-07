@@ -1,13 +1,13 @@
-from alive_progress import alive_bar, alive_it
+from alive_progress import alive_bar
 from ruamel import yaml
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import platform
 import re
 from pathlib import Path
 from plexapi.utils import download
-from logs import setup_logger, plogger, blogger, logger
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
+from logs import setup_logger, plogger
+from helpers import (get_plex, load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -47,20 +47,12 @@ DELAY = int(os.getenv("DELAY"))
 if not DELAY:
     DELAY = 0
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+PLEX_URL = os.getenv('PLEX_URL') if os.getenv('PLEX_URL') else os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')
+PLEX_TOKEN = os.getenv('PLEX_TOKEN') if os.getenv('PLEX_TOKEN') else os.getenv('PLEXAPI_AUTH_SERVER_TOKEN')
 
 if PLEX_URL.endswith('/'):
     PLEX_URL = PLEX_URL[:-1]
 
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
 
 if LIBRARY_NAMES:
     lib_array = LIBRARY_NAMES.split(",")
@@ -178,7 +170,7 @@ for lib in lib_array:
                     open(metadatafile_path, "w", encoding="utf-8"))
             else:
                 print(f"{lib} has no collections to export")
-    except Exception as ex:
+    except Exception:
         print(f"error loading library: {lib}")
         print(f"This server has: {plex.library.sections()}")
 

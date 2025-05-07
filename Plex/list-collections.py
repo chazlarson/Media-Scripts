@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 import logging
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from ruamel import yaml
 import os
-from pathlib import Path, PurePath
-from dotenv import load_dotenv
+from pathlib import Path
 import time
 from helpers import get_plex, load_and_upgrade_env
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 SCRIPT_NAME = Path(__file__).stem
 

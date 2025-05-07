@@ -1,25 +1,17 @@
 #!/usr/bin/env python
-from plexapi.exceptions import Unauthorized
-from logs import setup_logger, plogger, blogger, logger
 
 from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
-import os
-from dotenv import load_dotenv, set_key, unset_key
-
-from timeit import default_timer as timer
-import time
+from datetime import datetime
 from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env, get_overlay_status
+from logs import setup_logger, plogger, blogger
 from pathlib import Path
+from timeit import default_timer as timer
+import os
 import random
+import time
 
 start = timer()
 
-import logging
-from pathlib import Path
-
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -30,7 +22,7 @@ SCRIPT_NAME = Path(__file__).stem
 
 # DONE 0.1.1 added a couple booler
 # DONE 0.1.2 Require a meaningful value for TARGET_LABELS
-# DONE 0.1.3 Batch remove labels 
+# DONE 0.1.3 Batch remove labels
 
 VERSION = "0.1.3"
 
@@ -49,7 +41,7 @@ LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
 
 if TARGET_LABELS == 'this label, that label':
-    print(f"TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
+    print("TARGET_LABELS in the .env file must be empty or have a meaningful value.", 'info', 'a')
     exit()
 
 TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
@@ -93,7 +85,7 @@ def sleep_for_a_while():
     sleeptime = DELAY
     if DELAY == 99:
         sleeptime = random.uniform(0, 1)
-    
+
     time.sleep(sleeptime)
 
 def get_log_title(item):
@@ -107,12 +99,12 @@ def get_log_title(item):
 def pick_poster(poster_list, fallback):
     the_poster = None
     if len(posters) > 0:
-        blogger(f"-> picking the first poster in the list", 'info', 'a', bar)
+        blogger("-> picking the first poster in the list", 'info', 'a', bar)
         the_poster = posters[0]
     else:
         if RESET_SEASONS_WITH_SERIES:
             the_poster = fallback
-            blogger(f"-> empty list, using fallback", 'info', 'a', bar)
+            blogger("-> empty list, using fallback", 'info', 'a', bar)
 
     return the_poster
 
@@ -122,7 +114,7 @@ def apply_poster(item, item_poster):
         if not DRY_RUN:
             item.setPoster(item_poster)
     else:
-        blogger(f"-> No poster; no action being taken", 'info', 'a', bar)
+        blogger("-> No poster; no action being taken", 'info', 'a', bar)
 
 
 def track_completion(id_array, status_file, item_id):
@@ -192,7 +184,7 @@ for lib in LIB_ARRAY:
                         blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                         showPoster = pick_poster(posters, None)
-                        
+
                         apply_poster(item, showPoster)
 
                         # Wait between items in case hammering the Plex server turns out badly.
@@ -203,7 +195,7 @@ for lib in LIB_ARRAY:
                             item.removeLabel(lbl, True)
 
                         track_completion(id_array, status_file, f"{item.ratingKey}")
-                        
+
                         if item.TYPE == "show":
                             if RESET_SEASONS:
                                 # get seasons
@@ -219,7 +211,7 @@ for lib in LIB_ARRAY:
                                         blogger(f"-> Plex has {len(posters)} posters for: {item_title}", 'info', 'a', bar)
 
                                         seasonPoster = pick_poster(posters, showPoster)
-                                        
+
                                         apply_poster(s, seasonPoster)
 
                                         # Wait between items in case hammering the Plex server turns out badly.

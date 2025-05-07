@@ -1,34 +1,13 @@
 #!/usr/bin/env python
-import json
 import os
-import pickle
-import platform
-import re
-import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tmdbapis import TMDbAPIs
 from logs import setup_logger, plogger, blogger, logger
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
-from alive_progress import alive_bar, alive_it
-from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex,
-                     get_size, redact, validate_filename, load_and_upgrade_env)
-from pathvalidate import ValidationError, validate_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from plexapi.video import Episode
+from alive_progress import alive_bar
+from helpers import (booler, get_all_from_library, get_ids, get_plex,
+                     load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -107,7 +86,7 @@ for lib in LIB_ARRAY:
             # continue
 
         lib_size = the_lib.totalViewSize()
-        
+
         if ADJUST_DATE_FUTURES_ONLY:
             TODAY_STR = now.strftime("%Y-%m-%d")
             item_count, items = get_all_from_library(the_lib, None, {"addedAt>>": TODAY_STR})
@@ -136,7 +115,7 @@ for lib in LIB_ARRAY:
                         for sub_item in sub_items:
                             try:
                                 imdbid, tmid, tvid = get_ids(sub_item.guids, None)
-                            
+
                                 if is_movie:
                                     tmdb_item = tmdb.movie(tmid)
                                     release_date = tmdb_item.release_date
@@ -149,13 +128,13 @@ for lib in LIB_ARRAY:
                                         imdbid, tmid, tvid = get_ids(parent_show.guids, None)
                                         season_num = sub_item.seasonNumber
                                         episode_num = sub_item.episodeNumber
-                            
+
                                         tmdb_item = tmdb.tv_episode(tmid, season_num, episode_num)
                                         release_date = tmdb_item.air_date
 
                                 added_date = item.addedAt
                                 orig_date = item.originallyAvailableAt
-                                
+
                                 if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
                                     try:
                                         delta = added_date - release_date
@@ -168,21 +147,21 @@ for lib in LIB_ARRAY:
                                         orig_too_far_apart = abs(delta.days) > 1
                                     except:
                                         orig_too_far_apart = orig_date is None and release_date is not None
-                                    
+
                                     if added_too_far_apart:
                                         try:
                                             item.addedAt = release_date
                                             blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
                                         except Exception as ex:
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
-            
+
                                     if orig_too_far_apart:
                                         try:
                                             item.originallyAvailableAt = release_date
                                             blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
                                         except Exception as ex:
                                             plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
-    
+
                                 else:
                                     blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
 
@@ -193,7 +172,7 @@ for lib in LIB_ARRAY:
                         plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
 
                     bar()
-                    
+
             plogger(f"Processed {items_processed} of {item_count}", 'info', 'a')
 
         progress_str = "COMPLETE"

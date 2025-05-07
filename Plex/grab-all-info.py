@@ -1,35 +1,18 @@
 #!/usr/bin/env python
-import json
 import logging
 import os
-import platform
-import re
-import sys
-import time
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
 import sqlalchemy as db
 from alive_progress import alive_bar
-from dotenv import load_dotenv
-from pathvalidate import ValidationError, validate_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
+
 from sqlalchemy.dialects.sqlite import insert
 
-from helpers import booler, get_all_from_library, get_ids, get_plex, validate_filename, load_and_upgrade_env
+from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -78,10 +61,11 @@ def get_connection():
     metadata = db.MetaData()
 
     connection = engine.connect()
-        
+
     try:
         ids = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    except db.exc.NoSuchTableError as nste:
+        ids = ids
+    except db.exc.NoSuchTableError:
         defaultitem = db.Table('keys', metadata,
                 db.Column('guid', db.String(25), primary_key=True),
                 db.Column('imdb', db.String(25), nullable=True),
@@ -93,6 +77,7 @@ def get_connection():
                 db.Column('type', db.String(25), nullable=False),
                 db.Column('complete', db.Boolean),
                 )
+        defaultitem = defaultitem
         metadata.create_all(engine)
 
     return engine, metadata, connection
@@ -101,7 +86,7 @@ def get_completed():
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
 
-    query = db.select(keys).where(keys.columns.complete == True)
+    query = db.select(keys).where(keys.columns.complete)
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
 
@@ -117,7 +102,7 @@ def get_count():
     ResultProxy = connection.execute(query)
     ResultSet = ResultProxy.fetchall()
     count = len(ResultSet)
-    
+
     connection.close()
 
     return count
@@ -125,20 +110,20 @@ def get_count():
 def insert_record(payload):
     engine, metadata, connection = get_connection()
     keys = db.Table('keys', metadata, autoload=True, autoload_with=engine)
-    stmt = insert(keys).values(guid=payload['guid'], 
-                                    imdb=payload['imdb'], 
-                                    tmdb=payload['tmdb'], 
-                                    tvdb=payload['tvdb'], 
-                                    title=payload['title'], 
-                                    year=payload['year'], 
-                                    type=payload['type'], 
+    stmt = insert(keys).values(guid=payload['guid'],
+                                    imdb=payload['imdb'],
+                                    tmdb=payload['tmdb'],
+                                    tvdb=payload['tvdb'],
+                                    title=payload['title'],
+                                    year=payload['year'],
+                                    type=payload['type'],
                                     complete=payload['complete'])
     do_update_stmt = stmt.on_conflict_do_update(
         index_elements=['guid'],
         set_=dict(imdb=payload['imdb'], tmdb=payload['tmdb'], tvdb=payload['tvdb'], title=payload['title'], year=payload['year'], type=payload['type'], complete=payload['complete'])
     )
 
-    result = connection.execute(do_update_stmt)
+    connection.execute(do_update_stmt)
 
     connection.close()
 
@@ -170,7 +155,7 @@ def get_diffs(payload):
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['year']= payload['year']
-    
+
     return diffs
 
 plex = get_plex()
@@ -188,13 +173,13 @@ def get_IDs(type, item):
     if bits[0] == 'plex:':
         try:
             guid = bits[3]
-        
+
             if guid not in COMPLETE_ARRAY:
                 try:
                     if item.type != 'collection':
                         logging.info("Getting IDs")
                         imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
-                        complete = imdbid is not None and tmid is not None and tvid is not None 
+                        complete = imdbid is not None and tmid is not None and tvid is not None
                         payload = {
                             'guid': guid,
                             'imdb': imdbid,
@@ -207,7 +192,7 @@ def get_IDs(type, item):
                         }
 
                         diffs = get_diffs(payload)
-                            
+
                         if diffs['new'] or diffs['updated']:
                             # record change
                             if diffs['new']:
@@ -222,13 +207,13 @@ def get_IDs(type, item):
 
                             insert_record(payload)
                 except Exception as ex:
-                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")  
+                    print(f"{item.ratingKey}- {item.title} - Exception: {ex}")
                     logging.info(f"EXCEPTION: {item.ratingKey}- {item.title} - Exception: {ex}")
             else:
                 logging.info(f"{guid} already complete")
-        except Exception as ex:
+        except:
             logging.info(f"No guid: {bits}")
-        
+
 COMPLETE_ARRAY = []
 
 if LIBRARY_NAMES == 'ALL_LIBRARIES':

@@ -1,19 +1,14 @@
 #!/usr/bin/env python
-import logging
 import os
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 
-import piexif.helper
 from alive_progress import alive_bar
-from dotenv import load_dotenv
 
-from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger, logger
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -60,7 +55,7 @@ def reverse_genres(item):
 
     for genre in genres:
         reversed_list.insert(0, genre)
-    
+
     print(f"{item.title} reversed: {reversed_list}")
 
     for genre in reversed_list:

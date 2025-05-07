@@ -1,18 +1,16 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
 import os
 import json
-from dotenv import load_dotenv
 from alive_progress import alive_bar
 
 import sys
 import textwrap
 
-from helpers import get_all_from_library, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
+from helpers import get_plex, get_xml_watched, get_xml_libraries, load_and_upgrade_env
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -62,7 +60,7 @@ LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 try:
     lib_map = json.loads(LIBRARY_MAP)
 except:
-    plogger(f"LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+    plogger("LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
     lib_map = json.loads("{}")
 
 
@@ -106,7 +104,7 @@ def process_section(username, section):
     print(f"------------ {section['title']} ------------")
     items = get_xml_watched(PLEX_URL, PLEX_TOKEN, section['key'], section['type'])
     if len(items) > 0:
-        with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+        with alive_bar(len(items), dual_line=True, title="Saving status") as bar:
             for video in items:
                 status_text = get_data_line(username, section['type'], section['title'], video)
                 file_string = (f"{file_string}{status_text}{os.linesep}")
@@ -130,7 +128,7 @@ DO_NOTHING = False
 print(f"------------ {account.username} ------------")
 try:
     # plex_sections = plex.library.sections()
-    print(f"------------ getting libraries -------------")
+    print("------------ getting libraries -------------")
     plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
 
     if plex_sections is not None:
@@ -146,7 +144,7 @@ try:
                     file_string = file_string + f"{file_line}{os.linesep}"
     else:
         print(f"Could not retrieve libraries for {account.username}")
-        
+
 except Exception as ex:
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
@@ -160,7 +158,7 @@ for plex_user in all_users:
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
         PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
-        print(f"------------ getting libraries -------------")
+        print("------------ getting libraries -------------")
         plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
         if plex_sections is not None:
             for plex_section in plex_sections['MediaContainer']['Directory']:

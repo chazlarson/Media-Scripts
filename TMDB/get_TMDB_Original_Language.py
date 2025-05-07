@@ -256,7 +256,7 @@ def getTMDBItem(theItem):
     try:
         isShow = theItem.TYPE == "show"
     except:
-        isShow = not ("movie" in theItem.Part_File_Combined)
+        isShow = ("movie" not in theItem.Part_File_Combined)
 
     tmdbItem = None
     try:

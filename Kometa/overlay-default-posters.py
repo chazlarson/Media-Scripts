@@ -1,7 +1,7 @@
 from alive_progress import alive_bar
 import pathlib
 from pathlib import Path
-from git.repo.base import Repo, GitCommandError
+from git.repo.base import Repo
 from PIL import Image
 
 IMAGE_REPO = "https://github.com/Kometa-Team/Default-Images"
@@ -16,7 +16,7 @@ theTargetPath = Path(OVERLAID_FOLDER)
 
 if not theRepoPath.exists():
     print(f"Cloning {IMAGE_REPO}")
-    print(f"This may take some time with no display")
+    print("This may take some time with no display")
     theRepo = Repo.clone_from(IMAGE_REPO, LOCAL_FOLDER)
 else:
     print(f"Fetch/Pull on {LOCAL_FOLDER}")

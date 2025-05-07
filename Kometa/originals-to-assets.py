@@ -43,27 +43,18 @@ if load_and_upgrade_env(env_file_path) < 0:
 
 ID_FILES = True
 
-target_url_var = 'PLEX_URL'
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
-    PLEX_URL = os.getenv(target_url_var)
+PLEX_URL = os.getenv('PLEX_URL') if os.getenv('PLEX_URL') else os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')
+PLEX_TOKEN = os.getenv('PLEX_TOKEN') if os.getenv('PLEX_TOKEN') else os.getenv('PLEXAPI_AUTH_SERVER_TOKEN')
 
-# strip a trailing slash
-PLEX_URL = PLEX_URL.rstrip("/")
-
-target_token_var = 'PLEX_TOKEN'
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
-    PLEX_TOKEN = os.getenv(target_token_var)
+if PLEX_URL.endswith('/'):
+    PLEX_URL = PLEX_URL[:-1]
 
 if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+    plogger("You must specify PLEX URL in the .env file.", 'info', 'a')
     exit()
 
 if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+    plogger("You must specify PLEX TOKEN in the .env file.", 'info', 'a')
     exit()
 
 LIBRARY_NAME = os.getenv("LIBRARY_NAME")
@@ -123,12 +114,12 @@ def get_SE_str(item):
     elif item.TYPE == "episode":
         ret_val = f"S{str(item.seasonNumber).zfill(2)}E{str(item.episodeNumber).zfill(2)}"
     else:
-        ret_val = f""
+        ret_val = ""
 
     superchat(f"returning {ret_val}", 'info', 'a')
     return ret_val
 
-def find_original(library_title, the_key): 
+def find_original(library_title, the_key):
     original_file = None
     # KOMETA_CONFIG_DIR=/opt/kometa/Kometa/config
     original_path = Path(KOMETA_CONFIG_DIR, 'overlays', f"{library_title} Original Posters")
@@ -159,7 +150,7 @@ def target_asset(item):
         asset_name = target_path.name
         superchat(f"Show asset name: {asset_name}", 'info', 'a')
         ASSET_DIR_LOOKUP[item.ratingKey] = asset_name
- 
+
     if item.TYPE == 'season':
         item_season = item.seasonNumber
         superchat(f"item_season: {item_season}", 'info', 'a')
@@ -192,7 +183,7 @@ def target_asset(item):
     superchat(f"Target file: {target_file}", 'info', 'a')
 
     return target_file
-    
+
 for lib in LIB_ARRAY:
     if lib in ALL_LIB_NAMES:
         try:
@@ -214,13 +205,13 @@ for lib in LIB_ARRAY:
             plogger(f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}", 'info', 'a')
 
             if the_lib.TYPE == "show":
-                plogger(f"Loading seasons ...", 'info', 'a')
+                plogger("Loading seasons ...", 'info', 'a')
                 season_count, seasons = get_all_from_library(the_lib, 'season', None)
                 plogger(f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}", 'info', 'a')
                 items.extend(seasons)
                 superchat(f"{len(items)} items to examine", 'info', 'a')
 
-                plogger(f"Loading episodes ...", 'info', 'a')
+                plogger("Loading episodes ...", 'info', 'a')
                 episode_count, episodes = get_all_from_library(the_lib, 'episode', None)
                 plogger(f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}", 'info', 'a')
                 items.extend(episodes)
@@ -240,7 +231,7 @@ for lib in LIB_ARRAY:
                             # get rating key
                             the_key = item.ratingKey
                             superchat(f"{item.title} key: {the_key}", 'info', 'a')
-                            
+
                             # find image in originals as Path
                             original_file = find_original(the_lib.title, the_key)
                             superchat(f"{item.title} original file: {original_file}", 'info', 'a')
@@ -281,4 +272,4 @@ for lib in LIB_ARRAY:
     else:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')

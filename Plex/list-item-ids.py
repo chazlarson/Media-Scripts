@@ -1,33 +1,12 @@
 #!/usr/bin/env python
-import json
 import os
-import pickle
 import platform
-import re
-import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
+from datetime import datetime
 from pathlib import Path
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger, logger
 
-import filetype
-import piexif
-import piexif.helper
-import plexapi
-import requests
-from alive_progress import alive_bar, alive_it
-from dotenv import load_dotenv
-from helpers import (booler, get_all_from_library, get_ids, get_letter_dir, get_plex, has_overlay, get_size, redact, validate_filename, load_and_upgrade_env)
-from pathvalidate import ValidationError, is_valid_filename, sanitize_filename
-from plexapi import utils
-from plexapi.exceptions import Unauthorized
-from plexapi.server import PlexServer
-from plexapi.utils import download
-
-from database import add_last_run, get_last_run, add_url, check_url, add_key, check_key
+from alive_progress import alive_bar
+from helpers import (booler, get_all_from_library, get_ids, get_plex, load_and_upgrade_env)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -190,7 +169,7 @@ for lib in LIB_ARRAY:
                             bar()
 
             else:
-                plogger(f"Skipping collection members ...", 'info', 'a')
+                plogger("Skipping collection members ...", 'info', 'a')
 
             if not ONLY_COLLECTION_MEMBERS:
 
@@ -249,4 +228,4 @@ for lib in LIB_ARRAY:
     else:
         logger(f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}", 'info', 'a')
 
-plogger(f"Complete!", 'info', 'a')
+plogger("Complete!", 'info', 'a')

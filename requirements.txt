@@ -22,3 +22,5 @@ Flask
 GitPython
 num2words
 retrying
+
+ruff

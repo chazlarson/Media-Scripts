@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import logging
-from plexapi.server import PlexServer
 from plexapi.utils import download
-from plexapi.exceptions import Unauthorized
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
+import logging
+from pathlib import Path
+from datetime import datetime
 from tmdbapis import TMDbAPIs
 from pathlib import Path
 from timeit import default_timer as timer
@@ -19,9 +19,6 @@ from alive_progress import alive_bar
 
 start = timer()
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 
@@ -138,10 +135,10 @@ size_str = "original"
 
 def get_movie_match(item):
     imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
-    
+
     mapping_id = imdb_id if imdb_id is not None else tmdb_id
     tmpDict = {'mapping_id':mapping_id}
-    
+
     match_title = item.title
     match_year = item.title
 
@@ -164,7 +161,7 @@ def get_show_match(item):
 
     mapping_id = imdb_id if imdb_id is not None else tvdb_id
     tmpDict = {'mapping_id':mapping_id}
-    
+
     match_title = item.title
     match_year = item.title
 
@@ -210,7 +207,7 @@ def getTheme(item):
         thm_path = f"{base_path}/NO-MATCH-{item.ratingKey}/"
 
     Path(thm_path).mkdir(parents=True, exist_ok=True)
-    
+
     mp3Path = doDownload(item.themeUrl, 'theme.mp3', thm_path)
 
     # themeUrl ='http://192.168.1.11:32400/library/metadata/1262/theme/1723823327?X-Plex-Token=3rCte1jyCczPrzsAokwR'
@@ -232,7 +229,7 @@ def getPoster(item):
         img_path = f"{base_path}/NO-MATCH-{item.ratingKey}/"
 
     Path(img_path).mkdir(parents=True, exist_ok=True)
-    
+
     imgPath = doDownload(item.posterUrl, 'poster.jpg', img_path)
 
     # posterUrl = 'http://192.168.1.11:32400/library/metadata/1262/thumb/1723823327?X-Plex-Token=3rCte1jyCczPrzsAokwR'
@@ -528,7 +525,7 @@ for lib in LIB_ARRAY:
                             itemDict['seasons'] = all_seasons_dict
                         else:
                             itemDict = get_common_video_info(item)
-                        
+
                         # get image data
 
                         if itemDict is not None:

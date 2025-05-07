@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from plexapi.server import PlexServer
-import os, requests
+import os
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -80,10 +81,10 @@ def download():
     except:
         season_rating_key = None
 
-    try:
-        episode_rating_key = int(request.form['episode_rating_key'])
-    except:
-        episode_rating_key = None
+    # try:
+    #     episode_rating_key = int(request.form['episode_rating_key'])
+    # except:
+    #     episode_rating_key = None
     section_key = request.form['section_key']
     art_type = request.form['art_type']
     img_key = request.form['img_key']
@@ -94,7 +95,7 @@ def download():
 
     item = plex.fetchItem(rating_key)
     season_item = None if not season_rating_key else plex.fetchItem(season_rating_key)
-    episode_item = None if not episode_rating_key else plex.fetchItem(episode_rating_key)
+    # episode_item = None if not episode_rating_key else plex.fetchItem(episode_rating_key)
 
     try:
         asset_name = None

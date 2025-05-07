@@ -4,11 +4,9 @@ import os
 import re
 import sys
 import textwrap
-from dotenv import load_dotenv
-from plexapi.server import PlexServer
-from helpers import get_all_from_library, get_plex, load_and_upgrade_env
+from helpers import get_plex, load_and_upgrade_env
 
-from logs import setup_logger, plogger, blogger, logger
+from logs import setup_logger, plogger
 
 from pathlib import Path
 
@@ -44,7 +42,7 @@ LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 try:
     lib_map = json.loads(LIBRARY_MAP)
 except:
-    plogger(f"LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+    plogger("LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
     lib_map = json.loads("{}")
 
 def progress(count, total, status=""):

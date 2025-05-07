@@ -1,20 +1,11 @@
 #!/usr/bin/env python
-from plexapi.exceptions import Unauthorized
 from logs import setup_logger, plogger
-
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
-import os
 
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
 from pathlib import Path
 import random
 
-from pathlib import Path
-
 from datetime import datetime
-
-import random
 
 # current dateTime
 now = datetime.now()

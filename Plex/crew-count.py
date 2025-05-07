@@ -63,7 +63,7 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
 
-print(f"connecting to Plex...")
+print("connecting to Plex...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
@@ -94,7 +94,7 @@ for lib in lib_array:
 
             individuals.update(tmpDict)
             jobs.update(jobDict)
-        except Exception as ex:
+        except Exception:
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")

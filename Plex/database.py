@@ -1,4 +1,3 @@
-import datetime
 import sqlite3
 
 def get_connection(db_name='mediascripts.sqlite'):
@@ -12,8 +11,8 @@ def get_connection(db_name='mediascripts.sqlite'):
 # Track artwork download runs
 def last_artwork_run_table_create_query():
     return '''CREATE TABLE IF NOT EXISTS last_run_by_library (
-                                        uuid TEXT NOT NULL, 
-                                        level TEXT NOT NULL, 
+                                        uuid TEXT NOT NULL,
+                                        level TEXT NOT NULL,
                                         name TEXT,
                                         last_run_date TIMESTAMP,
                                         PRIMARY KEY (uuid, level)
@@ -32,14 +31,14 @@ def add_last_run(uuid, name, level, last_run_date):
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'last_run_by_library'
-                          ('uuid', 'level', 'name', 'last_run_date') 
+                          ('uuid', 'level', 'name', 'last_run_date')
                           VALUES (?, ?, ?, ?);"""
 
         data_tuple = (uuid, level, name, last_run_date)
         cursor.execute(sqlite_insert_with_param, data_tuple)
 
         sqlite_update_with_param = """UPDATE 'last_run_by_library'
-                          SET 'last_run_date' = ? 
+                          SET 'last_run_date' = ?
                           WHERE uuid == ? AND
                           name == ? AND
                           level == ?;"""
@@ -77,7 +76,7 @@ def get_last_run(uuid, level):
 
         for row in records:
             last_run_date = row[0]
-    
+
         cursor.close()
 
     except sqlite3.Error as error:
@@ -112,8 +111,8 @@ def reset_last_run():
 # Track media details
 def media_details_table_create_query():
     return '''CREATE TABLE IF NOT EXISTS media_details (
-                                        path TEXT PRIMARY KEY, 
-                                        title TEXT NOT NULL, 
+                                        path TEXT PRIMARY KEY,
+                                        title TEXT NOT NULL,
                                         type TEXT NOT NULL,
                                         height INTEGER,
                                         width INTEGER,
@@ -134,7 +133,7 @@ def add_media_details(path, title, type, height, width, aspect_ratio, aspect_rat
         cursor.execute(sqlite_create_table_query)
 
         sqlite_insert_with_param = """INSERT OR IGNORE INTO 'media_details'
-                          ('path','title','type','height','width','aspect_ratio','aspect_ratio_calc') 
+                          ('path','title','type','height','width','aspect_ratio','aspect_ratio_calc')
                           VALUES (?, ?, ?, ?, ?, ?, ?);"""
 
         data_tuple = (path, title, type, height, width, aspect_ratio, aspect_ratio_calc)
@@ -229,7 +228,7 @@ def check_url(url, uuid):
 
         for row in records:
             known_url = True
-    
+
         cursor.close()
 
     except sqlite3.Error as error:
@@ -321,7 +320,7 @@ def check_key(rating_key, uuid, tracking):
 
             for row in records:
                 known_key = True
-        
+
             cursor.close()
 
         except sqlite3.Error as error:
@@ -413,7 +412,7 @@ def check_rematch_key(rating_key, uuid, tracking):
 
             for row in records:
                 known_key = True
-        
+
             cursor.close()
 
         except sqlite3.Error as error:
@@ -464,7 +463,7 @@ def add_art_reset_key(rating_key, uuid, source, tracking):
                                                             sqlite3.PARSE_COLNAMES)
             cursor = sqliteConnection.cursor()
 
-            sqlite_create_table_query = reset_tracking_table_create_query()
+            sqlite_create_table_query = art_reset_tracking_table_create_query()
 
             cursor = sqliteConnection.cursor()
             cursor.execute(sqlite_create_table_query)
@@ -506,7 +505,7 @@ def check_art_reset_key(rating_key, uuid, source, tracking):
 
             for row in records:
                 known_key = True
-        
+
             cursor.close()
 
         except sqlite3.Error as error:
@@ -570,7 +569,7 @@ def get_completed():
         sqlite_select_query = """SELECT * from keys where complete = ?"""
         cursor.execute(sqlite_select_query, (True, ))
         records = cursor.fetchall()
-    
+
         cursor.close()
 
     except sqlite3.Error as error:
@@ -584,7 +583,7 @@ def get_completed():
 def get_count():
     method_name = "get_count"
     record_count = 0
-    
+
     try:
         sqliteConnection = get_connection(db_name='ids.sqlite')
 
@@ -702,7 +701,7 @@ def update_record(payload):
             sqliteConnection.close()
 
 def get_diffs(payload):
-    
+
     diffs = {
         'new': False,
         'updated': False,
@@ -727,6 +726,6 @@ def get_diffs(payload):
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['tmdb']= payload['tmdb']
         diffs['changes']['year']= payload['year']
-    
+
     return diffs
 

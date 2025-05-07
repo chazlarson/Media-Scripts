@@ -1,13 +1,10 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
 import os
-from dotenv import load_dotenv
 from helpers import get_plex, load_and_upgrade_env
 
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 # current dateTime
 now = datetime.now()
 
@@ -50,7 +47,7 @@ for plex_user in all_users:
     user_acct = account.user(plex_user.title)
     user_idx += 1
     try:
-        user_plex = get_plex(PLEX_URL, user_acct.get_token(PMI))
+        user_plex = get_plex(user_acct.get_token(PMI))
 
         playlists = user_plex.playlists()
         if len(playlists) > 0:
@@ -69,5 +66,5 @@ for plex_user in all_users:
                             f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
                         )
                     print(f"{typestr} - {output}")
-    except Exception as ex:
+    except:
         handle_this_silently = "please"
