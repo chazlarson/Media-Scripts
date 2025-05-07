@@ -28,9 +28,9 @@ env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -42,8 +42,13 @@ LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 try:
     lib_map = json.loads(LIBRARY_MAP)
 except:
-    plogger("LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+    plogger(
+        "LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.",
+        "info",
+        "a",
+    )
     lib_map = json.loads("{}")
+
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -136,7 +141,6 @@ with open("status.txt") as fp:
                 connected_plex_user = None
                 print(f"---- NOT FOUND: {plex_user} ------------")
 
-
         if plex is not None:
             if plex_library != connected_plex_library:
                 try:
@@ -157,7 +161,6 @@ with open("status.txt") as fp:
                 connected_plex_library = None
 
         if connected_plex_library is not None:
-
             if plex_type == "show":
                 plex_target = f"{plex_series} {plex_ep}"
                 sys.stdout.write(

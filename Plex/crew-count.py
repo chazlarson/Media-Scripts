@@ -63,6 +63,7 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
 
+
 print("connecting to Plex...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
@@ -101,7 +102,9 @@ for lib in lib_array:
 
     FOUND_COUNT = len(individuals.items())
     count = 0
-    print(f"Top {FOUND_COUNT if FOUND_COUNT < CREW_COUNT else CREW_COUNT} {TARGET_JOB} in [{lib}]:")
+    print(
+        f"Top {FOUND_COUNT if FOUND_COUNT < CREW_COUNT else CREW_COUNT} {TARGET_JOB} in [{lib}]:"
+    )
     for individual in sorted(individuals.items(), key=lambda x: x[1], reverse=True):
         if count < CREW_COUNT:
             print("{}\t{}".format(individual[1], individual[0]))

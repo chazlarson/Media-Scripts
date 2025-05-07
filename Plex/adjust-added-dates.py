@@ -6,8 +6,13 @@ from tmdbapis import TMDbAPIs
 from logs import setup_logger, plogger, blogger, logger
 
 from alive_progress import alive_bar
-from helpers import (booler, get_all_from_library, get_ids, get_plex,
-                     load_and_upgrade_env)
+from helpers import (
+    booler,
+    get_all_from_library,
+    get_ids,
+    get_plex,
+    load_and_upgrade_env,
+)
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -26,24 +31,24 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
 plex = get_plex()
 
-logger("connection success", 'info', 'a')
+logger("connection success", "info", "a")
 
 ADJUST_DATE_FUTURES_ONLY = booler(os.getenv("ADJUST_DATE_FUTURES_ONLY"))
-plogger(f"ADJUST_DATE_FUTURES_ONLY: {ADJUST_DATE_FUTURES_ONLY}", 'info', 'a')
+plogger(f"ADJUST_DATE_FUTURES_ONLY: {ADJUST_DATE_FUTURES_ONLY}", "info", "a")
 
 ADJUST_DATE_EPOCH_ONLY = booler(os.getenv("ADJUST_DATE_EPOCH_ONLY"))
-plogger(f"ADJUST_DATE_EPOCH_ONLY: {ADJUST_DATE_EPOCH_ONLY}", 'info', 'a')
+plogger(f"ADJUST_DATE_EPOCH_ONLY: {ADJUST_DATE_EPOCH_ONLY}", "info", "a")
 
-EPOCH_DATE=datetime(1970,1,1,0,0,0)
+EPOCH_DATE = datetime(1970, 1, 1, 0, 0, 0)
 
 TMDB_KEY = os.getenv("TMDB_KEY")
 
@@ -57,14 +62,15 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-if LIBRARY_NAMES == 'ALL_LIBRARIES':
+if LIBRARY_NAMES == "ALL_LIBRARIES":
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type == "movie" or lib.type == "show":
             LIB_ARRAY.append(lib.title.strip())
 
-plogger(f"Acting on libraries: {LIB_ARRAY}", 'info', 'a')
+plogger(f"Acting on libraries: {LIB_ARRAY}", "info", "a")
+
 
 def is_epoch(the_date):
     ret_val = False
@@ -74,12 +80,13 @@ def is_epoch(the_date):
 
     return ret_val
 
+
 for lib in LIB_ARRAY:
     try:
-        plogger(f"Loading {lib} ...", 'info', 'a')
+        plogger(f"Loading {lib} ...", "info", "a")
         the_lib = plex.library.section(lib)
-        is_movie = the_lib.type == 'movie'
-        is_show = the_lib.type == 'show'
+        is_movie = the_lib.type == "movie"
+        is_show = the_lib.type == "show"
 
         if not is_movie:
             print("the script hasn't been tested with non-movie libraries, skipping.")
@@ -89,18 +96,22 @@ for lib in LIB_ARRAY:
 
         if ADJUST_DATE_FUTURES_ONLY:
             TODAY_STR = now.strftime("%Y-%m-%d")
-            item_count, items = get_all_from_library(the_lib, None, {"addedAt>>": TODAY_STR})
+            item_count, items = get_all_from_library(
+                the_lib, None, {"addedAt>>": TODAY_STR}
+            )
         else:
             item_count, items = get_all_from_library(the_lib)
 
         if item_count > 0:
-            logger(f"looping over {item_count} items...", 'info', 'a')
+            logger(f"looping over {item_count} items...", "info", "a")
             items_processed = 0
 
             plex_links = []
             external_links = []
 
-            with alive_bar(item_count, dual_line=True, title=f"Adjust added dates {the_lib.title}") as bar:
+            with alive_bar(
+                item_count, dual_line=True, title=f"Adjust added dates {the_lib.title}"
+            ) as bar:
                 for item in items:
                     try:
                         items_processed += 1
@@ -120,64 +131,103 @@ for lib in LIB_ARRAY:
                                     tmdb_item = tmdb.movie(tmid)
                                     release_date = tmdb_item.release_date
                                 else:
-                                    if sub_item.type == 'show':
+                                    if sub_item.type == "show":
                                         tmdb_item = tmdb.tv_show(tmid)
                                         release_date = tmdb_item.first_air_date
                                     else:
                                         parent_show = sub_item.show()
-                                        imdbid, tmid, tvid = get_ids(parent_show.guids, None)
+                                        imdbid, tmid, tvid = get_ids(
+                                            parent_show.guids, None
+                                        )
                                         season_num = sub_item.seasonNumber
                                         episode_num = sub_item.episodeNumber
 
-                                        tmdb_item = tmdb.tv_episode(tmid, season_num, episode_num)
+                                        tmdb_item = tmdb.tv_episode(
+                                            tmid, season_num, episode_num
+                                        )
                                         release_date = tmdb_item.air_date
 
                                 added_date = item.addedAt
                                 orig_date = item.originallyAvailableAt
 
-                                if not ADJUST_DATE_EPOCH_ONLY or (ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)):
+                                if not ADJUST_DATE_EPOCH_ONLY or (
+                                    ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)
+                                ):
                                     try:
                                         delta = added_date - release_date
                                         added_too_far_apart = abs(delta.days) > 1
                                     except:
-                                        added_too_far_apart = added_date is None and release_date is not None
+                                        added_too_far_apart = (
+                                            added_date is None
+                                            and release_date is not None
+                                        )
 
                                     try:
                                         delta = orig_date - release_date
                                         orig_too_far_apart = abs(delta.days) > 1
                                     except:
-                                        orig_too_far_apart = orig_date is None and release_date is not None
+                                        orig_too_far_apart = (
+                                            orig_date is None
+                                            and release_date is not None
+                                        )
 
                                     if added_too_far_apart:
                                         try:
                                             item.addedAt = release_date
-                                            blogger(f"Set {sub_item.title} added at to {release_date}", 'info', 'a', bar)
+                                            blogger(
+                                                f"Set {sub_item.title} added at to {release_date}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
                                         except Exception as ex:
-                                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                                            plogger(
+                                                f"Problem processing {item.title}; {ex}",
+                                                "info",
+                                                "a",
+                                            )
 
                                     if orig_too_far_apart:
                                         try:
                                             item.originallyAvailableAt = release_date
-                                            blogger(f"Set {sub_item.title} originally available at to {release_date}", 'info', 'a', bar)
+                                            blogger(
+                                                f"Set {sub_item.title} originally available at to {release_date}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
                                         except Exception as ex:
-                                            plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                                            plogger(
+                                                f"Problem processing {item.title}; {ex}",
+                                                "info",
+                                                "a",
+                                            )
 
                                 else:
-                                    blogger(f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}", 'info', 'a', bar)
+                                    blogger(
+                                        f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}",
+                                        "info",
+                                        "a",
+                                        bar,
+                                    )
 
                             except Exception as ex:
-                                plogger(f"Problem processing sub_item {item.title}; {ex}", 'info', 'a')
+                                plogger(
+                                    f"Problem processing sub_item {item.title}; {ex}",
+                                    "info",
+                                    "a",
+                                )
 
                     except Exception as ex:
-                        plogger(f"Problem processing {item.title}; {ex}", 'info', 'a')
+                        plogger(f"Problem processing {item.title}; {ex}", "info", "a")
 
                     bar()
 
-            plogger(f"Processed {items_processed} of {item_count}", 'info', 'a')
+            plogger(f"Processed {items_processed} of {item_count}", "info", "a")
 
         progress_str = "COMPLETE"
-        logger(progress_str, 'info', 'a')
+        logger(progress_str, "info", "a")
 
     except Exception as ex:
         progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, 'info', 'a')
+        plogger(progress_str, "info", "a")

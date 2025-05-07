@@ -29,7 +29,7 @@ items = []
 people_file = Path(people_name_file)
 
 if people_file.is_file():
-    with open(people_name_file, encoding='utf-8') as fp:
+    with open(people_name_file, encoding="utf-8") as fp:
         for line in fp:
             items.append(line.strip())
 
@@ -37,7 +37,6 @@ idx = 1
 
 
 def save_image(person, idx, UPPER):
-
     file_root = f"{person.name}-{person.id}"
 
     if person.profile_url is not None:

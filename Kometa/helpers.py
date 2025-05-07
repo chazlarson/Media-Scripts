@@ -10,30 +10,43 @@ from dotenv import load_dotenv, set_key, unset_key
 import shutil
 from PIL import Image
 
+
 def has_overlay(image_path):
     kometa_overlay = False
     tcm_overlay = False
 
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
-        kometa_overlay = exif_tags is not None and 0x04bc in exif_tags and exif_tags[0x04bc] == "overlay"
-        tcm_overlay = exif_tags is not None and 0x4242 in exif_tags and exif_tags[0x4242] == "titlecard"
+        kometa_overlay = (
+            exif_tags is not None
+            and 0x04BC in exif_tags
+            and exif_tags[0x04BC] == "overlay"
+        )
+        tcm_overlay = (
+            exif_tags is not None
+            and 0x4242 in exif_tags
+            and exif_tags[0x4242] == "titlecard"
+        )
 
     return kometa_overlay, tcm_overlay
+
 
 def booler(thing):
     if type(thing) is str:
         thing = eval(thing)
     return bool(thing)
 
+
 def redact(thing, badthing):
     return thing.replace(badthing, "(REDACTED)")
+
 
 def redact(the_url, str_list):
     ret_val = the_url
     for thing in str_list:
-        ret_val = ret_val.replace(thing, '[REDACTED]')
+        ret_val = ret_val.replace(thing, "[REDACTED]")
     return ret_val
+
 
 def get_plex(user_token=None):
     print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
@@ -52,9 +65,11 @@ def get_plex(user_token=None):
 
     return plex
 
+
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
+
 
 def get_ids(theList, TMDB_KEY):
     imdbid = None
@@ -70,10 +85,12 @@ def get_ids(theList, TMDB_KEY):
 
     return imdbid, tmid, tvid
 
+
 # def imdb_from_tmdb(tmdb_id, TMDB_KEY):
 #     tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-    # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
+# https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
+
 
 def validate_filename(filename):
     # return filename
@@ -83,6 +100,7 @@ def validate_filename(filename):
         mapping_name = sanitize_filename(filename)
         stat_string = f"Log Folder Name: {filename} is invalid using {mapping_name}"
         return mapping_name, stat_string
+
 
 def getPath(library, item, season=False):
     if item.type == "collection":
@@ -102,6 +120,7 @@ def getPath(library, item, season=False):
                             Path(part.file).parent.parent,
                             Path(part.file).parent.parent.stem,
                         )
+
 
 def normalise_environment(key_values):
     """Converts denormalised dict of (string -> string) pairs, where the first string
@@ -203,14 +222,16 @@ def normalise_environment(key_values):
 
     return list_sorted_by_int_key() if all_keys_are_ints() else nested_structured_dict
 
+
 def get_type(type):
-    if type == 'movie':
+    if type == "movie":
         return plexapi.video.Movie
-    if type == 'show':
+    if type == "show":
         return plexapi.video.Show
-    if type == 'episode':
+    if type == "episode":
         return plexapi.video.Episode
     return None
+
 
 def get_size(the_lib, tgt_class=None, filter=None):
     lib_size = 0
@@ -225,6 +246,7 @@ def get_size(the_lib, tgt_class=None, filter=None):
 
     return lib_size
 
+
 def get_all_from_library(the_lib, tgt_class=None, filter=None):
     if tgt_class is None:
         tgt_class = the_lib.type
@@ -237,15 +259,31 @@ def get_all_from_library(the_lib, tgt_class=None, filter=None):
     results = []
     while lib_size is None or c_start <= lib_size:
         if filter is not None:
-            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size, filters=filter))
+            results.extend(
+                the_lib.search(
+                    libtype=tgt_class,
+                    maxresults=c_size,
+                    container_start=c_start,
+                    container_size=lib_size,
+                    filters=filter,
+                )
+            )
         else:
-            results.extend(the_lib.search(libtype=tgt_class, maxresults=c_size, container_start=c_start, container_size=lib_size))
+            results.extend(
+                the_lib.search(
+                    libtype=tgt_class,
+                    maxresults=c_size,
+                    container_start=c_start,
+                    container_size=lib_size,
+                )
+            )
 
-        print(f"Loaded: {len(results)}/{lib_size}", end='\r')
+        print(f"Loaded: {len(results)}/{lib_size}", end="\r")
         c_start += c_size
         if len(results) < c_start:
             c_start = lib_size + 1
     return lib_size, results
+
 
 def get_overlay_status(the_lib):
     overlay_items = the_lib.search(label="Overlay")
@@ -254,21 +292,23 @@ def get_overlay_status(the_lib):
 
     return ret_val
 
+
 def get_xml(plex_url, plex_token, lib_index):
     ssn = requests.Session()
-    ssn.headers.update({'Accept': 'application/json'})
-    ssn.params.update({'X-Plex-Token': plex_token})
-    media_output = ssn.get(f'{plex_url}/library/sections/{lib_index}/all').json()
+    ssn.headers.update({"Accept": "application/json"})
+    ssn.params.update({"X-Plex-Token": plex_token})
+    media_output = ssn.get(f"{plex_url}/library/sections/{lib_index}/all").json()
     return media_output
+
 
 def get_xml_libraries(plex_url, plex_token):
     media_output = None
     try:
         ssn = requests.Session()
-        ssn.headers.update({'Accept': 'application/json'})
-        ssn.params.update({'X-Plex-Token': plex_token})
+        ssn.headers.update({"Accept": "application/json"})
+        ssn.params.update({"X-Plex-Token": plex_token})
         print("- making request")
-        raw_output = ssn.get(f'{plex_url}/library/sections/')
+        raw_output = ssn.get(f"{plex_url}/library/sections/")
         if raw_output.status_code == 200:
             print("- success")
             media_output = raw_output.json()
@@ -277,85 +317,98 @@ def get_xml_libraries(plex_url, plex_token):
 
     return media_output
 
-def get_xml_watched(plex_url, plex_token, lib_index, lib_type='movie'):
-    output_array =[]
+
+def get_xml_watched(plex_url, plex_token, lib_index, lib_type="movie"):
+    output_array = []
 
     ssn = requests.Session()
-    ssn.headers.update({'Accept': 'application/json'})
-    ssn.params.update({'X-Plex-Token': plex_token})
-    media_output = ssn.get(f'{plex_url}/library/sections/{lib_index}/all?viewCount>=1').json()
+    ssn.headers.update({"Accept": "application/json"})
+    ssn.params.update({"X-Plex-Token": plex_token})
+    media_output = ssn.get(
+        f"{plex_url}/library/sections/{lib_index}/all?viewCount>=1"
+    ).json()
 
-    if 'Metadata' in media_output['MediaContainer'].keys():
-        if lib_type == 'movie':
-            #library is a movie lib; loop through every movie
-            movie_count = len(media_output['MediaContainer']['Metadata'])
+    if "Metadata" in media_output["MediaContainer"].keys():
+        if lib_type == "movie":
+            # library is a movie lib; loop through every movie
+            movie_count = len(media_output["MediaContainer"]["Metadata"])
             movie_idx = 1
-            for movie in media_output['MediaContainer']['Metadata']:
-                print(f"> {movie_idx:05}/{movie_count:05}", end='\r')
-                if 'viewCount' in movie.keys():
+            for movie in media_output["MediaContainer"]["Metadata"]:
+                print(f"> {movie_idx:05}/{movie_count:05}", end="\r")
+                if "viewCount" in movie.keys():
                     output_array.append(movie)
                 movie_idx += 1
-        elif lib_type == 'show':
-            #library is show lib; loop through every show
-            show_count = len(media_output['MediaContainer']['Metadata'])
+        elif lib_type == "show":
+            # library is show lib; loop through every show
+            show_count = len(media_output["MediaContainer"]["Metadata"])
             show_idx = 1
-            for show in media_output['MediaContainer']['Metadata']:
-                print(f"> {show_idx:05}/{show_count:05}            ", end='\r')
-                if 'viewedLeafCount' in show.keys() and show['viewedLeafCount'] > 0:
-                    show_output = ssn.get(f'{plex_url}/library/metadata/{show["ratingKey"]}/allLeaves?viewCount>=1').json()
-                    #loop through episodes of show to check if targeted season exists
-                    #loop through episodes of show
-                    if 'Metadata' in show_output['MediaContainer'].keys():
-                        episode_list = show_output['MediaContainer']['Metadata']
+            for show in media_output["MediaContainer"]["Metadata"]:
+                print(f"> {show_idx:05}/{show_count:05}            ", end="\r")
+                if "viewedLeafCount" in show.keys() and show["viewedLeafCount"] > 0:
+                    show_output = ssn.get(
+                        f"{plex_url}/library/metadata/{show['ratingKey']}/allLeaves?viewCount>=1"
+                    ).json()
+                    # loop through episodes of show to check if targeted season exists
+                    # loop through episodes of show
+                    if "Metadata" in show_output["MediaContainer"].keys():
+                        episode_list = show_output["MediaContainer"]["Metadata"]
                         episode_count = len(episode_list)
                         episode_idx = 1
                         for episode in episode_list:
-                            print(f"> {show_idx:05}/{show_count:05} {episode_idx:05}/{episode_count:05}", end='\r')
-                            if 'viewCount' in episode.keys():
+                            print(
+                                f"> {show_idx:05}/{show_count:05} {episode_idx:05}/{episode_count:05}",
+                                end="\r",
+                            )
+                            if "viewCount" in episode.keys():
                                 output_array.append(episode)
                             episode_idx += 1
                 show_idx += 1
 
     return output_array
 
-def get_media_details(plex_url, plex_token, rating_key):
 
+def get_media_details(plex_url, plex_token, rating_key):
     ssn = requests.Session()
-    ssn.headers.update({'Accept': 'application/json'})
-    ssn.params.update({'X-Plex-Token': plex_token})
-    media_output = ssn.get(f'{plex_url}/library/metadata/{rating_key}').json()
+    ssn.headers.update({"Accept": "application/json"})
+    ssn.params.update({"X-Plex-Token": plex_token})
+    media_output = ssn.get(f"{plex_url}/library/metadata/{rating_key}").json()
 
     return media_output
+
 
 def get_all_watched(plex, the_lib):
     results = the_lib.search(unwatched=False)
     return results
 
+
 def char_range(c1, c2):
     """Generates the characters from `c1` to `c2`, inclusive."""
-    for c in range(ord(c1), ord(c2)+1):
+    for c in range(ord(c1), ord(c2) + 1):
         yield chr(c)
+
 
 ALPHABET = []
 NUMBERS = []
 
-for c in char_range('a', 'z'):
+for c in char_range("a", "z"):
     ALPHABET.append(c)
 
-for c in char_range('0', '9'):
+for c in char_range("0", "9"):
     NUMBERS.append(c)
 
+
 def remove_articles(thing):
-    if thing.startswith('The '):
-        thing = thing.replace('The ','')
-    if thing.startswith('A '):
-        thing = thing.replace('A ','')
-    if thing.startswith('An '):
-        thing = thing.replace('An ','')
-    if thing.startswith('El '):
-        thing = thing.replace('El ','')
+    if thing.startswith("The "):
+        thing = thing.replace("The ", "")
+    if thing.startswith("A "):
+        thing = thing.replace("A ", "")
+    if thing.startswith("An "):
+        thing = thing.replace("An ", "")
+    if thing.startswith("El "):
+        thing = thing.replace("El ", "")
 
     return thing
+
 
 def get_letter_dir(thing):
     ret_val = "Other"
@@ -372,6 +425,7 @@ def get_letter_dir(thing):
 
     return ret_val
 
+
 def load_and_upgrade_env(file_path):
     status = 0
 
@@ -379,9 +433,9 @@ def load_and_upgrade_env(file_path):
         load_dotenv(dotenv_path=file_path)
     else:
         print("No environment [.env] file.  Creating base file.")
-        if os.path.exists('.env.example'):
-            src_file = os.path.join('.', '.env.example')
-            tgt_file = os.path.join('.','.env')
+        if os.path.exists(".env.example"):
+            src_file = os.path.join(".", ".env.example")
+            tgt_file = os.path.join(".", ".env")
             shutil.copyfile(src_file, tgt_file)
             print("Please edit .env file to suit and rerun script.")
         else:
@@ -393,29 +447,79 @@ def load_and_upgrade_env(file_path):
 
     if PLEX_URL is not None:
         # Add the PLEXAPI env vars
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_PLEXAPI_TIMEOUT", value_to_set="360")
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_PLEXAPI_TIMEOUT",
+            value_to_set="360",
+        )
 
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_BASEURL", value_to_set=PLEX_URL)
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_AUTH_SERVER_TOKEN", value_to_set=PLEX_TOKEN)
-        unset_key(dotenv_path=file_path, key_to_unset="PLEX_URL", quote_mode='always', encoding='utf-8')
-        unset_key(dotenv_path=file_path, key_to_unset="PLEX_TOKEN", quote_mode='always', encoding='utf-8')
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_AUTH_SERVER_BASEURL",
+            value_to_set=PLEX_URL,
+        )
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_AUTH_SERVER_TOKEN",
+            value_to_set=PLEX_TOKEN,
+        )
+        unset_key(
+            dotenv_path=file_path,
+            key_to_unset="PLEX_URL",
+            quote_mode="always",
+            encoding="utf-8",
+        )
+        unset_key(
+            dotenv_path=file_path,
+            key_to_unset="PLEX_TOKEN",
+            quote_mode="always",
+            encoding="utf-8",
+        )
 
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_BACKUP_COUNT", value_to_set='3')
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_FORMAT", value_to_set="%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s")
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_LEVEL", value_to_set="INFO")
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_PATH", value_to_set="plexapi.log")
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_ROTATE_BYTES", value_to_set='512000')
-        set_key(dotenv_path=file_path, key_to_set="PLEXAPI_LOG_SHOW_SECRETS", value_to_set="false")
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_LOG_BACKUP_COUNT",
+            value_to_set="3",
+        )
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_LOG_FORMAT",
+            value_to_set="%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s",
+        )
+        set_key(
+            dotenv_path=file_path, key_to_set="PLEXAPI_LOG_LEVEL", value_to_set="INFO"
+        )
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_LOG_PATH",
+            value_to_set="plexapi.log",
+        )
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_LOG_ROTATE_BYTES",
+            value_to_set="512000",
+        )
+        set_key(
+            dotenv_path=file_path,
+            key_to_set="PLEXAPI_LOG_SHOW_SECRETS",
+            value_to_set="false",
+        )
 
         # and load the new file
         load_dotenv(dotenv_path=file_path)
         status = 1
 
-    if os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == 'https://plex.domain.tld':
+    if (
+        os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None
+        or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == "https://plex.domain.tld"
+    ):
         print("You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.")
         status = -1
 
-    if os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == 'PLEX-TOKEN':
+    if (
+        os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None
+        or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == "PLEX-TOKEN"
+    ):
         print("You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.")
         status = -1
 

@@ -28,9 +28,9 @@ VERSION = "0.1.0"
 env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -47,15 +47,16 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-if LIBRARY_NAMES == 'ALL_LIBRARIES':
+if LIBRARY_NAMES == "ALL_LIBRARIES":
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type == "movie" or lib.type == "show":
             LIB_ARRAY.append(lib.title.strip())
 
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
+
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -68,18 +69,21 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
 
+
 for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
-    logger(f"getting items from [{lib}]...", 'info', 'a')
+    logger(f"getting items from [{lib}]...", "info", "a")
     the_lib = plex.library.section(lib)
     item_total, items = get_all_from_library(the_lib)
-    logger(f"looping over {item_total} items...", 'info', 'a')
+    logger(f"looping over {item_total} items...", "info", "a")
     item_count = 1
 
     plex_links = []
     external_links = []
 
-    with alive_bar(item_total, dual_line=True, title=f"Refresh Metadata: {the_lib.title}") as bar:
+    with alive_bar(
+        item_total, dual_line=True, title=f"Refresh Metadata: {the_lib.title}"
+    ) as bar:
         for item in items:
             tmpDict = {}
             item_count = item_count + 1
@@ -91,9 +95,8 @@ for lib in LIB_ARRAY:
 
             while attempts < 5:
                 try:
-
                     progress_str = f"{item.title} - attempt {attempts + 1}"
-                    logger(progress_str, 'info', 'a')
+                    logger(progress_str, "info", "a")
 
                     item.refresh()
 
@@ -107,7 +110,9 @@ for lib in LIB_ARRAY:
                 except urllib3.exceptions.HTTPError:
                     progress(item_count, item_total, "HTTPError: " + item.title)
                 except ReadTimeoutError:
-                    progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
+                    progress(
+                        item_count, item_total, "ReadTimeoutError-2: " + item.title
+                    )
                 except ReadTimeout:
                     progress(item_count, item_total, "ReadTimeout: " + item.title)
                 except Exception as ex:

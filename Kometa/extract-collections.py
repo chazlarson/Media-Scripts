@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from plexapi.utils import download
 from logs import setup_logger, plogger
-from helpers import (get_plex, load_and_upgrade_env)
+from helpers import get_plex, load_and_upgrade_env
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -29,9 +29,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -47,10 +47,18 @@ DELAY = int(os.getenv("DELAY"))
 if not DELAY:
     DELAY = 0
 
-PLEX_URL = os.getenv('PLEX_URL') if os.getenv('PLEX_URL') else os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')
-PLEX_TOKEN = os.getenv('PLEX_TOKEN') if os.getenv('PLEX_TOKEN') else os.getenv('PLEXAPI_AUTH_SERVER_TOKEN')
+PLEX_URL = (
+    os.getenv("PLEX_URL")
+    if os.getenv("PLEX_URL")
+    else os.getenv("PLEXAPI_AUTH_SERVER_BASEURL")
+)
+PLEX_TOKEN = (
+    os.getenv("PLEX_TOKEN")
+    if os.getenv("PLEX_TOKEN")
+    else os.getenv("PLEXAPI_AUTH_SERVER_TOKEN")
+)
 
-if PLEX_URL.endswith('/'):
+if PLEX_URL.endswith("/"):
     PLEX_URL = PLEX_URL[:-1]
 
 
@@ -83,9 +91,10 @@ for lib in lib_array:
 
         collections = the_lib.collections()
         item_total = len(collections)
-        with alive_bar(item_total, dual_line=True, title=f"Extract collections: {the_lib.title}") as bar:
+        with alive_bar(
+            item_total, dual_line=True, title=f"Extract collections: {the_lib.title}"
+        ) as bar:
             for collection in collections:
-
                 if collection.smart:
                     filters = collection.filters()
 
@@ -149,7 +158,6 @@ for lib in lib_array:
 
         metadatafile_path = Path(".", config_dir, f"{safe_lib}-existing.yml")
 
-
         if yaml.version_info < (0, 15):
             # data = yaml.load(istream, Loader=yaml.CSafeLoader)
             # yaml.round_trip_dump(data, ostream, width=1000, explicit_start=True)
@@ -162,15 +170,13 @@ for lib in lib_array:
         else:
             # yml = ruamel.yaml.YAML(typ='safe')
             # data = yml.load(istream)
-            if (len(coll_obj['collections']) > 0):
-                ymlo = yaml.YAML()   # or yaml.YAML(typ='rt')
+            if len(coll_obj["collections"]) > 0:
+                ymlo = yaml.YAML()  # or yaml.YAML(typ='rt')
                 ymlo.width = 1000
                 ymlo.explicit_start = True
-                ymlo.dump(coll_obj,
-                    open(metadatafile_path, "w", encoding="utf-8"))
+                ymlo.dump(coll_obj, open(metadatafile_path, "w", encoding="utf-8"))
             else:
                 print(f"{lib} has no collections to export")
     except Exception:
         print(f"error loading library: {lib}")
         print(f"This server has: {plex.library.sections()}")
-

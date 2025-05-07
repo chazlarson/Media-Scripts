@@ -20,20 +20,20 @@ VERSION = "0.0.1"
 env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
 plex = get_plex()
-plogger("connection success", 'info', 'a')
-plogger(f"Plex version {plex.version}", 'info', 'a')
+plogger("connection success", "info", "a")
+plogger(f"Plex version {plex.version}", "info", "a")
 
 new_rating = round(random.random() * 10, 1)
 
-the_lib = plex.library.section('Test-Movies')
+the_lib = plex.library.section("Test-Movies")
 the_type = the_lib.type
 
 print(f"getting first item from the {the_type} library [{the_lib.title}]...")

@@ -215,7 +215,6 @@ def getHeaders():
 
 
 def writeResults(itemList, lib):
-
     output_name = f"./{lib}-output.txt"
 
     with open(output_name, "wt") as csv_file:
@@ -251,12 +250,11 @@ def getPlexItem(
 
 
 def getTMDBItem(theItem):
-
     isShow = False
     try:
         isShow = theItem.TYPE == "show"
     except:
-        isShow = ("movie" not in theItem.Part_File_Combined)
+        isShow = "movie" not in theItem.Part_File_Combined
 
     tmdbItem = None
     try:

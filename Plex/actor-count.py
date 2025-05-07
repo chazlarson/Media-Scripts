@@ -30,7 +30,7 @@ VERSION = "0.1.0"
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
 env_file_path = Path(".env")
 
@@ -42,7 +42,7 @@ IS_WINDOWS = platform.system() == "Windows"
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -70,7 +70,9 @@ MIN_GENDER_FEMALE = int(os.getenv("MIN_GENDER_FEMALE"))
 MIN_GENDER_MALE = int(os.getenv("MIN_GENDER_MALE"))
 MIN_GENDER_NB = int(os.getenv("MIN_GENDER_NB"))
 
-if (MIN_GENDER_NONE + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB) > NUM_COLLECTIONS:
+if (
+    MIN_GENDER_NONE + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB
+) > NUM_COLLECTIONS:
     print("minimum gender requirements exceed number of collections")
     exit(1)
 
@@ -91,44 +93,48 @@ gender_female = Counter()
 gender_male = Counter()
 gender_nonbinary = Counter()
 
+
 def track_gender(the_key, gender):
     if gender == TMDB_GENDER_NOT_SET:
         gender_none[the_key] += 1
-        
+
     if gender == TMDB_GENDER_FEMALE:
         gender_female[the_key] += 1
-        
+
     if gender == TMDB_GENDER_MALE:
         gender_male[the_key] += 1
-        
+
     if gender == TMDB_GENDER_NONBINARY:
         gender_nonbinary[the_key] += 1
 
+
 def translate_gender(gender):
     if gender == TMDB_GENDER_NOT_SET:
-        return 'Unknown/Not set'
-        
+        return "Unknown/Not set"
+
     if gender == TMDB_GENDER_FEMALE:
-        return 'Female'
-        
+        return "Female"
+
     if gender == TMDB_GENDER_MALE:
-        return 'Male'
-        
+        return "Male"
+
     if gender == TMDB_GENDER_NONBINARY:
-        return 'Non-binary'
+        return "Non-binary"
+
 
 def reverse_gender(gender_str):
-    if gender_str == 'Unknown/Not set':
+    if gender_str == "Unknown/Not set":
         return TMDB_GENDER_NOT_SET
-        
-    if gender_str == 'Female':
+
+    if gender_str == "Female":
         return TMDB_GENDER_FEMALE
-        
-    if gender_str == 'Male':
+
+    if gender_str == "Male":
         return TMDB_GENDER_MALE
-        
-    if gender_str == 'Non-binary':
+
+    if gender_str == "Non-binary":
         return TMDB_GENDER_NONBINARY
+
 
 def getTID(theList):
     tmid = None
@@ -140,24 +146,26 @@ def getTID(theList):
             tvid = guid.id.replace(tvdb_str, "")
     return tmid, tvid
 
+
 plex = get_plex()
 
 ALL_LIBS = plex.library.sections()
 ALL_LIB_NAMES = []
 
-plogger(f"{len(ALL_LIBS)} libraries found:", 'info', 'a')
+plogger(f"{len(ALL_LIBS)} libraries found:", "info", "a")
 for lib in ALL_LIBS:
     ALL_LIB_NAMES.append(f"{lib.title.strip()}")
 
-if LIBRARY_NAMES == 'ALL_LIBRARIES':
+if LIBRARY_NAMES == "ALL_LIBRARIES":
     LIB_ARRAY = []
     for lib in ALL_LIBS:
         LIB_ARRAY.append(lib.title.strip())
 
+
 def ascii_histogram(data) -> None:
     """A horizontal frequency-table/histogram plot."""
     for k in sorted(data):
-        print('{0} {1}'.format(k, '+' * data[k]))
+        print("{0} {1}".format(k, "+" * data[k]))
 
 
 for lib in LIB_ARRAY:
@@ -200,9 +208,13 @@ for lib in LIB_ARRAY:
                 average_list = round(total_list / item_count)
                 if list_size > highwater_list:
                     highwater_list = list_size
-                    print(f"New list size high water mark - {item.title}: {highwater_list}")
+                    print(
+                        f"New list size high water mark - {item.title}: {highwater_list}"
+                    )
 
-                bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
+                bar.text(
+                    f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
+                )
                 for person in list:
                     # person points to person
 
@@ -216,7 +228,9 @@ for lib in LIB_ARRAY:
                                 count_them = True
                             else:
                                 skip_count += 1
-                                print(f"Skipping {person.name}: {person.known_for_department}")
+                                print(
+                                    f"Skipping {person.name}: {person.known_for_department}"
+                                )
                         else:
                             count_them = True
 
@@ -225,7 +239,9 @@ for lib in LIB_ARRAY:
                             if TRACK_GENDER:
                                 track_gender(the_key, person.gender)
                             credit_count += 1
-                            bar.text(f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}")
+                            bar.text(
+                                f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
+                            )
             except Exception:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
@@ -238,7 +254,9 @@ for lib in LIB_ARRAY:
 
     end = timer()
     elapsed = end - start
-    print(f"Looked at {list_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds.")
+    print(
+        f"Looked at {list_count} credits from the top {CAST_DEPTH} from each {the_lib.TYPE} in {elapsed} seconds."
+    )
     print(f"Unique people: {len(people)}")
     if TRACK_GENDER:
         print(f"'None' gender': {len(gender_none)}")
@@ -252,17 +270,18 @@ for lib in LIB_ARRAY:
     print(f"Total {credit_count} credits recorded")
     print(f"Top {TOP_COUNT} listed below")
 
-
     count = 0
     for person in sorted(people.items(), key=lambda x: x[1], reverse=True):
         if count < TOP_COUNT:
             print("{}\t{}".format(person[1], person[0]))
             count = count + 1
 
-    print("--------------------------------\nlist sizes with relative frequency\n--------------------------------")
+    print(
+        "--------------------------------\nlist sizes with relative frequency\n--------------------------------"
+    )
     ascii_histogram(lists)
     print("--------------------------------\n")
-    
+
     if GENERATE_KOMETA_YAML:
         top_people = Counter()
 
@@ -275,7 +294,9 @@ for lib in LIB_ARRAY:
 
         count = 0
         if MIN_GENDER_FEMALE > 0:
-            for person in sorted(gender_female.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(
+                gender_female.items(), key=lambda x: x[1], reverse=True
+            ):
                 if count < MIN_GENDER_FEMALE:
                     top_people[person[0]] = person[1]
                     count = count + 1
@@ -289,7 +310,9 @@ for lib in LIB_ARRAY:
 
         count = 0
         if MIN_GENDER_NB > 0:
-            for person in sorted(gender_nonbinary.items(), key=lambda x: x[1], reverse=True):
+            for person in sorted(
+                gender_nonbinary.items(), key=lambda x: x[1], reverse=True
+            ):
                 if count < MIN_GENDER_NB:
                     top_people[person[0]] = person[1]
                     count = count + 1
@@ -307,20 +330,20 @@ for lib in LIB_ARRAY:
         for person in sorted(top_people.items(), key=lambda x: x[1], reverse=True):
             if count < TOP_COUNT:
                 print("{}\t{}".format(person[1], person[0]))
-                bits = person[0].split(' - ')
+                bits = person[0].split(" - ")
                 collection_string = f"{collection_string}        - {bits[0]}\n"
                 count = count + 1
 
         print("--------------------------------")
-        
+
         print(f"Creating {NUM_COLLECTIONS} with:")
         print(f"Minimum {MIN_GENDER_FEMALE} female people if possible")
         print(f"Minimum {MIN_GENDER_MALE} male people if possible")
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
         print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
-        
+
         print("--- YAML FOR Kometa config.yml ----")
-        
+
         print(collection_string)
 
         print("--- END YAML -------------------")

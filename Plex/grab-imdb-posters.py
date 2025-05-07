@@ -9,6 +9,7 @@ from helpers import booler, get_ids, get_plex, load_and_upgrade_env
 import logging
 from pathlib import Path
 from datetime import datetime
+
 # current dateTime
 now = datetime.now()
 
@@ -28,8 +29,8 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
+print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -59,6 +60,7 @@ imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
+
 def progress(count, total, status=""):
     bar_len = 40
     filled_len = int(round(bar_len * count / float(total)))
@@ -69,6 +71,7 @@ def progress(count, total, status=""):
 
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
+
 
 all_items = []
 
