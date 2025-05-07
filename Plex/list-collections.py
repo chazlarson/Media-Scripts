@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 import logging
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
-from plexapi.utils import download
-from ruamel import yaml
 import os
-from pathlib import Path, PurePath
-from dotenv import load_dotenv
 import time
-from helpers import get_plex, load_and_upgrade_env
+from datetime import datetime
+from pathlib import Path
 
-from datetime import datetime, timedelta
+from alive_progress import alive_bar
+from helpers import get_plex, load_and_upgrade_env
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -37,9 +33,9 @@ print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
-LIBRARY_NAME = os.getenv('LIBRARY_NAME')
-LIBRARY_NAMES = os.getenv('LIBRARY_NAMES')
-DELAY = int(os.getenv('DELAY'))
+LIBRARY_NAME = os.getenv("LIBRARY_NAME")
+LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+DELAY = int(os.getenv("DELAY"))
 
 if not DELAY:
     DELAY = 0
@@ -52,15 +48,13 @@ else:
 plex = get_plex()
 
 coll_obj = {}
-coll_obj['collections'] = {}
+coll_obj["collections"] = {}
+
 
 def get_sort_text(argument):
-    switcher = {
-        0: "release",
-        1: "alpha",
-        2: "custom"
-    }
+    switcher = {0: "release", 1: "alpha", 2: "custom"}
     return switcher.get(argument, "invalid-sort")
+
 
 for lib in lib_array:
     print(f"{lib} collection(s):")
@@ -69,7 +63,7 @@ for lib in lib_array:
     item_total = len(items)
     print(f"{item_total} collection(s) retrieved...")
     item_count = 1
-    with alive_bar(item_total, dual_line=True, title='Collection list - Plex') as bar:
+    with alive_bar(item_total, dual_line=True, title="Collection list - Plex") as bar:
         for item in items:
             title = item.title
             print(f"{title}")
@@ -78,4 +72,3 @@ for lib in lib_array:
 
             # Wait between items in case hammering the Plex server turns out badly.
             time.sleep(DELAY)
-

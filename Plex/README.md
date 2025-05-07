@@ -45,7 +45,7 @@ ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these colle
 GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
 GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
 
-### background-related 
+### background-related
 GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
 ARTWORK=1                                    # current background is downloaded with current poster
 
@@ -57,8 +57,8 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0              # keep images that have the Kometa overlay EXIF tag 
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0              # keep images that have the Kometa overlay EXIF tag
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
@@ -66,7 +66,7 @@ USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directo
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
 ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored                                            
+                                             # if asset-directory naming is on, the next three are ignored
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
@@ -152,7 +152,7 @@ SHOW_JOBS=0
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
 1. [grab-all-IDs.py](#grab-all-IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
-1. [image_picker.py](#image_pickerpy) - simple web app to make choosing active art from the images downloaded by grab-all-posters simpler
+1. [image_picker.py](#image_pickerpy) - Replaced by [Plex Image Picker](../Plex%20Image%20Picker/)
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
@@ -346,8 +346,8 @@ POSTER_DEPTH=20                              # grab this many posters [0 grabs a
 KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
 FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
 # RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag 
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag 
+RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag
+RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
 
 ## where-to-put-it
 USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
@@ -355,7 +355,7 @@ USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directo
 USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
 ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
 ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored                                            
+                                             # if asset-directory naming is on, the next three are ignored
 POSTER_DIR=extracted_posters                 # put downloaded posters here
 CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
 POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
@@ -405,7 +405,7 @@ Then the "beginning of time" fallback date will be used.  This is a Windows issu
 
 Normally, this fallback date is used *only* if there is no last-run date stored, for example the first time you run the script.  This means that if you run the script once with `DEFAULT_YEARS_BACK=2` then change that to `DEFAULT_YEARS_BACK=0`, nothing new will be downloaded.  The script will read the last run date from its database and will never look at the new fallback date.
 
-You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.  
+You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.
 
 If you want to reset all libraries and clear all history, delete `mediascripts.sqlite`.
 
@@ -417,7 +417,7 @@ DEFAULT_YEARS_BACK=0
 RESET_LIBRARIES=Movies
 ```
 That will set the fallback date to "the beginning of time" and apply that new fallback date to the "Movies" library only.
- 
+
 If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates Kometa created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_KOMETA_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
 
 If "RETAIN_KOMETA_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
@@ -642,81 +642,7 @@ assets
 
 ## image_picker.py
 
-You've run grab-all-posters and now you want a simpler way to choose which of those hundreds of images you want as your active asset
-
-It presents a web UI that lets you scroll through the images that `grab-all-posters` downloaded, selecting the one you want by clicking on it.
-
-When you click on an image, it is copied to a parallel file system rooted at `active_assets` with the correct pathing and naming for the Kometa asset directory.
-
-You can then copy that `active_assets` directory to the Kometa config dir ready for use.
-
-It keeps track of which images have been chosen on a show/movie basis [is a json file] so that when you come back the current image is highlighted.
-
-This script does not use anything from the `.env`, but it does make some assumptions:
-
-### Assumptions:
-1. You are working with a directory of images produced by `grab-all-posters`
-2. That directory is named `assets` and is in this directory next to this script.
-3. You can run a web server on the machine that listens on port 5001
-
-### Usage
-1. setup as above
-2. Run with `python image_picker.py`
-3. Go to one of the URLs presented.
-
-In this case I'm running it on a server in my home:
-```
-python image-picker.py
- * Serving Flask app 'image-picker'
- * Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5001
- * Running on http://192.168.1.11:5001
- ```
-Since I am running it on a machine remote from the laptop I am on, I go to the second URL.
-
-I see a list of my libraries along with a reminder of where images are being read from and copied to:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f5a0da28-7fef-4e6a-88da-c3778d97726d)
-
-Clicking into the library shows the next level of folders [I have mine split by letter here]:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/08a7747e-dd10-43e9-a63f-b31ff8b4e2b1)
-
-Drilling in displays the movies/shows
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/e75be969-0d60-40f0-af91-e595e2199fe1)
-
-Drilling into an individual thing shows the posters for this item, with the filename and image size:
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/162ebff9-9aff-4ea4-8c8f-913ff8cb2ec5)
-
-Note that there are checkboxes to show/hide types of images to minimize scrolling, and a slider to control the image size if you need a closer look.
-
-Clicking on an image will copy it to `active_assets` and it is highlighted in the list.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f08a76ef-42e4-4af4-93d2-9bc7dfd72c5d)
-
-Now that I've chosen a background, I can uncheck "Show Backgrounds" to hide them from the list.  I've also increased the poster size here.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/93b5bbcf-6676-46a9-adc5-4955737d7e8f)
-
-And again, clicking on the image selects and copies.
-
-![image](https://github.com/chazlarson/Media-Scripts/assets/3865541/f95cebd8-e5f3-499b-bfcf-ac2a1f36def4)
-
-
-At this point if you go look in the file system you'll see:
-```
-active_assets/Movies/
-└── 3
-    └── 300 (2007) {imdb-tt0416449} {tmdb-1271}
-        ├── background.jpg
-        └── poster.jpg
-```
-
-TV works the same way except that there are also Season and Episode images.
+Replaced with [Plex Image Picker](../Plex%20Image%20Picker/).
 
 ## grab-all-status.py
 
@@ -901,7 +827,7 @@ on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     2/  125 | T
 on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     3/  125 | TVDb ID: 419379    | IMDb ID: tt15384586  | Fellow Travelers
 on 0: INFO: 11/05/2023 05:03:05 PM Collection: New Episodes item     4/  125 | TVDb ID: 439494    | IMDb ID: tt10270200  | The Vanishing Triangle
 ```
-or 
+or
 ```
 on 5782: INFO: 11/05/2023 05:07:49 PM tem  5782/ 5786 | TMDb ID:   9398    | IMDb ID:  tt0196229  | Zoolander
 on 5783: INFO: 11/05/2023 05:07:49 PM tem  5783/ 5786 | TMDb ID: 329833    | IMDb ID:  tt1608290  | Zoolander 2
@@ -967,7 +893,7 @@ connecting to https://plex.bing.bang...
 getting items from [Movies - 4K DV]...
 Completed loading 1996 items from Movies - 4K DV
 looping over 1996 items...
-[======----------------------------------] 15.0% ... Captain America: Civil War    
+[======----------------------------------] 15.0% ... Captain America: Civil War
 ```
 
 It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
@@ -1010,7 +936,7 @@ Note that the top ten changed dramatically due to looking deeper into the cast l
 
 Perhaps you want a list of crew members with a count of how many movies from your libraries they have been credited in.
 
-This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.  
+This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.
 At the end, it produces a list of a configurable size in descending order of number of appearances.
 
 Script-specific variables in .env:
@@ -1021,7 +947,7 @@ TARGET_JOB=Director             ### WHAT JOB TO TRACK
 SHOW_JOBS=0                     ### Display a list of all the jobs the script saw
 ```
 
-`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.  
+`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
 
 `CREW_COUNT` is the number of individuals to show in the list at the end.
 
@@ -1035,7 +961,7 @@ If `SHOW_JOBS` is set to 1, the script will also output a list of all the jobs i
 connecting to Plex...
 getting items from [Test-Movies]...
 looping over 35 items...
-[=========================================] 102.9% ... Wild Gals of the Naked West   
+[=========================================] 102.9% ... Wild Gals of the Naked West
 ```
 
 It will go through all your movies, and then at the end print out however many actors you specified in TOP_COUNT along with a bunch of other statistics.
@@ -1129,4 +1055,4 @@ on 52: 21 Up has 4 posters
 on 77: 63 Up has 7 posters
 on 94: 1962 Halloween Massacre has 8 posters
 on 119: Ace in the Hole has 8 posters
-Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18) 
+Low poster counts Movies |█                                       | ▇▇▅ 162/6171 [3%] in 9s (18.6/s, eta: 5:18)

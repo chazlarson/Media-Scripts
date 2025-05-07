@@ -1,20 +1,10 @@
 #!/usr/bin/env python
-from plexapi.exceptions import Unauthorized
-from logs import setup_logger, plogger
-
-from plexapi.server import PlexServer
-from plexapi.exceptions import Unauthorized
-import os
+import random
+from datetime import datetime
+from pathlib import Path
 
 from helpers import get_all_from_library, get_plex, load_and_upgrade_env
-from pathlib import Path
-import random
-
-from pathlib import Path
-
-from datetime import datetime
-
-import random
+from logs import plogger, setup_logger
 
 # current dateTime
 now = datetime.now()
@@ -29,20 +19,20 @@ VERSION = "0.0.1"
 env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
 plex = get_plex()
-plogger("connection success", 'info', 'a')
-plogger(f"Plex version {plex.version}", 'info', 'a')
+plogger("connection success", "info", "a")
+plogger(f"Plex version {plex.version}", "info", "a")
 
 new_rating = round(random.random() * 10, 1)
 
-the_lib = plex.library.section('Test-Movies')
+the_lib = plex.library.section("Test-Movies")
 the_type = the_lib.type
 
 print(f"getting first item from the {the_type} library [{the_lib.title}]...")

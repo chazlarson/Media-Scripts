@@ -1,9 +1,10 @@
-from collections import Counter
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
+from collections import Counter
+
+from dotenv import load_dotenv
+from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
 
 load_dotenv()
@@ -94,7 +95,7 @@ for lib in lib_array:
                     if actor.known_for_department == "Acting":
                         tmpDict[f"{actor.id}-{actor.name}"] = 1
             actors.update(tmpDict)
-        except Exception as ex:
+        except Exception:
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")

@@ -1,18 +1,15 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
-import os
 import json
-from dotenv import load_dotenv
-from alive_progress import alive_bar
-
+import os
 import sys
 import textwrap
-
-from helpers import get_all_from_library, get_plex, get_all_watched, get_xml, get_xml_watched, get_media_details, get_xml_libraries, load_and_upgrade_env
-
-from logs import setup_logger, plogger, blogger, logger
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timedelta
+
+from alive_progress import alive_bar
+from helpers import get_plex, get_xml_libraries, get_xml_watched, load_and_upgrade_env
+from logs import plogger, setup_logger
+
 # current dateTime
 now = datetime.now()
 
@@ -28,31 +25,31 @@ VERSION = "0.1.1"
 env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
 
-target_url_var = 'PLEX_URL'
+target_url_var = "PLEX_URL"
 PLEX_URL = os.getenv(target_url_var)
 if PLEX_URL is None:
-    target_url_var = 'PLEXAPI_AUTH_SERVER_BASEURL'
+    target_url_var = "PLEXAPI_AUTH_SERVER_BASEURL"
     PLEX_URL = os.getenv(target_url_var)
 
-target_token_var = 'PLEX_TOKEN'
+target_token_var = "PLEX_TOKEN"
 PLEX_TOKEN = os.getenv(target_token_var)
 if PLEX_TOKEN is None:
-    target_token_var = 'PLEXAPI_AUTH_SERVER_TOKEN'
+    target_token_var = "PLEXAPI_AUTH_SERVER_TOKEN"
     PLEX_TOKEN = os.getenv(target_token_var)
 
-if PLEX_URL is None or PLEX_URL == 'https://plex.domain.tld':
-    plogger(f"You must specify {target_url_var} in the .env file.", 'info', 'a')
+if PLEX_URL is None or PLEX_URL == "https://plex.domain.tld":
+    plogger(f"You must specify {target_url_var} in the .env file.", "info", "a")
     exit()
 
-if PLEX_TOKEN is None or PLEX_TOKEN == 'PLEX-TOKEN':
-    plogger(f"You must specify {target_token_var} in the .env file.", 'info', 'a')
+if PLEX_TOKEN is None or PLEX_TOKEN == "PLEX-TOKEN":
+    plogger(f"You must specify {target_token_var} in the .env file.", "info", "a")
     exit()
 
 PLEX_OWNER = os.getenv("PLEX_OWNER")
@@ -62,7 +59,11 @@ LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
 try:
     lib_map = json.loads(LIBRARY_MAP)
 except:
-    plogger(f"LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.", 'info', 'a')
+    plogger(
+        "LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.",
+        "info",
+        "a",
+    )
     lib_map = json.loads("{}")
 
 
@@ -86,8 +87,10 @@ def get_user_acct(acct_list, username):
 
 def get_data_line(username, type, section, video):
     file_line = ""
-    contentRating = video['contentRating'] if 'contentRating' in video.keys() else 'NONE'
-    episodeNum = video['index'] if 'index' in video.keys() else video['duration']
+    contentRating = (
+        video["contentRating"] if "contentRating" in video.keys() else "NONE"
+    )
+    episodeNum = video["index"] if "index" in video.keys() else video["duration"]
     if type == "show":
         file_line = f"{username}\t{type}\t{section}\t{video['grandparentTitle']}\ts{video['parentIndex']:02}e{episodeNum:02}\t{video['title']}"
     elif type == "movie":
@@ -99,19 +102,23 @@ def filter_for_unwatched(list):
     watched = [x for x in list if x.isPlayed]
     return watched
 
+
 def process_section(username, section):
     items = []
     file_string = ""
 
     print(f"------------ {section['title']} ------------")
-    items = get_xml_watched(PLEX_URL, PLEX_TOKEN, section['key'], section['type'])
+    items = get_xml_watched(PLEX_URL, PLEX_TOKEN, section["key"], section["type"])
     if len(items) > 0:
-        with alive_bar(len(items), dual_line=True, title=f"Saving status") as bar:
+        with alive_bar(len(items), dual_line=True, title="Saving status") as bar:
             for video in items:
-                status_text = get_data_line(username, section['type'], section['title'], video)
-                file_string = (f"{file_string}{status_text}{os.linesep}")
+                status_text = get_data_line(
+                    username, section["type"], section["title"], video
+                )
+                file_string = f"{file_string}{status_text}{os.linesep}"
                 bar()
     return file_string
+
 
 padwidth = 95
 count = 0
@@ -130,23 +137,25 @@ DO_NOTHING = False
 print(f"------------ {account.username} ------------")
 try:
     # plex_sections = plex.library.sections()
-    print(f"------------ getting libraries -------------")
+    print("------------ getting libraries -------------")
     plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
 
     if plex_sections is not None:
-        for plex_section in plex_sections['MediaContainer']['Directory']:
+        for plex_section in plex_sections["MediaContainer"]["Directory"]:
             if not DO_NOTHING:
-                if plex_section['type'] != "artist":
-                    print(f"- processing {plex_section['type']} library: {plex_section['title']}")
+                if plex_section["type"] != "artist":
+                    print(
+                        f"- processing {plex_section['type']} library: {plex_section['title']}"
+                    )
                     status_text = process_section(account.username, plex_section)
-                    file_string = (f"{file_string}{status_text}{os.linesep}")
+                    file_string = f"{file_string}{status_text}{os.linesep}"
                 else:
                     file_line = f"Skipping {plex_section['title']}"
                     print(file_line)
                     file_string = file_string + f"{file_line}{os.linesep}"
     else:
         print(f"Could not retrieve libraries for {account.username}")
-        
+
 except Exception as ex:
     file_line = f"Exception processing {account.username} - {ex}"
     print(file_line)
@@ -160,14 +169,14 @@ for plex_user in all_users:
     print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
     try:
         PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
-        print(f"------------ getting libraries -------------")
+        print("------------ getting libraries -------------")
         plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
         if plex_sections is not None:
-            for plex_section in plex_sections['MediaContainer']['Directory']:
+            for plex_section in plex_sections["MediaContainer"]["Directory"]:
                 if not DO_NOTHING:
-                    if plex_section['type'] != "artist":
+                    if plex_section["type"] != "artist":
                         status_text = process_section(plex_user.title, plex_section)
-                        file_string = (f"{file_string}{status_text}{os.linesep}")
+                        file_string = f"{file_string}{status_text}{os.linesep}"
                     else:
                         file_line = f"Skipping {plex_section['title']}"
                         file_string = file_string + f"{file_line}{os.linesep}"

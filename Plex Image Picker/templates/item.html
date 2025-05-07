@@ -1,0 +1,121 @@
+<!-- templates/item.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ section.title }}: {{ item.title }}</h2>
+<div class="d-flex justify-content-between mb-3">
+  <div>
+    <a href="{{ url_for('browse', section_key=section.key, page=1) }}" class="btn btn-outline-secondary btn-sm">First Item</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page-1 if item_page>1 else 1) }}" class="btn btn-outline-secondary btn-sm">Previous Item</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page+1 if item_page<pages else pages) }}" class="btn btn-outline-secondary btn-sm">Next Item</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=pages) }}" class="btn btn-outline-secondary btn-sm">Last Item</a>
+  </div>
+  <form class="d-inline" method="get">
+    <input type="hidden" name="page" value="{{ item_page }}">
+    <label>Art Type</label>
+    <select name="art_type" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
+      <option value="poster" {% if art_type=='poster' %}selected{% endif %}>Poster</option>
+      <option value="background" {% if art_type=='background' %}selected{% endif %}>Background</option>
+    </select>
+  </form>
+</div>
+
+{% if section.type == 'show' %}
+<form id="filter-form" method="get" class="mb-3">
+  <input type="hidden" name="page" value="{{ item_page }}">
+  <input type="hidden" name="art_type" value="{{ art_type }}">
+  <input type="hidden" name="art_page" value="{{ art_page }}">
+  <div class="row g-2">
+    <div class="col-auto">
+      <label>Season</label>
+      <select name="season" class="form-select" onchange="this.form.submit()">
+        <option value="">Show Level</option>
+        {% for s in item.seasons() %}
+          <option value="{{ s.seasonNumber }}" {% if season and season|int==s.seasonNumber %}selected{% endif %}>Season {{ '%02d'|format(s.seasonNumber) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if season %}
+    <div class="col-auto">
+      <label>Episode</label>
+      {% set sel_season = item.seasons()|selectattr('seasonNumber','equalto',season|int)|first %}
+      <select name="episode" class="form-select" onchange="this.form.submit()">
+        <option value="">Season Level</option>
+        {% for e in sel_season.episodes() %}
+          <option value="{{ e.index }}" {% if episode|int==e.index %}selected{% endif %}>Episode {{ '%02d'|format(e.index) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+</form>
+{% endif %}
+
+{# Determine art items based on type and scope #}
+{% if section.type=='movie' %}
+  {% set all_art = art_type=='poster' and item.posters() or item.arts() %}
+{% else %}
+  {% if episode %}
+    {% set sel_season = item.seasons()|selectattr('seasonNumber','equalto',season|int)|first %}
+    {% set ep = sel_season.episodes()|selectattr('index','equalto',episode|int)|first %}
+    {% set all_art = art_type=='poster' and ep.posters() or ep.arts() %}
+  {% elif season %}
+    {% set sel_season = item.seasons()|selectattr('seasonNumber','equalto',season|int)|first %}
+    {% set all_art = art_type=='poster' and sel_season.posters() or sel_season.arts() %}
+  {% else %}
+    {% set all_art = art_type=='poster' and item.posters() or item.arts() %}
+  {% endif %}
+{% endif %}
+
+{% set total_art = all_art|length %}
+{% set per_page = 12 %}
+{% set art_pages = (total_art + per_page -1) // per_page %}
+{% set start = (art_page-1) * per_page %}
+{% set end = start + per_page %}
+{% set page_items = all_art[start:end] %}
+
+<div class="d-flex justify-content-between mb-3">
+  <div>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page, art_type=art_type, season=season, episode=episode, art_page=1) }}" class="btn btn-outline-secondary btn-sm">First</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page, art_type=art_type, season=season, episode=episode, art_page=art_page-1 if art_page>1 else 1) }}" class="btn btn-outline-secondary btn-sm">Prev</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page, art_type=art_type, season=season, episode=episode, art_page=art_page+1 if art_page<art_pages else art_pages) }}" class="btn btn-outline-secondary btn-sm">Next</a>
+    <a href="{{ url_for('browse', section_key=section.key, page=item_page, art_type=art_type, season=season, episode=episode, art_page=art_pages) }}" class="btn btn-outline-secondary btn-sm">Last</a>
+  </div>
+  <form method="get" class="d-inline">
+    <input type="hidden" name="page" value="{{ item_page }}">
+    <input type="hidden" name="season" value="{{ season }}">
+    <input type="hidden" name="episode" value="{{ episode }}">
+    <input type="hidden" name="art_type" value="{{ art_type }}">
+    <input type="number" name="art_page" min="1" max="{{ art_pages }}" value="{{ art_page }}" class="form-control d-inline-block" style="width: 80px;">
+    <button class="btn btn-secondary btn-sm">Go</button>
+  </form>
+</div>
+
+<div class="row">
+  {% for img in page_items %}
+    {% if img.key.startswith("http") %}
+      {% set img_url = img.key %}
+    {% else %}
+      {% set img_url = session['base_url'] ~ img.key ~ '&X-Plex-Token=' ~ session['token'] %}
+    {% endif %}
+    <div class="col-md-3 mb-4">
+      <div class="card">
+        <img src="{{ img_url }}" class="card-img-top">
+        <div class="card-body text-center">
+          <form action="{{ url_for('download') }}" method="post">
+            <input type="hidden" name="rating_key" value="{{ item.ratingKey }}">
+            <input type="hidden" name="season_rating_key" value="{{ season_rating_key }}">
+            <input type="hidden" name="section_key" value="{{ section.key }}">
+            <input type="hidden" name="item_page" value="{{ item_page }}">
+            <input type="hidden" name="art_page" value="{{ art_page }}">
+            <input type="hidden" name="season" value="{{ season }}">
+            <input type="hidden" name="episode" value="{{ episode }}">
+            <input type="hidden" name="art_type" value="{{ art_type }}">
+            <input type="hidden" name="img_key" value="{{ img.key }}">
+            <button type="submit" class="btn btn-primary btn-sm">Download</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
+import logging
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
-import logging
-import urllib3.exceptions
-from urllib3.exceptions import ReadTimeoutError
-from requests import ReadTimeout
-from helpers import booler, get_plex, get_all_from_library, load_and_upgrade_env
-from alive_progress import alive_bar
-
-from logs import setup_logger, plogger, blogger, logger
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timedelta
+
+import urllib3.exceptions
+from alive_progress import alive_bar
+from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
+from requests import ReadTimeout
+from urllib3.exceptions import ReadTimeoutError
+
 # current dateTime
 now = datetime.now()
 
@@ -30,9 +29,9 @@ VERSION = "0.2.1"
 env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -64,40 +63,37 @@ def progress(count, total, status=""):
 
 plex = get_plex()
 
-if LIBRARY_NAMES == 'ALL_LIBRARIES':
+if LIBRARY_NAMES == "ALL_LIBRARIES":
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type == "movie" or lib.type == "show":
             LIB_ARRAY.append(lib.title.strip())
 
 for lib in LIB_ARRAY:
     the_lib = plex.library.section(lib)
-    plogger(f"getting items from [{lib}]...", 'info', 'a')
+    plogger(f"getting items from [{lib}]...", "info", "a")
 
     if UNMATCHED_ONLY:
         print(f"getting UNMATCHED items from [{lib}]...")
-        item_total, items = get_all_from_library(the_lib, None, {'unmatched': True})
+        item_total, items = get_all_from_library(the_lib, None, {"unmatched": True})
     else:
         item_total, items = get_all_from_library(the_lib)
 
-    plogger(f"looping over {item_total} items...", 'info', 'a')
+    plogger(f"looping over {item_total} items...", "info", "a")
     item_count = 0
 
     plex_links = []
     external_links = []
 
-    if the_lib.type == 'movie':
+    if the_lib.type == "movie":
         agents = [
             "com.plexapp.agents.imdb",
             "tv.plex.agents.movie",
-            "com.plexapp.agents.themoviedb"
+            "com.plexapp.agents.themoviedb",
         ]
-    elif the_lib.type == 'show':
-        agents = [
-            "com.plexapp.agents.thetvdb",
-            "tv.plex.agents.series"
-        ]
+    elif the_lib.type == "show":
+        agents = ["com.plexapp.agents.thetvdb", "tv.plex.agents.series"]
     else:
         agents = [
             "com.plexapp.agents.fanarttv",
@@ -115,11 +111,10 @@ for lib in LIB_ARRAY:
             "com.plexapp.agents.htbackdrops",
             "com.plexapp.agents.movieposterdb",
             "com.plexapp.agents.localmedia",
-            "com.plexapp.agents.lastfm"
+            "com.plexapp.agents.lastfm",
         ]
 
-
-    with alive_bar(len(items), dual_line=True, title=f"Rematching") as bar:
+    with alive_bar(len(items), dual_line=True, title="Rematching") as bar:
         for item in items:
             tmpDict = {}
             item_count = item_count + 1
@@ -139,15 +134,18 @@ for lib in LIB_ARRAY:
                         bar.text(progress_str)
 
                     except urllib3.exceptions.ReadTimeoutError:
-                        progress(item_count, item_total, "ReadTimeoutError: " + item.title)
+                        progress(
+                            item_count, item_total, "ReadTimeoutError: " + item.title
+                        )
                     except urllib3.exceptions.HTTPError:
                         progress(item_count, item_total, "HTTPError: " + item.title)
                     except ReadTimeoutError:
-                        progress(item_count, item_total, "ReadTimeoutError-2: " + item.title)
+                        progress(
+                            item_count, item_total, "ReadTimeoutError-2: " + item.title
+                        )
                     except ReadTimeout:
                         progress(item_count, item_total, "ReadTimeout: " + item.title)
                     except Exception as ex:
                         progress(item_count, item_total, "EX: " + item.title)
                         logging.error(ex)
             bar()
-

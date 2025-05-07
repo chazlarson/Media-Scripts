@@ -1,15 +1,12 @@
 #!/usr/bin/env python
-from alive_progress import alive_bar
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import time
-from helpers import get_plex, load_and_upgrade_env
-
-from logs import setup_logger, plogger, blogger, logger
-
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from alive_progress import alive_bar
+from helpers import get_plex, load_and_upgrade_env
+from logs import plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -25,9 +22,9 @@ env_file_path = Path(".env")
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
-setup_logger('activity_log', ACTIVITY_LOG)
+setup_logger("activity_log", ACTIVITY_LOG)
 
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", 'info', 'a')
+plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if load_and_upgrade_env(env_file_path) < 0:
     exit()
@@ -45,7 +42,7 @@ if LIBRARY_NAMES:
 else:
     LIB_ARRAY = [LIBRARY_NAME]
 
-plogger(f"Acting on libraries: {LIB_ARRAY}", 'info', 'a')
+plogger(f"Acting on libraries: {LIB_ARRAY}", "info", "a")
 
 if KEEP_COLLECTIONS:
     keeper_array = KEEP_COLLECTIONS.split(",")
@@ -54,11 +51,11 @@ else:
 
 plex = get_plex()
 
-if LIBRARY_NAMES == 'ALL_LIBRARIES':
+if LIBRARY_NAMES == "ALL_LIBRARIES":
     LIB_ARRAY = []
     all_libs = plex.library.sections()
     for lib in all_libs:
-        if lib.type == 'movie' or lib.type == 'show':
+        if lib.type == "movie" or lib.type == "show":
             LIB_ARRAY.append(lib.title.strip())
 
 coll_obj = {}
@@ -68,6 +65,7 @@ coll_obj["collections"] = {}
 def get_sort_text(argument):
     switcher = {0: "release", 1: "alpha", 2: "custom"}
     return switcher.get(argument, "invalid-sort")
+
 
 for lib in LIB_ARRAY:
     the_lib = plex.library.section(lib)

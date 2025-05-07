@@ -1,11 +1,12 @@
-from collections import Counter
-from plexapi.server import PlexServer
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
+from collections import Counter
+
+from dotenv import load_dotenv
 from helpers import booler
+from plexapi.server import PlexServer
+from tmdbapis import TMDbAPIs
 
 load_dotenv()
 
@@ -63,7 +64,8 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
 
-print(f"connecting to Plex...")
+
+print("connecting to Plex...")
 plex = PlexServer(PLEX_URL, PLEX_TOKEN)
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
@@ -94,14 +96,16 @@ for lib in lib_array:
 
             individuals.update(tmpDict)
             jobs.update(jobDict)
-        except Exception as ex:
+        except Exception:
             progress(item_count, item_total, "EX: " + item.title)
 
     print("\r\r")
 
     FOUND_COUNT = len(individuals.items())
     count = 0
-    print(f"Top {FOUND_COUNT if FOUND_COUNT < CREW_COUNT else CREW_COUNT} {TARGET_JOB} in [{lib}]:")
+    print(
+        f"Top {FOUND_COUNT if FOUND_COUNT < CREW_COUNT else CREW_COUNT} {TARGET_JOB} in [{lib}]:"
+    )
     for individual in sorted(individuals.items(), key=lambda x: x[1], reverse=True):
         if count < CREW_COUNT:
             print("{}\t{}".format(individual[1], individual[0]))

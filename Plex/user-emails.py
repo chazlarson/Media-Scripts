@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-from plexapi.server import PlexServer
-from dotenv import load_dotenv
-import os
+import logging
+from datetime import datetime
+from pathlib import Path
+
 from helpers import get_plex, load_and_upgrade_env
 
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
 # current dateTime
 now = datetime.now()
 

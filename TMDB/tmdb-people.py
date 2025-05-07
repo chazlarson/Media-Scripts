@@ -1,10 +1,11 @@
-import requests
-from dotenv import load_dotenv
-from alive_progress import alive_bar
 import os
-from tmdbapis import TMDbAPIs
 from pathlib import Path
 from timeit import default_timer as timer
+
+import requests
+from alive_progress import alive_bar
+from dotenv import load_dotenv
+from tmdbapis import TMDbAPIs
 
 start = timer()
 
@@ -29,7 +30,7 @@ items = []
 people_file = Path(people_name_file)
 
 if people_file.is_file():
-    with open(people_name_file, encoding='utf-8') as fp:
+    with open(people_name_file, encoding="utf-8") as fp:
         for line in fp:
             items.append(line.strip())
 
@@ -37,7 +38,6 @@ idx = 1
 
 
 def save_image(person, idx, UPPER):
-
     file_root = f"{person.name}-{person.id}"
 
     if person.profile_url is not None:

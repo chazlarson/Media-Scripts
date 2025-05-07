@@ -20,11 +20,12 @@
 #
 # Some yaml will be printed, ready to copy-paste into your Kometa config.yml.
 
-import requests
-import webbrowser
-import secrets
-import re
 import os
+import re
+import secrets
+import webbrowser
+
+import requests
 
 urls = {
     "oauth_token": "https://myanimelist.net/v1/oauth2/token",

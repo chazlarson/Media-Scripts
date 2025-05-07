@@ -1,13 +1,14 @@
-from plexapi.server import PlexServer
+import csv
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
+import time
 from pathlib import Path
 from timeit import default_timer as timer
-import time
-import csv
+
+from dotenv import load_dotenv
+from plexapi.server import PlexServer
+from tmdbapis import TMDbAPIs
 
 # import tvdb_v4_official
 
@@ -215,7 +216,6 @@ def getHeaders():
 
 
 def writeResults(itemList, lib):
-
     output_name = f"./{lib}-output.txt"
 
     with open(output_name, "wt") as csv_file:
@@ -251,12 +251,11 @@ def getPlexItem(
 
 
 def getTMDBItem(theItem):
-
     isShow = False
     try:
         isShow = theItem.TYPE == "show"
     except:
-        isShow = not ("movie" in theItem.Part_File_Combined)
+        isShow = "movie" not in theItem.Part_File_Combined
 
     tmdbItem = None
     try:
