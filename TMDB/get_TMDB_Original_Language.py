@@ -1,13 +1,14 @@
-from plexapi.server import PlexServer
+import csv
 import os
-from dotenv import load_dotenv
 import sys
 import textwrap
-from tmdbapis import TMDbAPIs
+import time
 from pathlib import Path
 from timeit import default_timer as timer
-import time
-import csv
+
+from dotenv import load_dotenv
+from plexapi.server import PlexServer
+from tmdbapis import TMDbAPIs
 
 # import tvdb_v4_official
 
