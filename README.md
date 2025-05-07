@@ -93,7 +93,7 @@ See the [Plex Scripts README](Plex/README.md) for details.
 
 See the [Kometa Scripts README](Kometa/README.md) for details.
 
-# TMDB scripts
+## TMDB scripts
 
 1. tmdb-people.py - retrieve TMDB images for a list of people
 
@@ -105,7 +105,7 @@ This presents a web UI that lets you scroll through the images that Plex provide
 
 See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
 
-# Other script repos of interest
+## Other script repos of interest
 
 1. [bullmoose](https://github.com/bullmoose20/Plex-Stuff)
 2. [Casvt](https://github.com/Casvt/Plex-scripts)
