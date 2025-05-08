@@ -4,7 +4,7 @@
 <ul class="list-group">
   {% for section in sections %}
     <li class="list-group-item">
-      <a href="{{ url_for('browse', section_key=section.key) }}">{{ section.title }} ({{ section.type }})</a>
+      <a href="{{ url_for('list_items', section_key=section.key) }}">{{ section.title }} ({{ section.type }})</a>
     </li>
   {% endfor %}
 </ul>
