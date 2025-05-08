@@ -1,7 +1,5 @@
 import os
 
-import math
-import string
 import requests
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from plexapi.server import PlexServer
@@ -9,9 +7,6 @@ from plexapi.server import PlexServer
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# module‑level alphabet list so we only build it once
-ALPHABET = list(string.ascii_uppercase)
-ALPHABET.insert(0, "0-9")
 
 def get_plex():
     base_url = session.get("base_url")
@@ -42,66 +37,6 @@ def libraries():
     return render_template("libraries.html", sections=sections)
 
 
-# new paginated item picker
-@app.route("/browse/<section_key>/items")
-def list_items(section_key):
-    plex = get_plex()
-    if not plex:
-        return redirect(url_for("connect"))
-
-    # find the right library section
-    section = next(
-        (s for s in plex.library.sections() if str(s.key) == section_key),
-        None,
-    )
-    if not section:
-        flash("Library not found.")
-        return redirect(url_for("libraries"))
-
-    # full list of items
-    all_items_full = list(section.all())
-
-    # optional letter filter (defaults to 'All')
-    letter = request.args.get("letter", "All")
-    if letter != "All":
-        if letter[:1].isdigit():
-            items_filtered = [
-                item
-                for item in all_items_full
-                if item.title and item.title[:1].isdigit()
-            ]
-        else:
-            items_filtered = [
-                item
-                for item in all_items_full
-                if item.title and item.title.upper().startswith(letter.upper())
-            ]
-    else:
-        items_filtered = all_items_full
-
-    # pagination params (based on filtered set)
-    total    = len(items_filtered)
-    per_page = 20
-    pages    = math.ceil(total / per_page)
-
-    # clamp page number
-    page = int(request.args.get("page", 1))
-    page = max(1, min(page, pages))
-
-    # slice out this page from filtered items
-    start      = (page - 1) * per_page
-    page_items = items_filtered[start : start + per_page]
-
-    return render_template(
-        "items.html",
-        section=section,
-        items=page_items,
-        page=page,
-        pages=pages,
-        per_page=per_page,
-        alphabet=ALPHABET,
-        letter=letter,
-    )
 # http://127.0.0.1:5000/browse/5?page=1&art_type=poster&art_page=1&season=3&episode=
 
 
