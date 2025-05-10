@@ -1,7 +1,5 @@
 import os
 
-import math
-import string
 import requests
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from plexapi.server import PlexServer
@@ -9,9 +7,6 @@ from plexapi.server import PlexServer
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# module‑level alphabet list so we only build it once
-ALPHABET = list(string.ascii_uppercase)
-ALPHABET.insert(0, "0-9")
 
 def get_plex():
     base_url = session.get("base_url")
