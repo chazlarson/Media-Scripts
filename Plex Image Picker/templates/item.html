@@ -1,7 +1,12 @@
 <!-- templates/item.html -->
 {% extends 'base.html' %}
 {% block content %}
-<h2>{{ section.title }}: {{ item.title }}</h2>
+
+<!-- http://127.0.0.1:5000/browse/1/items?page=1&letter=O -->
+<!-- item_page -->
+<!-- item_letter -->
+
+<h2><a href="{{ url_for('list_items', section_key=section.key, page=item_page, letter=item_letter) }}">{{ section.title }}</a>: {{ item.title }}</h2>
 <div class="d-flex justify-content-between mb-3">
   <div>
     <a href="{{ url_for('browse', section_key=section.key, page=1) }}" class="btn btn-outline-secondary btn-sm">First Item</a>

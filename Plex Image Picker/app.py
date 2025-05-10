@@ -61,6 +61,12 @@ def list_items(section_key):
     # full list of items
     all_items_full = list(section.all())
 
+    # give everything a global index
+    global_index = 1
+    for item in all_items_full:
+        item.global_index = global_index
+        global_index = global_index + 1
+
     # optional letter filter (defaults to 'All')
     letter = request.args.get("letter", "All")
     if letter != "All":
@@ -102,7 +108,6 @@ def list_items(section_key):
         alphabet=ALPHABET,
         letter=letter,
     )
-# http://127.0.0.1:5000/browse/5?page=1&art_type=poster&art_page=1&season=3&episode=
 
 
 @app.route("/browse/<section_key>")
@@ -119,6 +124,7 @@ def browse(section_key):
     items = list(section.all())
     pages = len(items)
     item_page = int(request.args.get("page", 1))
+    item_letter = request.args.get("letter", "All")
     item_page = max(1, min(item_page, pages))
     item = items[item_page - 1]
 
@@ -139,6 +145,7 @@ def browse(section_key):
         season_rating_key=season_rating_key,
         items=items,
         item_page=item_page,
+        item_letter=item_letter,
         pages=pages,
         art_type=art_type,
         season=season,

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>{{ section.title }} – Pick an Item {{ letter }}</h2>
+  <h2>{{ section.title }} – Pick an Item</h2>
 
   {# ——— Alphabet picker with index‑based active highlighting ——— #}
   {% set current_index = 0 %}
@@ -30,7 +30,8 @@
         {% set global_index = (page - 1) * per_page + loop.index %}
         <a href="{{ url_for('browse',
                              section_key=section.key,
-                             page=global_index) }}">
+                             page=item.global_index,
+                             letter=letter) }}">
           {{ item.title }}
         </a>
       </li>
