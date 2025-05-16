@@ -23,7 +23,9 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 1. install direnv
 2. go to the previous section
 
-ok no
+ok not really
+
+### if you don't use [`direnv`](https://github.com/direnv/direnv):
 
 1. clone repo
    ```
