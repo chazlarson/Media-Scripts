@@ -8,30 +8,12 @@ See the top-level [README](../README.md) for setup instructions.
 
 All these scripts use the same `.env` and requirements.
 
-### `.env` contents
-
+Any that communicate with Plex require:
 ```
-TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
-TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
-PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
-PLEX_TOKEN=PLEX-TOKEN
-PLEX_OWNER=yournamehere                      # account name of the server owner
-LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
-CAST_DEPTH=20                                # how deep to go into the cast for actor collections
-TOP_COUNT=10                                 # how many actors to export
-TARGET_LABELS=this label, that label         # comma-separated list of labels to remove posters from
-REMOVE_LABELS=True                           # attempt to remove the TARGET_LABELs from items after resetting the poster
-DELAY=1                                      # optional delay between items
-POSTER_DIR=extracted_posters                 # put downloaded posters here
-POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
-POSTER_DOWNLOAD=0                            # if set to 0, generate a script rather than downloading
-POSTER_CONSOLIDATE=1                         # if set to 0, posters are separated into folders by library
-KOMETA_CONFIG_DIR=/opt/kometa/Kometa/config/ # path to Kometa config directory
-
-# ORIGINAL TO ASSETS
-USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
-ASSETS_BY_LIBRARIES=1                        # should those asset folders be sorted into library folders?
-ASSET_DIR=assets                             # top-level directory for those assets
+PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
+                            # Just the base URL, no /web or anything at the end.
+                            # i.e. http://192.168.1.11:32400 or the like
+PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
 ```
 
 ## Scripts:
@@ -54,8 +36,6 @@ You've deleted stuff from Plex and want to clean up the leftover backup art that
 
 The script uses these settings from the `.env`:
 ```
-PLEX_URL=https://plex.domain.tld             # URL for Plex; can be a domain or IP:PORT
-PLEX_TOKEN=PLEX-TOKEN
 LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
 DELAY=1                                      # optional delay between items
 KOMETA_CONFIG_DIR=/opt/kometa/config/              # path to Kometa config directory
