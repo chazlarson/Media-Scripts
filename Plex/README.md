@@ -16,6 +16,7 @@ If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entries th
 
 ```shell
 # PLEX API ENV VARS
+PLEXAPI_HEADER_IDENTIFIER="media-scripts"
 PLEXAPI_PLEXAPI_TIMEOUT='360'
 PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
                                              # Just the base URL, no /web or anything at the end.
