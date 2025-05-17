@@ -82,7 +82,7 @@ from plexapi.utils import download
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.9c"
+VERSION = "0.8.9d"
 
 env_file_path = Path(".env")
 
