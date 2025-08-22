@@ -1,13 +1,14 @@
 #!/usr/bin/env python
+
 import json
 import os
-import sys
-import textwrap
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import get_plex, get_xml_libraries, get_xml_watched, load_and_upgrade_env
+from config import Config
+from helpers import (get_plex, get_redaction_list, get_target_libraries,
+                     get_xml_libraries, get_xml_watched)
 from logs import plogger, setup_logger
 
 # current dateTime
@@ -18,49 +19,26 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 
 # DONE 0.1.1: guard against empty library map
-
-env_file_path = Path(".env")
+# DONE 0.2.0: config class
 
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-target_url_var = "PLEX_URL"
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = "PLEXAPI_AUTH_SERVER_BASEURL"
-    PLEX_URL = os.getenv(target_url_var)
-
-target_token_var = "PLEX_TOKEN"
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = "PLEXAPI_AUTH_SERVER_TOKEN"
-    PLEX_TOKEN = os.getenv(target_token_var)
-
-if PLEX_URL is None or PLEX_URL == "https://plex.domain.tld":
-    plogger(f"You must specify {target_url_var} in the .env file.", "info", "a")
-    exit()
-
-if PLEX_TOKEN is None or PLEX_TOKEN == "PLEX-TOKEN":
-    plogger(f"You must specify {target_token_var} in the .env file.", "info", "a")
-    exit()
-
-PLEX_OWNER = os.getenv("PLEX_OWNER")
-
-LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
+PLEX_URL = config.get('plex_api.auth_server.base_url')
+PLEX_TOKEN = config.get('plex_api.auth_server.token')
 
 try:
-    lib_map = json.loads(LIBRARY_MAP)
+    lib_map = json.loads(config.get("status.library_map", "{}"))
 except:
     plogger(
-        "LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.",
+        "LIBRARY_MAP in the config.yaml appears to be broken.  Defaulting to an empty list.",
         "info",
         "a",
     )
@@ -122,10 +100,11 @@ def process_section(username, section):
 
 padwidth = 95
 count = 0
-connected_plex_user = PLEX_OWNER
+connected_plex_user = config.get("status.plex_owner")
 connected_plex_library = ""
 
 plex = get_plex()
+
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
@@ -133,6 +112,7 @@ all_users = account.users()
 item = None
 file_string = ""
 DO_NOTHING = False
+
 
 print(f"------------ {account.username} ------------")
 try:

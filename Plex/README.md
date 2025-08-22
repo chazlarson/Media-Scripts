@@ -6,144 +6,153 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 See the top-level [README](../README.md) for setup instructions.
 
-All these scripts use the same `.env` and requirements.
+All these scripts use the same `config.yaml` and requirements.
 
-NOTE: on 06-29 these scripts have changed to using ENV vars to set up the Plex API details.  This was done primarily to enable the timeout to apply to all Plex interactions.
+NOTE: on 08-22-2025 these scripts have changed to using a yaml config rather than an env file.  TYOu will need to transfer your settings manually from one to the other.
 
-If your `.env` file contains the original `PLEX_URL` and `PLEX_TOKEN` entries those will be silently changed for you.
+### `config.template.yaml` contents
 
-### `.env` contents
+```yaml
+plex_api:
+  header_identifier: "media-scripts"
+  timeout: 360
+  auth_server:
+    base_url: 'YOUR_PLEX_URL'
+    token: 'YOUR_PLEX_TOKEN'
+  log:
+    backup_count: 3
+    format: "%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s"
+    level: "INFO"
+    path: "plexapi.log"
+    rotate_bytes: 512000
+    show_secrets: 0
+  skip_verify_ssl: 0
 
-```shell
-# PLEX API ENV VARS
-PLEXAPI_HEADER_IDENTIFIER="media-scripts"
-PLEXAPI_PLEXAPI_TIMEOUT='360'
-PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
-                                             # Just the base URL, no /web or anything at the end.
-                                             # i.e. http://192.168.1.11:32400 or the like
-PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
-PLEXAPI_LOG_BACKUP_COUNT='3'
-PLEXAPI_LOG_FORMAT='%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s' # PLEX API ENV VARS
-PLEXAPI_LOG_LEVEL='INFO'
-PLEXAPI_LOG_PATH='plexapi.log'
-PLEXAPI_LOG_ROTATE_BYTES='512000'
-PLEXAPI_LOG_SHOW_SECRETS='false'
+general:
+  tmdb_key: "TMDB_API_KEY" # https://developers.themoviedb.org/3/getting-started/introduction
+  tvdb_key: "TVDB_V4_API_KEY" # currently not used; https://thetvdb.com/api-information
+  delay: 1 # optional delay between items
+  library_names: Movies,TV Shows,Movies 4K # comma-separated list of libraries to act on
+  superchat: 0
 
-# GENERAL ENV VARS
-TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
-TVDB_KEY=TVDB_V4_API_KEY                     # currently not used; https://thetvdb.com/api-information
-DELAY=1                                      # optional delay between items
-LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
+kometa:
+  config_dir: /kometa/is/here
 
-# IMAGE DOWNLOAD ENV VARS
-## what-to-grab
-### collection-related
-INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
-ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
-ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
+image_download:
+  what_to_grab:
+    ### collection-related
+    include_collection_artwork: 1 # should get-all-posters retrieve collection posters?
+    only_collection_artwork: 0 # should get-all-posters retrieve ONLY collection posters?
+    only_these_collections: "Bing|Bang|Boing" # only grab artwork for these collections and items in them
 
-### tv-related
-GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
-GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
+    ### tv-related
+    seasons: 1 # should get-all-posters retrieve season posters?
+    episodes: 1 # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
 
-### background-related
-GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
-ARTWORK=1                                    # current background is downloaded with current poster
+    ### background-related
+    backgrounds: 1 # should get-all-posters retrieve backgrounds?
+    artwork: 1 # current background is downloaded with current poster
 
-### quantity-related
-ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
-POSTER_DEPTH=20                              # grab this many posters [0 grabs all] [ONLY_CURRENT overrides this]
+    ### quantity-related
+    only_current: 0 # should get-all-posters retrieve ONLY current artwork?
+    poster_depth: 20 # grab this many posters [0 grabs all] [ONLY_CURRENT overrides this]
 
-### what-to-keep
-KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
-FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
-# RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0              # keep images that have the Kometa overlay EXIF tag
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
+    ### what-to-keep
+    keep_junk: 0 # keep files that script would normally delete [incorrect filetypes, mainly]
+    find_overlaid_images: 0 # check all downloaded images for overlays
+    retain_overlaid_images: 0 # keep images that have an overlay EXIF tag [this will override the following two]
+    retain_kometa_overlaid_images: 0 # keep images that have the Kometa overlay EXIF tag
+    retain_tcm_overlaid_images: 0 # keep images that have the TCM overlay EXIF tag
 
-## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
-USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
-USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
-ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
-ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored
-POSTER_DIR=extracted_posters                 # put downloaded posters here
-CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
-POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
+  ## where-to-put-it
+  where_to_put_it:
+    use_asset_naming: 1 # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+    use_asset_folders: 1 # should those Kometa-Asset-Directory names use asset folders?
+    use_asset_subfolders: 0 # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
+    assets_by_libraries: 1 # should those Kometa-Asset-Directory images be sorted into library folders?
+    asset_dir: "assets" # top-level directory for those Kometa-Asset-Directory images
+    # if asset-directory naming is on, the next three are ignored
+    poster_dir: "extracted_posters" # put downloaded posters here
+    current_poster_dir: "current_posters" # put downloaded current posters and artwork here
+    poster_consolidate: 0 # if false, posters are separated into folders by library
 
-## tracking
-TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
-TRACK_COMPLETION=1                           # If set to 1, movies/shows are tracked as complete by rating id
-TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
+  ## tracking
+  tracking:
+    track_urls: 1 # If set to 1, URLS are tracked and won't be downloaded twice
+    track_completion: 1 # If set to 1, movies/shows are tracked as complete by rating id
+    track_image_sources: 1 # keep a file containing file names and source URLs
 
-## general
-POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
-FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
-DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
-                                             # 0 sets the fallback date to the beginning of time
-THREADED_DOWNLOADS=0                         # should downloads be done in the background in threads?
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to the fallback date for these libraries
-RESET_COLLECTIONS=Bing,Bang,Boing            # CURRENTLY UNUSED
-ADD_SOURCE_EXIF_COMMENT=1                    # CURRENTLY UNUSED
+  ## general
+  general:
+    poster_download: 1 # if false, generate a script rather than downloading
+    folders_only: 0 # Just build out the folder hierarchy; no image downloading
+    default_years_back: 2 # in absence of a "last run date", grab things added this many years back.
+    # 0 sets the fallback date to the beginning of time
+    threaded_downloads: 0 # should downloads be done in the background in threads?
+    reset_libraries: "Bing,Bang,Boing" # reset "last time" count to the fallback date for these libraries
+    reset_collections: "Bing,Bang,Boing" # CURRENTLY UNUSED
+    add_source_exif_comment: 1 # CURRENTLY UNUSED
 
-# STATUS ENV VARS
-PLEX_OWNER=yournamehere                      # account name of the server owner
-TARGET_PLEX_URL=https://plex.domain2.tld     # As above, the target of apply_all_status
-TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO             # As above, the target of apply_all_status
-TARGET_PLEX_OWNER=yournamehere               # As above, the target of apply_all_status
-LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
-                                             # In apply_all_status, map libraries according to this JSON.
+status:
+  plex_owner: "yournamehere" # account name of the server owner
+  target_plex_url: "https://plex.domain2.tld" # As above, the target of apply_all_status
+  target_plex_token: "PLEX-TOKEN-TWO" # As above, the target of apply_all_status
+  target_plex_owner: "yournamehere" # As above, the target of apply_all_status
+  library_map: '{"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}'
+  # In apply_all_status, map libraries according to this JSON.
 
-# RESET-POSTERS ENV VARS
-TRACK_RESET_STATUS=1                         # should reset-posters-* keep track of status and pick up where it left off?
-LOCAL_RESET_ARCHIVE=1                        # should reset-posters-tmdb keep a local archive of posters?
-TARGET_LABELS=this label, that label         # comma-separated list of labels to reset posters on
-REMOVE_LABELS=0                              # attempt to remove the TARGET_LABELs from items after resetting the poster
-RESET_SEASONS=1                              # reset-posters-* resets season artwork as well in TV libraries
-RESET_EPISODES=1                             # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
-RETAIN_RESET_STATUS_FILE=0                   # Don't delete the reset progress file at the end
-FLUSH_STATUS_AT_START=0                      # Delete the reset progress file at the start instead of reading it
-RESET_SEASONS_WITH_SERIES=0                  # If there isn't a season poster, use the series poster
-DRY_RUN=0                                    # [currently only works with reset-posters-*]; don't actually do anything, just log
+reset_posters:
+  track_reset_status: 1 # should reset-posters-* keep track of status and pick up where it left off?
+  clear_reset_status: 0
+  local_reset_archive: 1 # should reset-posters-tmdb keep a local archive of posters?
+  override_overlay_status: 0
+  target_labels: this label, that label # comma-separated list of labels to reset posters on
+  remove_labels: 0 # attempt to remove the TARGET_LABELs from items after resetting the poster
+  reset_seasons: 1 # reset-posters-* resets season artwork as well in TV libraries
+  reset_episodes: 1 # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+  retain_reset_status_file: 0 # Don't delete the reset progress file at the end
+  flush_status_at_start: 0 # Delete the reset progress file at the start instead of reading it
+  reset_seasons_with_series: 0 # If there isn't a season poster, use the series poster
+  dry_run: 0 # [currently only works with reset-posters-*]; don't actually do anything, just log
 
-# LIST ITEM IDS ENV VARS
-INCLUDE_COLLECTION_MEMBERS=0
-ONLY_COLLECTION_MEMBERS=0
+list_item_ids:
+  include_collection_members: 0
+  only_collection_members: 0
 
-# DELETE_COLLECTION ENV VARS
-KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
+delete_collection:
+  keep_collections: "bing,bang" # List of collections to keep
 
-# REMATCH-ITEMS ENV VARS
-UNMATCHED_ONLY=1                             # If 1, only rematch things that are currently unmatched
+refresh_metadata:
+  refresh_1970_only: 1 # If 1, only refresh things that have an originally-available date of 1970-01-01
 
-# RESET_ADDED_AT
-ADJUST_DATE_FUTURES_ONLY=0                   # Only look at items that show up as added in the future
-ADJUST_DATE_EPOCH_ONLY=1                     # Only adjust items that have "originally available" dates of `1970-01-01`
+rematch_items:
+  unmatched_only: 1 # If 1, only rematch things that are currently unmatched
 
-# REFRESH_METADATA
-REFRESH_1970_ONLY=1                          # If 1, only refresh things that have an originally-available date of 1970-01-01
+reset_added_at:
+  adjust_date_futures_only: 0 # Only look at items that show up as added in the future
+  adjust_date_epoch_only: 1 # Only adjust items that have "originally available" dates of `1970-01-01`
 
-# ACTOR ENV VARS
-CAST_DEPTH=20                                # how deep to go into the cast for actor collections
-TOP_COUNT=10                                 # how many actors to export
-KNOWN_FOR_ONLY=0                                # ignore cast members who are not primarily known as actors
-TRACK_GENDER=1                               # Pay attention to actor gender [as recorded on TMDB]
-BUILD_COLLECTIONS=0                          # build yaml for Kometa config.yml
-NUM_COLLECTIONS=20                           # this many actors in Kometa yaml
-MIN_GENDER_NONE = 5                          # include minimum this many "none" gendered actors in the YAML, if possible
-MIN_GENDER_FEMALE = 5                        # include minimum this many "female" gendered actors in the YAML, if possible
-MIN_GENDER_MALE = 5                          # include minimum this many "male" gendered actors in the YAML, if possible
-MIN_GENDER_NB = 5                            # include minimum this many "non-binary" gendered actors in the YAML, if possible
+actor:
+  cast_depth: 20 # how deep to go into the cast for actor collections
+  top_count: 10 # how many actors to export
+  job_type: "Actor"
+  known_for_only: 0 # ignore cast members who are not primarily known as actors
+  build_collections: 0 # build yaml for Kometa config.yml
+  num_collections: 20 # this many actors in Kometa yaml
+  track_gender: 1 # Pay attention to actor gender [as recorded on TMDB]
+  min_gender_none: 5 # include minimum this many "none" gendered actors in the YAML, if possible
+  min_gender_female: 5 # include minimum this many "female" gendered actors in the YAML, if possible
+  min_gender_male: 5 # include minimum this many "male" gendered actors in the YAML, if possible
+  min_gender_nb: 5 # include minimum this many "non-binary" gendered actors in the YAML, if possible
 
-# LOW POSTER COUNT
-POSTER_THRESHOLD=10
+low_poster_count:
+  poster_threshold: 10 # how many posters counts as a "low" count?
 
-# CREW COUNT
-CREW_DEPTH=20
-CREW_COUNT=100
-TARGET_JOB=Director
-SHOW_JOBS=0
+crew:
+  depth: 20
+  count: 100
+  target_job: Director
+  show_jobs: 0
 ```
 
 ## Scripts:
@@ -171,10 +180,12 @@ You have things in your library that show up added in the future, or way in the 
 
 This script will set the "added at" date and "originally available" date to match the thing's release date as found on TMDB, if the values set in Plex are more than a day or so off the TMDB release date.
 
-Script-specific variables in .env:
-```
-ADJUST_DATE_FUTURES_ONLY=0      # Only look at items that show up as added in the future
-ADJUST_DATE_EPOCH_ONLY=1        # Only adjust items that have "originally available" dates of `1970-01-01`
+Script-specific variables in `config.yaml`:
+```yaml
+reset_added_at:
+  adjust_date_futures_only: 0 # Only look at items that show up as added in the future
+  adjust_date_epoch_only: 1 # Only adjust items that have "originally available" dates of `1970-01-01`
+
 ```
 
 ### Usage
@@ -212,23 +223,26 @@ This script will set the poster for every series or movie to the default poster 
 
 If there is a file already located at `./posters/[movies|shows]/<rating_key>.ext`, the script will use *that image* instead of retrieving a new one, so if you replace that local one with a poster of your choice, the script will use the custom one rather than the TMDB/TVDB default.
 
-Script-specific variables in .env:
-```shell
-TRACK_RESET_STATUS=1                            # pick up where the script left off
-LOCAL_RESET_ARCHIVE=1                           # keep a local archive of posters
-TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
-REMOVE_LABELS=1                                 # remove labels when done [NOT RECOMMENDED]
-RESET_SEASONS=1                                 # reset-posters-plex resets season artwork as well in TV libraries
-RESET_EPISODES=1                                # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
-RETAIN_RESET_STATUS_FILE=0                      # Don't delete the reset progress file at the end
-DRY_RUN=0                                       # [currently only works with reset-posters-*]; don't actually do anything, just log
-FLUSH_STATUS_AT_START=0                         # Delete the reset progress file at the start instead of reading them
-RESET_SEASONS_WITH_SERIES=0                     # If there isn't a season poster, use the series poster
+Script-specific variables in `config.yaml`:
+```yaml
+reset_posters:
+  track_reset_status: 1 # should reset-posters-* keep track of status and pick up where it left off?
+  clear_reset_status: 0
+  local_reset_archive: 1 # should reset-posters-tmdb keep a local archive of posters?
+  override_overlay_status: 0
+  target_labels: this label, that label # comma-separated list of labels to reset posters on
+  remove_labels: 0 # attempt to remove the TARGET_LABELs from items after resetting the poster
+  reset_seasons: 1 # reset-posters-* resets season artwork as well in TV libraries
+  reset_episodes: 1 # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+  retain_reset_status_file: 0 # Don't delete the reset progress file at the end
+  flush_status_at_start: 0 # Delete the reset progress file at the start instead of reading it
+  reset_seasons_with_series: 0 # If there isn't a season poster, use the series poster
+  dry_run: 0 # [currently only works with reset-posters-*]; don't actually do anything, just log
 ```
 
 If you set:
-```
-TRACK_RESET_STATUS=1
+```yaml
+  track_reset_status: 1
 ```
 The script will keep track of where it is and will pick up at that point on subsequent runs.  This is useful in the event of a lost connection to Plex.
 
@@ -237,22 +251,22 @@ Once it gets to the end of the library successfully, the tracking file is delete
 If you want to reset any existing progress tracking and start from the beginning for some reason, set `FLUSH_STATUS_AT_START` to 1.
 
 If you specify a comma-separated list of labels in the env file:
-```
-TARGET_LABELS = This label, That label, Another label
+```yaml
+  target_labels: this label, that label
 ```
 The script will reset posters only on movies with those labels assigned.
 
 If you also set:
-```
-REMOVE_LABELS=1
+```yaml
+  remove_labels: 1
 ```
 The script will *attempt* to remove those labels after resetting the poster.  I say "attempt" since in testing I have experienced an odd situation where no error occurs but the label is not removed.  My test library of 230 4K-Dolby Movies contains 47 that fail in this way; every run it goes through the 47 movies "removing labels" without error yet they still have the labels on the next run.
 
-Besides that Heisenbug, I don't recommend using this [`REMOVE_LABELS`] since the label removal takes a long time [dozens of seconds per item].  Doing this through the Plex UI is much faster.
+Besides that Heisenbug, I don't recommend using this [`remove_labels`] since the label removal takes a long time [dozens of seconds per item].  Doing this through the Plex UI is much faster.
 
 If you set:
-```
-LOCAL_RESET_ARCHIVE=0
+```yaml
+  local_reset_archive: 1
 ```
 The script will set the artwork by sending the TMDB URL to Plex, without downloading the file locally first.  This means a faster run compared to the initial run when downloading.
 
@@ -288,29 +302,32 @@ At this time, there is no configuration aside from library name; it replaces all
 
 ## reset-posters-plex.py
 
-Script-specific variables in .env:
-```
-TRACK_RESET_STATUS=1                            # pick up where the script left off
-LOCAL_RESET_ARCHIVE=1                           # keep a local archive of posters
-TARGET_LABELS = Bing, Bang, Boing               # reset artwork on items with these labels
-REMOVE_LABELS=1                                 # remove labels when done [NOT RECOMMENDED]
-RESET_SEASONS=1                                 # reset-posters-plex resets season artwork as well in TV libraries
-RESET_EPISODES=1                                # reset-posters-plex resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
-RETAIN_RESET_STATUS_FILE=0                      # Don't delete the reset progress file at the end
-DRY_RUN=0                                       # [currently only works with reset-posters-*]; don't actually do anything, just log
-FLUSH_STATUS_AT_START=0                         # Delete the reset progress file at the start instead of reading them
-RESET_SEASONS_WITH_SERIES=0                     # If there isn't a season poster, use the series poster
+Script-specific variables in `config.yaml`:
+```yaml
+reset_posters:
+  track_reset_status: 1 # should reset-posters-* keep track of status and pick up where it left off?
+  clear_reset_status: 0
+  local_reset_archive: 1 # should reset-posters-tmdb keep a local archive of posters?
+  override_overlay_status: 0
+  target_labels: this label, that label # comma-separated list of labels to reset posters on
+  remove_labels: 0 # attempt to remove the TARGET_LABELs from items after resetting the poster
+  reset_seasons: 1 # reset-posters-* resets season artwork as well in TV libraries
+  reset_episodes: 1 # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+  retain_reset_status_file: 0 # Don't delete the reset progress file at the end
+  flush_status_at_start: 0 # Delete the reset progress file at the start instead of reading it
+  reset_seasons_with_series: 0 # If there isn't a season poster, use the series poster
+  dry_run: 0 # [currently only works with reset-posters-*]; don't actually do anything, just log
 ```
 
 Same as `reset-posters-tmdb.py`, but it resets the artwork to the first item in Plex's own list of artwork, rather than downloading a new image from TMDB.
 
-With `RESET_SEASONS_WITH_SERIES=1`, if the season doesn't have artwork the series artwork will be used instead.
+With `reset_seasons_with_series: 1`, if the season doesn't have artwork the series artwork will be used instead.
 
 ## grab-all-IDs.py
 
 Perhaps you want to gather all the IDs for everything in a library.
 
-This script will go through a library and grab PLex RatingKey [which may be unique], IMDB ID, TMDB ID, and TVDB ID for everything in the list of libraries specified in the `.env`.  It stores the data in a sqlite database called `ids.sqlite`; the repo copy of this file contains that data for 105871 movies and 26699 TV Shows.
+This script will go through a library and grab PLex RatingKey [which may be unique], IMDB ID, TMDB ID, and TVDB ID for everything in the list of libraries specified in the `config.yaml`.  It stores the data in a sqlite database called `ids.sqlite`; the repo copy of this file contains that data for 105871 movies and 26699 TV Shows.
 
 
 ## grab-all-posters.py
@@ -327,118 +344,130 @@ The script can name these files so that they are ready for use with [Kometa's As
 
 If you have downloaded more than one image for each thing, see [image_picker.py](#image_pickerpy) for a simpler way to choose which one you want to make active.
 
-If `THREADED_DOWNLOADS=1`, the script queues downloads so they happen in the background in multiple threads.  Once it's gone through the libraries listed in the config, it will then wait until the queue is drained before exiting.  If you want to drop out of the library-scanning loop early, create a file `stop.dat` next to the script, and the library loop will exit at the end of the current show or movie, then go to the "waiting for the downloads" section.  This allows you to get out early without flushing the queue [as control-C would do].
+If threaded downloads are enabled, the script queues downloads so they happen in the background in multiple threads.  Once it's gone through the libraries listed in the config, it will then wait until the queue is drained before exiting.  If you want to drop out of the library-scanning loop early, create a file `stop.dat` next to the script, and the library loop will exit at the end of the current show or movie, then go to the "waiting for the downloads" section.  This allows you to get out early without flushing the queue [as control-C would do].
 
 You can also skip the current library by creating `skip.dat`.
 
-Script-specific variables in .env:
-```shell
-# IMAGE DOWNLOAD ENV VARS
-## what-to-grab
-GRAB_SEASONS=1                               # should get-all-posters retrieve season posters?
-GRAB_EPISODES=1                              # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
-GRAB_BACKGROUNDS=1                           # should get-all-posters retrieve backgrounds?
-ONLY_CURRENT=0                               # should get-all-posters retrieve ONLY current artwork?
-ARTWORK=1                                    # current background is downloaded with current poster
-INCLUDE_COLLECTION_ARTWORK=1                 # should get-all-posters retrieve collection posters?
-ONLY_COLLECTION_ARTWORK=0                    # should get-all-posters retrieve ONLY collection posters?
-ONLY_THESE_COLLECTIONS=Bing|Bang|Boing       # only grab artwork for these collections and items in them
-POSTER_DEPTH=20                              # grab this many posters [0 grabs all]
-KEEP_JUNK=0                                  # keep files that script would normally delete [incorrect filetypes, mainly]
-FIND_OVERLAID_IMAGES=0                       # check all downloaded images for overlays
-# RETAIN_OVERLAID_IMAGES=0                   # keep images that have an overlay EXIF tag [this will override the following two]
-RETAIN_KOMETA_OVERLAID_IMAGES=0                 # keep images that have the Kometa overlay EXIF tag
-RETAIN_TCM_OVERLAID_IMAGES=0                 # keep images that have the TCM overlay EXIF tag
+Script-specific variables in `config.yaml`:
+```yaml
+image_download:
+  what_to_grab:
+    ### collection-related
+    include_collection_artwork: 1 # should get-all-posters retrieve collection posters?
+    only_collection_artwork: 0 # should get-all-posters retrieve ONLY collection posters?
+    only_these_collections: "Bing|Bang|Boing" # only grab artwork for these collections and items in them
 
-## where-to-put-it
-USE_ASSET_NAMING=1                           # should grab-all-posters name images to match Kometa's Asset Directory requirements?
-USE_ASSET_FOLDERS=1                          # should those Kometa-Asset-Directory names use asset folders?
-USE_ASSET_SUBFOLDERS=0                       # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
-ASSETS_BY_LIBRARIES=1                        # should those Kometa-Asset-Directory images be sorted into library folders?
-ASSET_DIR=assets                             # top-level directory for those Kometa-Asset-Directory images
-                                             # if asset-directory naming is on, the next three are ignored
-POSTER_DIR=extracted_posters                 # put downloaded posters here
-CURRENT_POSTER_DIR=current_posters           # put downloaded current posters and artwork here
-POSTER_CONSOLIDATE=0                         # if false, posters are separated into folders by library
+    ### tv-related
+    seasons: 1 # should get-all-posters retrieve season posters?
+    episodes: 1 # should get-all-posters retrieve episode posters? [requires GRAB_SEASONS]
 
-## tracking
-TRACK_URLS=1                                 # If set to 1, URLS are tracked and won't be downloaded twice
-TRACK_COMPLETION=1                           # If set to 1, movies/shows are tracked as complete by rating id
-TRACK_IMAGE_SOURCES=1                        # keep a file containing file names and source URLs
+    ### background-related
+    backgrounds: 1 # should get-all-posters retrieve backgrounds?
+    artwork: 1 # current background is downloaded with current poster
 
-## general
-POSTER_DOWNLOAD=1                            # if false, generate a script rather than downloading
-FOLDERS_ONLY=0                               # Just build out the folder hierarchy; no image downloading
-DEFAULT_YEARS_BACK=2                         # in absence of a "last run date", grab things added this many years back.
-                                             # 0 sets the fallback date to the beginning of time
-THREADED_DOWNLOADS=0                         # should downloads be done in the background in threads?
-RESET_LIBRARIES=Bing,Bang,Boing              # reset "last time" count to the fallback date for these libraries
-RESET_COLLECTIONS=Bing,Bang,Boing            # CURRENTLY UNUSED
-ADD_SOURCE_EXIF_COMMENT=1                    # CURRENTLY UNUSED
+    ### quantity-related
+    only_current: 0 # should get-all-posters retrieve ONLY current artwork?
+    poster_depth: 20 # grab this many posters [0 grabs all] [ONLY_CURRENT overrides this]
+
+    ### what-to-keep
+    keep_junk: 0 # keep files that script would normally delete [incorrect filetypes, mainly]
+    find_overlaid_images: 0 # check all downloaded images for overlays
+    retain_overlaid_images: 0 # keep images that have an overlay EXIF tag [this will override the following two]
+    retain_kometa_overlaid_images: 0 # keep images that have the Kometa overlay EXIF tag
+    retain_tcm_overlaid_images: 0 # keep images that have the TCM overlay EXIF tag
+
+  ## where-to-put-it
+  where_to_put_it:
+    use_asset_naming: 1 # should grab-all-posters name images to match Kometa's Asset Directory requirements?
+    use_asset_folders: 1 # should those Kometa-Asset-Directory names use asset folders?
+    use_asset_subfolders: 0 # create asset folders in subfolders ["Collections", "Other", or [0-9, A-Z]] ]
+    assets_by_libraries: 1 # should those Kometa-Asset-Directory images be sorted into library folders?
+    asset_dir: "assets" # top-level directory for those Kometa-Asset-Directory images
+    # if asset-directory naming is on, the next three are ignored
+    poster_dir: "extracted_posters" # put downloaded posters here
+    current_poster_dir: "current_posters" # put downloaded current posters and artwork here
+    poster_consolidate: 0 # if false, posters are separated into folders by library
+
+  ## tracking
+  tracking:
+    track_urls: 1 # If set to 1, URLS are tracked and won't be downloaded twice
+    track_completion: 1 # If set to 1, movies/shows are tracked as complete by rating id
+    track_image_sources: 1 # keep a file containing file names and source URLs
+
+  ## general
+  general:
+    poster_download: 1 # if false, generate a script rather than downloading
+    folders_only: 0 # Just build out the folder hierarchy; no image downloading
+    default_years_back: 2 # in absence of a "last run date", grab things added this many years back.
+    # 0 sets the fallback date to the beginning of time
+    threaded_downloads: 0 # should downloads be done in the background in threads?
+    reset_libraries: "Bing,Bang,Boing" # reset "last time" count to the fallback date for these libraries
+    reset_collections: "Bing,Bang,Boing" # CURRENTLY UNUSED
+    add_source_exif_comment: 1 # CURRENTLY UNUSED
 ```
 
-The point of "POSTER_DEPTH" is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
+The point of `poster_depth` is that sometimes movies have an insane number of posters, and maybe you don't want all 257 Endgame posters or whatever.  Or maybe you want to download them in batches.
 
-If "POSTER_DOWNLOAD" is `0`, the script will build a shell/batch script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
+If `poster_download` is `0`, the script will build a shell/batch script for each library to download the images at your convenience instead of downloading them as it runs, so you can run the downloads overnight or on a different machine with ALL THE DISK SPACE or something.
 
-If "POSTER_CONSOLIDATE" is `1`, the script will store all the images in one directory rather than separating them by library name.  The idea is that Plex shows the same set of posters for "Star Wars" whether it's in your "Movies" or "Movies - 4K" or whatever other libraries, so there's no reason to pull the same set of posters multiple times.  There is an example below.
+If `poster_consolidate` is `1`, the script will store all the images in one directory rather than separating them by library name.  The idea is that Plex shows the same set of posters for "Star Wars" whether it's in your "Movies" or "Movies - 4K" or whatever other libraries, so there's no reason to pull the same set of posters multiple times.  There is an example below.
 
-If "INCLUDE_COLLECTION_ARTWORK" is `1`, the script will grab artwork for all the collections in the target library.
+If `include_collection_artwork` is `1`, the script will grab artwork for all the collections in the target library.
 
-If "ONLY_COLLECTION_ARTWORK" is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
+If `only_collection_artwork` is `1`, the script will grab artwork for ONLY the collections in the target library; artwork for individual items [movies, shows] will not be grabbed.
 
-If "ONLY_THESE_COLLECTIONS" is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.  IF YOU DON'T CHANGE THIS SETTING, NOTHING WILL BE DOWNLOADED.
+If `only_these_collections` is not empty, the script will grab artwork for ONLY the collections listed and items contained in those collections.  This doesn't affect the sorting or naming, just the filter applied when asking Plex for the items.  IF YOU DON'T CHANGE THIS SETTING, NOTHING WILL BE DOWNLOADED.
 
-If "TRACK_URLS" is `1`, the script will track every URL it downloads in a sqlite database.  On future runs, if a given URL is found in that database it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.
+If `track_urls` is `1`, the script will track every URL it downloads in a sqlite database.  On future runs, if a given URL is found in that database it won't be downloaded a second time.  This may save time if the same URL appears multiple times in the list of posters from Plex.
 
-If "TRACK_COMPLETION" is `1`, the script records collections/movies/shows/seasons/episodes by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the thing is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all the images for a thing only to determine that it's already downloaded all of them.  HOWEVER, this also means that if you increase `POSTER_DEPTH`, those additional images won't be picked up when you run the script again, since the item will be marked as complete.
+If `track_completion` is `1`, the script records collections/movies/shows/seasons/episodes by rating key in a sqlite database.  On future runs, if a given rating key is found in that database the thing is considered complete and it will be skipped.  This will save time in subsequent runs as the script will not look through all the images for a thing only to determine that it's already downloaded all of them.  HOWEVER, this also means that if you increase `poster_depth`, those additional images won't be picked up when you run the script again, since the item will be marked as complete.
 
-The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script uses a fallback "last run" date of today - `DEFAULT_YEARS_BACK`.
+The script keeps track of the last date it retrieved items from a library [for show libraries it also tracks seasons and episodes separately], and on each run will only retrieve items added since that date.  If there is no "last run date" for a given thing, the script uses a fallback "last run" date of today - `default_years_back`.
 
-If `DEFAULT_YEARS_BACK` = 0, the fallback date is "the beginning of time".  There is one other circumstance that will result in a fallback date of "the beginning of time".
+If `default_years_back` = 0, the fallback date is "the beginning of time".  There is one other circumstance that will result in a fallback date of "the beginning of time".
 
 If:
 1. You are running Windows
-2. `DEFAULT_YEARS_BACK` is > 0
+2. `default_years_back` is > 0
 3. the calculated fallback date is before 01/01/1970
 
 Then the "beginning of time" fallback date will be used.  This is a Windows issue.
 
-Normally, this fallback date is used *only* if there is no last-run date stored, for example the first time you run the script.  This means that if you run the script once with `DEFAULT_YEARS_BACK=2` then change that to `DEFAULT_YEARS_BACK=0`, nothing new will be downloaded.  The script will read the last run date from its database and will never look at the new fallback date.
+Normally, this fallback date is used *only* if there is no last-run date stored, for example the first time you run the script.  This means that if you run the script once with `default_years_back: 2` then change that to `default_years_back: 0`, nothing new will be downloaded.  The script will read the last run date from its database and will never look at the new fallback date.
 
-You can use `RESET_LIBRARIES` to force the "last run date" to that fallback date for one or more libraries.
+You can use `reset_libraries` to force the "last run date" to that fallback date for one or more libraries.
 
 If you want to reset all libraries and clear all history, delete `mediascripts.sqlite`.
 
 For example:
 
-You run `grab-all-posters` with `DEFAULT_YEARS_BACK=2`; it downloads posters for half your "Movies" library.  Now you want to grab all the rest.  You change that to `DEFAULT_YEARS_BACK=0` and run `grab-all-posters` again.  Nothing new will be downloaded since the last run date is now the time of that first run, and nothing has been added to Plex since then.  If you want to grab all posters from the beginning of time for that library, set:
-```
-DEFAULT_YEARS_BACK=0
-RESET_LIBRARIES=Movies
+You run `grab-all-posters` with `default_years_back: 2`; it downloads posters for half your "Movies" library.  Now you want to grab all the rest.  You change that to `default_years_back: 0` and run `grab-all-posters` again.  Nothing new will be downloaded since the last run date is now the time of that first run, and nothing has been added to Plex since then.  If you want to grab all posters from the beginning of time for that library, set:
+```yaml
+  default_years_back: 0
+  reset_libraries: Movies
 ```
 That will set the fallback date to "the beginning of time" and apply that new fallback date to the "Movies" library only.
 
-If "FIND_OVERLAID_IMAGES" is `1`, the script checks every imnage it downloads for the EXIF tag that indicates Kometa created it.  If found, the image is deleted.  You can override the deleting with `RETAIN_KOMETA_OVERLAID_IMAGES` and/or `RETAIN_TCM_OVERLAID_IMAGES`.
+If `find_overlaid_images` is `1`, the script checks every imnage it downloads for the EXIF tag that indicates Kometa created it.  If found, the image is deleted.  You can override the deleting with `retain_kometa_overlaid_images` and/or `retain_tcm_overlaid_images`.
 
-If "RETAIN_KOMETA_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
+If `retain_kometa_overlaid_images` is `1`, those images with the Kometa EXIF tag are **not** deleted.
 
-If "RETAIN_TCM_OVERLAID_IMAGES" is `1`, those images with the Kometa EXIF tag are **not** deleted.
+If `retain_tcm_overlaid_images`` is `1`, those images with the Kometa EXIF tag are **not** deleted.
 
-If "RETAIN_OVERLAID_IMAGES" is `1`, the previous two settings will be forced to `0` and all overlaid images will be retained.  This is a older deprecated setting.
+If `retain_overlaid_images` is `1`, the previous two settings will be forced to `0` and all overlaid images will be retained.  This is a older deprecated setting.
 
-NOTE: `ONLY_CURRENT` and `POSTER_DEPTH` do not take these images into account, meaning that if you have:
-```
-ONLY_CURRENT=1
-RETAIN_KOMETA_OVERLAID_IMAGES=0
+NOTE: `only_current` and `poster_depth` do not take these images into account, meaning that if you have:
+```yaml
+  only_current: 1
+  retain_kometa_overlaid_images: 0
 ```
 Then nothing will be retained for items with overlaid posters.  `grab-all-posters` will download the current art, find that it has an overlay, delete it, then go to the next movie/show.
 
 Similarly:
-```
-ONLY_CURRENT=0
-POSTER_DEPTH=20
-RETAIN_KOMETA_OVERLAID_IMAGES=0
+```yaml
+  only_current: 0
+  poster_depth: 20
+  retain_kometa_overlaid_images: 0
 ```
 This won't grab images until you have 20 downloaded.  It will grab 20 images, and if ten are found to have overlays, those ten will be deleted and you will end up with 10.
 
@@ -457,9 +486,10 @@ The image names are: `title-source-location-INCREMENT.ext`
 The folder structure in which the images are saved is controlled by a combination of settings; please review the examples below to find the format you want and the settings that you need to generate it.
 
 All movies and TV shows in a single folder:
+```yaml
+  poster_consolidate: 1
+```
 ```shell
-POSTER_CONSOLIDATE=1:
-
 extracted_posters/
 └── all_libraries
     ├── 3 12 Hours-847208
@@ -492,9 +522,10 @@ extracted_posters/
 ```
 
 Split by Plex library name ['Movies' and 'TV Shows' are Plex library names]:
+```yaml
+  poster_consolidate: 0
+```
 ```shell
-POSTER_CONSOLIDATE=0:
-
 extracted_posters/
 ├── Movies
 │   ├── 3 12 Hours-847208
@@ -528,12 +559,16 @@ extracted_posters/
 ```
 
 Use Kometa Asset-directory naming, flat:
+```yaml
+image_download:
+  what_to_grab:
+    only_current: 1
+  where_to_put_it:
+    use_asset_naming: 1
+    use_asset_folders: 0
+    assets_by_libraries: 0
+```
 ```shell
-USE_ASSET_NAMING=1
-USE_ASSET_FOLDERS=0
-ASSETS_BY_LIBRARIES=0
-ONLY_CURRENT=1
-
 assets
 ├── Adam-12 (1968) {tvdb-78686}.jpg
 ├── Adam-12 (1968) {tvdb-78686}_S01E01.jpg
@@ -547,12 +582,16 @@ assets
 ```
 
 Use Kometa Asset-directory naming, movies and TV in a single directory, split by item name:
+```yaml
+image_download:
+  what_to_grab:
+    only_current: 1 # OR poster_depth: 1
+  where_to_put_it:
+    use_asset_naming: 1
+    use_asset_folders: 1
+    assets_by_libraries: 0
+```
 ```shell
-USE_ASSET_NAMING=1
-USE_ASSET_FOLDERS=1
-ASSETS_BY_LIBRARIES=0
-ONLY_CURRENT=1 OR POSTER_DEPTH=1
-
 assets
 ├── Adam-12 (1968) {tvdb-78686}
 │   ├── S01E01.jpg
@@ -569,12 +608,16 @@ assets
 ```
 
 Use Kometa Asset-directory naming, split by Plex library name, flat folder:
+```yaml
+image_download:
+  what_to_grab:
+    only_current: 1
+  where_to_put_it:
+    use_asset_naming: 1
+    use_asset_folders: 0
+    assets_by_libraries: 1
+```
 ```shell
-USE_ASSET_NAMING=1
-USE_ASSET_FOLDERS=0
-ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=1
-
 assets
 ├── One Movie
 │   ├── Star Wars (1977) {imdb-tt0076759} {tmdb-11}.jpg
@@ -590,12 +633,16 @@ assets
 ```
 
 Use Kometa Asset-directory naming, split by Plex library name, split by item name:
+```yaml
+image_download:
+  what_to_grab:
+    only_current: 1 # OR poster_depth: 1
+  where_to_put_it:
+    use_asset_naming: 1
+    use_asset_folders: 1
+    assets_by_libraries: 1
+```
 ```shell
-USE_ASSET_NAMING=1
-USE_ASSET_FOLDERS=1
-ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=1 OR POSTER_DEPTH=1
-
 assets
 ├── One Movie
 │   └── Star Wars (1977) {imdb-tt0076759} {tmdb-11}
@@ -614,13 +661,17 @@ assets
 ```
 
 Use Kometa Asset-directory naming, split by Plex library name, split by first letter, split by item name:
+```yaml
+image_download:
+  what_to_grab:
+    only_current: 1 # OR poster_depth: 1
+  where_to_put_it:
+    use_asset_naming: 1
+    use_asset_folders: 1
+    assets_by_libraries: 1
+    use_asset_subfolders: 1
+```
 ```shell
-USE_ASSET_NAMING=1
-USE_ASSET_FOLDERS=1
-ASSETS_BY_LIBRARIES=1
-ONLY_CURRENT=1 OR POSTER_DEPTH=1
-USE_ASSET_SUBFOLDERS=1
-
 assets
 ├── One Movie
 │   └── S
@@ -651,9 +702,10 @@ Perhaps you want to move or restore watch status from one server to another [or 
 
 This script will retrieve all watched items for all libraries on a given plex server.  It stores them in a tab-delimited file.
 
-Script-specific variables in .env:
-```shell
-PLEX_OWNER=yournamehere                      # account name of the server owner
+Script-specific variables in `config.yaml`:
+```yaml
+status:
+  plex_owner: "yournamehere" # account name of the server owner
 ```
 
 ### Usage
@@ -692,22 +744,24 @@ chazlarson      movie   Movies - 4K DV  Mad Max: Fury Road      2015    R
 
 This script reads the file produces by the previous script and applies the watched status for each user/library/item
 
-Script-specific variables in .env:
-```shell
-TARGET_PLEX_URL=https://plex.domain2.tld
-TARGET_PLEX_TOKEN=PLEX-TOKEN-TWO
-TARGET_PLEX_OWNER=yournamehere
-LIBRARY_MAP={"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}
+Script-specific variables in `config.yaml`:
+```yaml
+status:
+  target_plex_url: "https://plex.domain2.tld" # As above, the target of apply_all_status
+  target_plex_token: "PLEX-TOKEN-TWO" # As above, the target of apply_all_status
+  target_plex_owner: "yournamehere" # As above, the target of apply_all_status
+  library_map: '{"LIBRARY_ON_PLEX":"LIBRARY_ON_TARGET_PLEX", ...}'
+  # In apply_all_status, map libraries according to this JSON.
 ```
 
 These values are for the TARGET of this script; this is easier than requiring you to edit the PLEX_URL, etc, when running the script.
 
-If the target Plex has different library names, you can map one to the other in LIBRARY_MAP.
+If the target Plex has different library names, you can map one to the other in `library_map`.
 
 For example, if the TV library on the source Plex is called "TV - 1080p" and on the target Plex it's "TV Shows on SpoonFlix", you'd map that with:
 
-```
-LIBRARY_MAP={"TV - 1080p":"TV Shows on SpoonFlix"}
+```yaml
+  library_map: '{"TV - 1080p":"TV Shows on SpoonFlix"}'
 ```
 And any records from the status.txt file that came from the "TV - 1080p" library on the source Plex would get applied to the "TV Shows on SpoonFlix" library on the target.
 
@@ -732,7 +786,7 @@ Perhaps you want to creep on your users and see what they have on their playlist
 
 This script will list the contents of all playlists users have created [except the owner's, since you already have access to those].
 
-Script-specific variables in .env:
+Script-specific variables in `config.yaml`:
 ```
 NONE
 ```
@@ -776,9 +830,10 @@ Perhaps you want to delete all the collections in one or more libraries
 
 This script will simply delete all collections from the libraries specified in the config, except those listed.
 
-Script-specific variables in .env:
-```shell
-KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collections to keep
+Script-specific variables in `config.yaml`:
+```yaml
+delete_collection:
+  keep_collections: "bing,bang" # List of collections to keep
 ```
 ****
 ### Usage
@@ -797,9 +852,10 @@ Perhaps you want to refresh metadata in one or more libraries; there are situati
 
 This script will simply loop through the libraries specified in the config, refreshing each item in the library.  It waits for the specified DELAY between each.
 
-Script-specific variables in .env:
-```
-NONE
+Script-specific variables in `config.yaml`:
+```yaml
+refresh_metadata:
+  refresh_1970_only: 1 # If 1, only refresh things that have an originally-available date of 1970-01-01
 ```
 ****
 ### Usage
@@ -855,36 +911,39 @@ This script connects to a plex library, and grabs all the items.  For each item,
 
 At the end, it produces a list of a configurable size in descending order of number of appearances.
 
-Script-specific variables in .env:
+Script-specific variables in `config.yaml`:
 ```
-CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
-TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
-KNOWN_FOR_ONLY=0                   ### ONLY CONSIDER CAST MEMBERS "KNOWN FOR" ACTING
-BUILD_COLLECTIONS=0             # build yaml for Kometa config.yml
-NUM_COLLECTIONS=20              # this many actors in Kometa yaml
-MIN_GENDER_NONE = 5             # include minimum this many "none" gendered actors in the YAML, if possible
-MIN_GENDER_FEMALE = 5           # include minimum this many "female" gendered actors in the YAML, if possible
-MIN_GENDER_MALE = 5             # include minimum this many "male" gendered actors in the YAML, if possible
-MIN_GENDER_NB = 5               # include minimum this many "non-binary" gendered actors in the YAML, if possible
+actor:
+  cast_depth: 20 # how deep to go into the cast for actor collections
+  top_count: 10 # how many actors to export
+  job_type: "Actor"
+  known_for_only: 0 # ignore cast members who are not primarily known as actors
+  build_collections: 0 # build yaml for Kometa config.yml
+  num_collections: 20 # this many actors in Kometa yaml
+  track_gender: 1 # Pay attention to actor gender [as recorded on TMDB]
+  min_gender_none: 5 # include minimum this many "none" gendered actors in the YAML, if possible
+  min_gender_female: 5 # include minimum this many "female" gendered actors in the YAML, if possible
+  min_gender_male: 5 # include minimum this many "male" gendered actors in the YAML, if possible
+  min_gender_nb: 5 # include minimum this many "non-binary" gendered actors in the YAML, if possible
 ```
 
-`CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
+`cast_depth` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
 
-`TOP_COUNT` is the number of actors to show in the list at the end.
+`top_count` is the number of actors to show in the list at the end.
 
-Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `KNOWN_FOR_ONLY=True`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
+Every person in the cast list has a "known_for_department" attribute on TMDB.  If you set `known_for_only: 1`, then people who don't have "Acting" in that field will be excluded.  Turning this on may slightly distort results.  For example, Harold Ramis is the second lead in "Stripes" and "Ghostbusters", but he is primarily known for "Directing" according to TMDB, so if you turn this flag on he doesn't get counted at all.
 
-`BUILD_COLLECTIONS` will make the script build some YAML to paste into your Kometa config file to generate collections.
+`build_collections` will make the script build some YAML to paste into your Kometa config file to generate collections.
 
-`NUM_COLLECTIONS` controls the number of collections in that YAML
+`num_collections` controls the number of collections in that YAML
 
-`TRACK_GENDER` controls whether the script pays attention to actor gender
+`track_gender` controls whether the script pays attention to actor gender
 
-`MIN_GENDER_*` control the minimum number of that gender [as recorded by TMDB] actor to include in the list [provided `TRACK_GENDER=1`]
+`min_gender_*` control the minimum number of that gender [as recorded by TMDB] actor to include in the list [provided `track_gender: 1`]
 
-Actors are sorted into lists by the four genders recorded at TMDB.  The top `MIN_GENDER_*` for each are added to the final list, then if there is space left over the remainder is filled from the master actor list.
+Actors are sorted into lists by the four genders recorded at TMDB.  The top `min_gender_*` for each are added to the final list, then if there is space left over the remainder is filled from the master actor list.
 
-If the four `MIN_GENDER_*` sum to more than `NUM_COLLECTIONS`, the script exists with an error.
+If the four `min_gender_*` sum to more than `num_collections`, the script exits with an error.
 ### Usage
 1. setup as above
 1. Run with `python actor-count.py`
@@ -901,8 +960,10 @@ It will go through all your movies, and then at the end print out however many a
 
 Sample results for the library above:
 
-CAST_DEPTH=20
-TOP_COUNT = 10
+```yaml
+  cast_depth: 20
+  top_count: 10
+```
 ```shell
 30      Samuel L. Jackson - 2231
 22      Idris Elba - 17605
@@ -916,8 +977,10 @@ TOP_COUNT = 10
 20      Laurence Fishburne - 2975
 ```
 
-CAST_DEPTH=40
-TOP_COUNT=10
+```yaml
+  cast_depth: 40
+  top_count: 10
+```
 ```shell
 33      Samuel L. Jackson - 2231
 24      John Ratzenberger - 7907
@@ -940,19 +1003,20 @@ Perhaps you want a list of crew members with a count of how many movies from you
 This script connects to a plex library, and grabs all the items.  For each item, it then gets the crew from TMDB and keeps track across all items how many times it sees each individual with the configured `TARGET_JOB` within the list, looking down to a configurable depth.
 At the end, it produces a list of a configurable size in descending order of number of appearances.
 
-Script-specific variables in .env:
+Script-specific variables in `config.yaml`:
+```yaml
+crew:
+  depth: 20
+  count: 100
+  target_job: Director
+  show_jobs: 0
 ```
-CREW_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CREW
-CREW_COUNT=100                  ### HOW MANY INDIVIDUALS TO REPORT AT THE END
-TARGET_JOB=Director             ### WHAT JOB TO TRACK
-SHOW_JOBS=0                     ### Display a list of all the jobs the script saw
-```
 
-`CREW_DEPTH` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
+`depth` is meant to allow the script to look deeper into the crew to find all the individuals working as TARGET_JOB.
 
-`CREW_COUNT` is the number of individuals to show in the list at the end.
+`count` is the number of individuals to show in the list at the end.
 
-If `SHOW_JOBS` is set to 1, the script will also output a list of all the jobs it saw, if you want a reference to what may be available.
+If `show_jobs` is set to 1, the script will also output a list of all the jobs it saw, if you want a reference to what may be available.
 
 ### Usage
 1. setup as above
@@ -969,9 +1033,13 @@ It will go through all your movies, and then at the end print out however many a
 
 Sample results for the library above:
 
-CREW_DEPTH=20
-CREW_COUNT=100
-TARGET_JOB=Director
+```yaml
+crew:
+  depth: 20
+  count: 100
+  target_job: Director
+  show_jobs: 0
+```
 ```shell
 Top 27 Director in [Test-Movies]:
 3       Jules Bass - 16410
@@ -1003,9 +1071,12 @@ Top 27 Director in [Test-Movies]:
 1       Russ Meyer - 4590
 ```
 
-CREW_DEPTH=5
-CREW_COUNT=100
-TARGET_JOB=Director
+```yaml
+crew:
+  depth: 5
+  count: 100
+  target_job: Director
+```
 ```shell
 Top 22 Director in [Test-Movies]:
 3       Jules Bass - 16410
@@ -1038,9 +1109,10 @@ Note that the list changed due to the different depth; apparently Robert Wise's 
 
 Perhaps you want to know which movies have fewer than 4 posters avaiable in Plex.
 
-Script-specific variables in .env:
-```
-POSTER_THRESHOLD=10  # report items with fewer posters than this
+Script-specific variables in `config.yaml`:
+```yaml
+low_poster_count:
+  poster_threshold: 10 # how many posters counts as a "low" count?
 ```
 
 ### Usage

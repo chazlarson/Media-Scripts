@@ -42,28 +42,30 @@ ok not really
 ### After you've done one of the above:
 Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
 
-1. cd to script directory [`Plex`, `Kometa`, `TMDB`, etc]
+1. Copy `config.yaml.template` to `config.yaml`
+
+   Linux or Mac:
+   ```
+   cp config.yaml.template config.yaml
+   ```
+   Windows:
+   ```
+   copy config.yaml.template config.yaml
+   ```
+1. Edit `config.yaml` to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
+
+   Edit the file with whatever text editor you wish, so long as you save it as **plain text**.
+
+1. cd to script directory [`Plex`, `Kometa`, etc]
    for example:
    ```
    cd Plex
    ```
-1. Copy `.env.example` to `.env`
 
-   Linux or Mac:
-   ```
-   cp .env.example .env
-   ```
-   Windows:
-   ```
-   copy .env.example .env
-   ```
-1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
-
-   Edit the file with whatever text editor you wish.
 1. Run the desired script.
 
 
-All these scripts use the same `.env` and requirements.
+All these scripts use the same `config.yaml` and requirements.
 
 ## Plex scripts:
 
@@ -112,3 +114,4 @@ See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
 1. [bullmoose](https://github.com/bullmoose20/Plex-Stuff)
 2. [Casvt](https://github.com/Casvt/Plex-scripts)
 3. [maximuskowalski](https://github.com/maximuskowalski/maxmisc)
+1

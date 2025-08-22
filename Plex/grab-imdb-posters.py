@@ -7,7 +7,8 @@ from datetime import datetime
 from pathlib import Path
 
 import imdb
-from helpers import booler, get_ids, get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_ids, get_plex, get_redaction_list, get_target_libraries
 
 # current dateTime
 now = datetime.now()
@@ -19,8 +20,6 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
 
-env_file_path = Path(".env")
-
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
     filemode="w",
@@ -31,33 +30,14 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-TMDB_KEY = os.getenv("TMDB_KEY")
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-POSTER_DIR = os.getenv("POSTER_DIR")
-POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
-POSTER_DOWNLOAD = booler(os.getenv("POSTER_DOWNLOAD"))
-POSTER_CONSOLIDATE = booler(os.getenv("POSTER_CONSOLIDATE"))
+POSTER_CONSOLIDATE = config.get_bool("image_download.general.poster_consolidate")
 
-if POSTER_DEPTH is None:
-    POSTER_DEPTH = 0
-
-if POSTER_DOWNLOAD:
-    script_string = f'#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO DO STUFF{os.linesep}{os.linesep}cd "{POSTER_DIR}"{os.linesep}{os.linesep}'
+if config.get_bool("image_download.general.poster_download"):
+    script_string = f'#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO DO STUFF{os.linesep}{os.linesep}cd "{config.get("image_download.where_to_put_it.poster_dir")}"{os.linesep}{os.linesep}'
 else:
     script_string = ""
-
-if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
-else:
-    lib_array = [LIBRARY_NAME]
-
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
 
 
 def progress(count, total, status=""):
@@ -76,9 +56,11 @@ all_items = []
 
 plex = get_plex()
 
+LIB_ARRAY = get_target_libraries(plex)
+
 logging.info("connection success")
 
-for lib in lib_array:
+for lib in LIB_ARRAY:
     print(f"getting items from [{lib}]...")
     items = plex.library.section(lib).all()
     item_total = len(items)

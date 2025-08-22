@@ -5,20 +5,14 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import (
-    booler,
-    get_all_from_library,
-    get_ids,
-    get_plex,
-    load_and_upgrade_env,
-)
+from config import Config
+from helpers import (get_all_from_library, get_ids, get_plex,
+                     get_target_libraries)
 from logs import logger, plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
-
-env_file_path = Path(".env")
 
 # current dateTime
 now = datetime.now()
@@ -43,8 +37,7 @@ setup_logger("download_log", DOWNLOAD_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
 ID_FILES = True
 
@@ -52,104 +45,39 @@ URL_ARRAY = []
 # no one using this yet
 # QUEUED_DOWNLOADS = {}
 
-target_url_var = "PLEX_URL"
-PLEX_URL = os.getenv(target_url_var)
-if PLEX_URL is None:
-    target_url_var = "PLEXAPI_AUTH_SERVER_BASEURL"
-    PLEX_URL = os.getenv(target_url_var)
+POSTER_DIR = config.get("image_download.where_to_put_it.poster_dir", "extracted_posters")
 
-target_token_var = "PLEX_TOKEN"
-PLEX_TOKEN = os.getenv(target_token_var)
-if PLEX_TOKEN is None:
-    target_token_var = "PLEXAPI_AUTH_SERVER_TOKEN"
-    PLEX_TOKEN = os.getenv(target_token_var)
 
-if PLEX_URL is None or PLEX_URL == "https://plex.domain.tld":
-    plogger(f"You must specify {target_url_var} in the .env file.", "info", "a")
-    exit()
+SUPERCHAT = config.get("general.superchat", False)
 
-if PLEX_TOKEN is None or PLEX_TOKEN == "PLEX-TOKEN":
-    plogger(f"You must specify {target_token_var} in the .env file.", "info", "a")
-    exit()
+INCLUDE_COLLECTION_MEMBERS = config.get_bool("list_item_ids.include_collection_members", False)
+ONLY_COLLECTION_MEMBERS = config.get_bool("list_item_ids.only_collection_members", False)
+DELAY = config.get_int("general.delay", 0)
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-POSTER_DIR = os.getenv("POSTER_DIR")
-
-SUPERCHAT = os.getenv("SUPERCHAT")
-
-INCLUDE_COLLECTION_MEMBERS = booler(os.getenv("INCLUDE_COLLECTION_MEMBERS"))
-ONLY_COLLECTION_MEMBERS = booler(os.getenv("ONLY_COLLECTION_MEMBERS"))
-DELAY = int(os.getenv("DELAY"))
-
-if not DELAY:
-    DELAY = 0
-
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-ONLY_THESE_COLLECTIONS = os.getenv("ONLY_THESE_COLLECTIONS")
+ONLY_THESE_COLLECTIONS = config.get("list_item_ids.only_these_collections", "").strip()
 
 if ONLY_THESE_COLLECTIONS:
     COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
 else:
     COLLECTION_ARRAY = []
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
-
-redaction_list = []
-redaction_list.append(os.getenv("PLEXAPI_AUTH_SERVER_BASEURL"))
-redaction_list.append(os.getenv("PLEXAPI_AUTH_SERVER_TOKEN"))
-
+redaction_list = get_redaction_list()
 plex = get_plex()
 
-logger("Plex connection succeeded", "info", "a")
+LIB_ARRAY = get_target_libraries(plex)
 
 
 def lib_type_supported(lib):
     return lib.type == "movie" or lib.type == "show"
 
 
-ALL_LIBS = plex.library.sections()
-ALL_LIB_NAMES = []
-
-logger(f"{len(ALL_LIBS)} libraries found:", "info", "a")
-for lib in ALL_LIBS:
-    logger(
-        f"{lib.title.strip()}: {lib.type} - supported: {lib_type_supported(lib)}",
-        "info",
-        "a",
-    )
-    ALL_LIB_NAMES.append(f"{lib.title.strip()}")
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    for lib in ALL_LIBS:
-        if lib_type_supported(lib):
-            LIB_ARRAY.append(lib.title.strip())
-
-TOPLEVEL_TMID = ""
-TOPLEVEL_TVID = ""
-
-
-def get_lib_setting(the_lib, the_setting):
-    settings = the_lib.settings()
-    for setting in settings:
-        if setting.id == the_setting:
-            return setting.value
-
-
 for lib in LIB_ARRAY:
-    if lib in ALL_LIB_NAMES:
-        try:
-            highwater = 0
+    try:
+        highwater = 0
 
-            plogger(f"Loading {lib} ...", "info", "a")
-            the_lib = plex.library.section(lib)
+        plogger(f"Loading {lib} ...", "info", "a")
+        the_lib = plex.library.section(lib)
+        if lib_type_supported(the_lib):
             the_uuid = the_lib.uuid
             superchat(f"{the_lib} uuid {the_uuid}", "info", "a")
             ID_ARRAY = []
@@ -178,9 +106,7 @@ for lib in LIB_ARRAY:
                             coll_item_total = len(collection_items)
                             coll_idx = 1
                             for collection_item in collection_items:
-                                imdbid, tmid, tvid = get_ids(
-                                    collection_item.guids, None
-                                )
+                                imdbid, tmid, tvid = get_ids(collection_item.guids)
                                 if the_lib.TYPE == "movie":
                                     plogger(
                                         f"Collection: {item.title} item {coll_idx: >5}/{coll_item_total: >5} | TMDb ID: {tmid: >7}    | IMDb ID: {imdbid: >10}  | {collection_item.title}",
@@ -244,7 +170,7 @@ for lib in LIB_ARRAY:
                         ) as bar:
                             for item in items:
                                 try:
-                                    imdbid, tmid, tvid = get_ids(item.guids, None)
+                                    imdbid, tmid, tvid = get_ids(item.guids)
                                     imdbid_format = (
                                         f"{imdbid: >10}" if imdbid else "       N/A"
                                     )
@@ -278,15 +204,11 @@ for lib in LIB_ARRAY:
 
             progress_str = "COMPLETE"
             logger(progress_str, "info", "a")
+        else:
+            logger(f"Library type '{the_lib.type}' not supported", "info", "a")
 
-        except Exception as ex:
-            progress_str = f"Problem processing {lib}; {ex}"
-            plogger(progress_str, "info", "a")
-    else:
-        logger(
-            f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}",
-            "info",
-            "a",
-        )
+    except Exception as ex:
+        progress_str = f"Problem processing {lib}; {ex}"
+        plogger(progress_str, "info", "a")
 
 plogger("Complete!", "info", "a")

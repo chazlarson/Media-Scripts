@@ -5,8 +5,11 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from database import get_completed, get_count, get_diffs, insert_record, update_record
-from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
+from config import Config
+from database import (get_completed, get_count, get_diffs, insert_record,
+                      update_record)
+from helpers import (get_all_from_library, get_ids, get_plex,
+                     get_target_libraries)
 
 # current dateTime
 now = datetime.now()
@@ -16,12 +19,11 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.1"
+VERSION = "0.3.0"
 
 # 0.1.1 refactoring changes
 # 0.2.0 get rid of sqlalchemy, use the same database module as the others
-
-env_file_path = Path(".env")
+# 0.3.0 use config module for configuration
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -33,19 +35,11 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 TMDB_KEY = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
-
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
 
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
@@ -54,6 +48,8 @@ if change_file.is_file():
     change_file.unlink()
 
 plex = get_plex()
+
+LIB_ARRAY = get_target_libraries(plex)
 
 logging.info("connection success")
 
@@ -74,7 +70,7 @@ def get_IDs(type, item):
                 try:
                     if item.type != "collection":
                         logging.info("Getting IDs")
-                        imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
+                        imdbid, tmid, tvid = get_ids(item.guids)
                         complete = (
                             imdbid is not None and tmid is not None and tvid is not None
                         )
@@ -117,13 +113,6 @@ def get_IDs(type, item):
 
 
 COMPLETE_ARRAY = []
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
 
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"start: {get_count()} records{os.linesep}")

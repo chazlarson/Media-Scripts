@@ -74,7 +74,7 @@ def get_ids(theList, TMDB_KEY):
 
 
 # def imdb_from_tmdb(tmdb_id, TMDB_KEY):
-#     tmdb = TMDbAPIs(TMDB_KEY, language="en")
+#     tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
 
@@ -431,7 +431,7 @@ def load_and_upgrade_env(file_path):
             src_file = os.path.join(".", ".env.example")
             tgt_file = os.path.join(".", ".env")
             shutil.copyfile(src_file, tgt_file)
-            print("Please edit .env file to suit and rerun script.")
+            print("Please edit config.yaml to suit and rerun script.")
         else:
             print("No example [.env.example] file.  Cannot create base file.")
         status = -1
@@ -508,7 +508,7 @@ def load_and_upgrade_env(file_path):
         or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == "https://plex.domain.tld"
     ):
         print(
-            "You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.",
+            "You must specify PLEXAPI_AUTH_SERVER_BASEURL in the config.yaml.",
             "info",
             "a",
         )
@@ -519,7 +519,7 @@ def load_and_upgrade_env(file_path):
         or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == "PLEX-TOKEN"
     ):
         print(
-            "You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.", "info", "a"
+            "You must specify PLEXAPI_AUTH_SERVER_TOKEN in the config.yaml.", "info", "a"
         )
         status = -1
 

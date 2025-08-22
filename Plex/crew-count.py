@@ -1,56 +1,29 @@
-import os
 import sys
 import textwrap
 from collections import Counter
 
-from dotenv import load_dotenv
-from helpers import booler
-from plexapi.server import PlexServer
+from config import Config
+from helpers import get_ids, get_plex, get_redaction_list, get_target_libraries
 from tmdbapis import TMDbAPIs
 
-load_dotenv()
+config = Config('../config.yaml')
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
-TVDB_KEY = os.getenv("TVDB_KEY")
-CREW_DEPTH = int(os.getenv("CREW_DEPTH"))
-CREW_COUNT = int(os.getenv("CREW_COUNT"))
-TARGET_JOB = os.getenv("TARGET_JOB")
-DELAY = int(os.getenv("DELAY"))
-SHOW_JOBS = booler(os.getenv("SHOW_JOBS"))
+CREW_COUNT = config.get_int('crew.count')
+TARGET_JOB = config.get('crew.target_job')
+DELAY = config.get_int('general.delay')
+SHOW_JOBS = config.get_bool('crew.show_jobs')
 
 if not DELAY:
     DELAY = 0
 
-if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
-else:
-    lib_array = [LIBRARY_NAME]
 
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 individuals = Counter()
 jobs = Counter()
 
 YAML_STR = ""
 COLL_TMPL = ""
-
-
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
-    return tmid, tvid
 
 
 def progress(count, total, status=""):
@@ -65,8 +38,10 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-print("connecting to Plex...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+plex = get_plex()
+
+lib_array = get_target_libraries(plex)
+
 for lib in lib_array:
     print(f"getting items from [{lib}]...")
     items = plex.library.section(lib).all()
@@ -76,18 +51,18 @@ for lib in lib_array:
     for item in items:
         jobDict = {}
         tmpDict = {}
-        tmdb_id, tvdb_id = getTID(item.guids)
+        imdbid, tmid, tvid = get_ids(item.guids)
         item_count = item_count + 1
         try:
             progress(item_count, item_total, item.title)
             crew = None
             if item.TYPE == "show":
-                crew = tmdb.tv_show(tmdb_id).crew
+                crew = tmdb.tv_show(tmid).crew
             else:
-                crew = tmdb.movie(tmdb_id).crew
+                crew = tmdb.movie(tmid).crew
             count = 0
             for individual in crew:
-                if count < CREW_DEPTH:
+                if count <  config.get_int('crew.depth'):
                     count = count + 1
                     if individual.job == TARGET_JOB:
                         tmpDict[f"{individual.name} - {individual.person_id}"] = 1
@@ -113,6 +88,6 @@ for lib in lib_array:
 
     JOB_COUNT = len(jobs.items())
     count = 0
-    print(f"{JOB_COUNT} defined [{lib}]:")
+    print(f"{JOB_COUNT} jobs defined [{lib}]:")
     for job in sorted(jobs.items(), key=lambda x: x[1], reverse=True):
         print("{}\t{}".format(job[1], job[0]))

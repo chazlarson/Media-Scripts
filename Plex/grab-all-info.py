@@ -6,7 +6,9 @@ from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
-from helpers import get_all_from_library, get_ids, get_plex, load_and_upgrade_env
+from config import Config
+from helpers import (get_all_from_library, get_ids, get_plex,
+                     get_target_libraries)
 from sqlalchemy.dialects.sqlite import insert
 
 # current dateTime
@@ -17,10 +19,9 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
-
-env_file_path = Path(".env")
+# 0.2.0 use config module for configuration
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -32,19 +33,10 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME}")
 print(f"Starting {SCRIPT_NAME}")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
-
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
 
 CHANGE_FILE_NAME = "changes.txt"
 change_file = Path(CHANGE_FILE_NAME)
@@ -170,8 +162,7 @@ def get_diffs(payload):
 
 plex = get_plex()
 
-logging.info("connection success")
-
+LIB_ARRAY = get_target_libraries(plex)
 
 def get_IDs(type, item):
     imdbid = None
@@ -189,7 +180,7 @@ def get_IDs(type, item):
                 try:
                     if item.type != "collection":
                         logging.info("Getting IDs")
-                        imdbid, tmid, tvid = get_ids(item.guids, TMDB_KEY)
+                        imdbid, tmid, tvid = get_ids(item.guids)
                         complete = (
                             imdbid is not None and tmid is not None and tvid is not None
                         )
@@ -232,13 +223,6 @@ def get_IDs(type, item):
 
 COMPLETE_ARRAY = []
 
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
-
 with open(change_file, "a", encoding="utf-8") as cf:
     cf.write(f"start: {get_count()} records{os.linesep}")
 
@@ -254,8 +238,8 @@ for lib in LIB_ARRAY:
         count = plex.library.section(lib).totalSize
         print(f"getting {count} {the_lib.type}s from [{lib}]...")
         logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        items = get_all_from_library(the_lib)
-        # items = the_lib.all()
+        search_results = get_all_from_library(the_lib)
+        items = search_results[1]
         item_total = len(items)
         logging.info(f"looping over {item_total} items...")
         item_count = 1

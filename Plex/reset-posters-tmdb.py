@@ -11,16 +11,13 @@ from timeit import default_timer as timer
 import requests
 import validators
 from alive_progress import alive_bar
-from helpers import (
-    booler,
-    get_all_from_library,
-    get_ids,
-    get_overlay_status,
-    get_plex,
-    load_and_upgrade_env,
-)
+from config import Config
+from helpers import (get_all_from_library, get_ids, get_overlay_status,
+                     get_plex, get_redaction_list, get_target_libraries)
 from logs import blogger, logger, plogger, setup_logger
 from tmdbapis import TMDbAPIs
+
+config = Config('../config.yaml')
 
 # import tvdb_v4_official
 
@@ -38,69 +35,47 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.2"
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
-
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
-TVDB_KEY = os.getenv("TVDB_KEY")
 TARGET_LABELS = os.getenv("TARGET_LABELS")
 
 if TARGET_LABELS == "this label, that label":
     print(
-        "TARGET_LABELS in the .env file must be empty or have a meaningful value.",
+        "TARGET_LABELS in the config.yaml must be empty or have a meaningful value.",
         "info",
         "a",
     )
     exit()
-
-TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
-CLEAR_RESET_STATUS = booler(
-    os.getenv(
-        "CLEAR_RESET_STATUS",
-    )
-)
-
-RETAIN_RESET_STATUS_FILE = os.getenv("RETAIN_RESET_STATUS_FILE")
-REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
-RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
-RESET_EPISODES = booler(os.getenv("RESET_EPISODES"))
-RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
-LOCAL_RESET_ARCHIVE = booler(os.getenv("LOCAL_RESET_ARCHIVE"))
-DRY_RUN = booler(os.getenv("DRY_RUN"))
-FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
-OVERRIDE_OVERLAY_STATUS = booler(os.getenv("OVERRIDE_OVERLAY_STATUS"))
-
-DELAY = 0
-try:
-    DELAY = int(os.getenv("DELAY"))
-except:
-    DELAY = 0
-
-if TARGET_LABELS:
-    LBL_ARRAY = TARGET_LABELS.split(",")
 else:
-    LBL_ARRAY = ["xy22y1973"]
+    if TARGET_LABELS:
+        LBL_ARRAY = TARGET_LABELS.split(",")
+    else:
+        LBL_ARRAY = ["xy22y1973"]
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = LIBRARY_NAMES.split(",")
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
+TRACK_RESET_STATUS = config.get_bool('reset_posters.track_reset_status', False)
+CLEAR_RESET_STATUS = config.get_bool('reset_posters.clear_reset_status', False)
+RETAIN_RESET_STATUS_FILE = config.get_bool('reset_posters.retain_reset_status_file', False)
+DRY_RUN = config.get_bool('reset_posters.dry_run', False)
+FLUSH_STATUS_AT_START = config.get_bool('reset_posters.flush_status_at_start', False)
+RESET_SEASONS_WITH_SERIES = config.get_bool('reset_posters.reset_seasons_with_series', False)
+OVERRIDE_OVERLAY_STATUS = config.get_bool('reset_posters.override_overlay_status', False)
+LOCAL_RESET_ARCHIVE = config.get_bool('reset_posters.local_reset_archive', False)
+
+REMOVE_LABELS = config.get_bool('reset_posters.remove_labels', False)
+RESET_SEASONS = config.get_bool('reset_posters.reset_seasons', False)
+RESET_EPISODES = config.get_bool('reset_posters.reset_episodes', False)
+
+DELAY = config.get_int('general.delay', 0)
 
 IS_WINDOWS = platform.system() == "Windows"
 
 # Commented out until this doesn't throw a 400
 # tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
 
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
+tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 local_dir = os.path.join(os.getcwd(), "posters")
 
@@ -127,16 +102,7 @@ base_url = tmdb.configuration().secure_base_image_url
 size_str = "original"
 
 plex = get_plex()
-
-logger(("connection success"), "info", "a")
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
-
+LIB_ARRAY = get_target_libraries(plex)
 
 def sleep_for_a_while():
     sleeptime = DELAY
@@ -359,7 +325,7 @@ for lib in LIB_ARRAY:
                 item_count = item_count + 1
                 item_key = library_item.ratingKey
                 item_title = library_item.title
-                imdbid, tmdb_id, tvdb_id = get_ids(library_item.guids, TMDB_KEY)
+                imdbid, tmdb_id, tvdb_id = get_ids(library_item.guids)
                 logger(
                     (
                         f"{item_title}: ratingKey: {item_key} imdbid: {imdbid} tmdb_id: {tmdb_id} tvdb_id: {tvdb_id}"

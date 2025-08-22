@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-import os
 import time
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_plex, get_redaction_list, get_target_libraries
 from logs import plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 # current dateTime
 now = datetime.now()
@@ -18,31 +18,20 @@ now = datetime.now()
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-DELAY = int(os.getenv("DELAY"))
-KEEP_COLLECTIONS = os.getenv("KEEP_COLLECTIONS")
+DELAY = config.get_int('general.delay')
+KEEP_COLLECTIONS = config.get('delete_collection.keep_collections')
 
 if not DELAY:
     DELAY = 0
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = LIBRARY_NAMES.split(",")
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-plogger(f"Acting on libraries: {LIB_ARRAY}", "info", "a")
 
 if KEEP_COLLECTIONS:
     keeper_array = KEEP_COLLECTIONS.split(",")
@@ -51,12 +40,9 @@ else:
 
 plex = get_plex()
 
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
+LIB_ARRAY = get_target_libraries(plex)
+
+plogger(f"Acting on libraries: {LIB_ARRAY}", "info", "a")
 
 coll_obj = {}
 coll_obj["collections"] = {}

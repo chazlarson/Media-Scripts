@@ -3,7 +3,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from helpers import get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_plex
 
 # current dateTime
 now = datetime.now()
@@ -15,8 +16,6 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
 
-env_file_path = Path(".env")
-
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
     filemode="w",
@@ -27,8 +26,7 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
 print("connecting...")
 plex = get_plex()

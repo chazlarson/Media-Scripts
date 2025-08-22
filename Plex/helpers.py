@@ -1,16 +1,70 @@
+import getpass
+import hashlib
 import itertools
+import json
 import os
 import shutil
 from pathlib import Path
 
 import plexapi
 import requests
+from config import Config
 from dotenv import load_dotenv, set_key, unset_key
 from pathvalidate import is_valid_filename, sanitize_filename
 from PIL import Image
 from plexapi.exceptions import Unauthorized
+from plexapi.myplex import MyPlexAccount
 from plexapi.server import PlexServer
 
+# Your fixed client identifier
+CLIENT_IDENTIFIER = 'MediaScripts-chazlarson'
+# File to store token + server URL
+AUTH_FILE = '.plex_auth.json'
+# Default network timeout (seconds)
+DEFAULT_TIMEOUT = 360
+
+stock_md5 = {
+    "plexapi.config.ini": '6209bb0c2ab877e6b74f757a004c84c9',
+}
+
+def file_has_changed(filepath):
+    """
+    Calculates the MD5 checksum of a file.
+
+    Args:
+        filepath: The path to the file.
+
+    Returns:
+        The MD5 checksum as a hexadecimal string.
+    """
+    if filepath.name not in stock_md5:
+        print(f"File {filepath.name} not in stock_md5, returning True")
+        return True
+    old_hash = stock_md5.get(filepath.name)
+    md5_hash = hashlib.md5()
+    with open(filepath, "rb") as file:
+        # Read the file in chunks to handle large files efficiently
+        for chunk in iter(lambda: file.read(4096), b""):
+            md5_hash.update(chunk)
+    new_hash = md5_hash.hexdigest()
+    return new_hash != old_hash
+
+
+def copy_file(source_path, destination_path):
+    """Copies a file from source to destination using pathlib.
+
+    Args:
+        source_path (str or Path): Path to the source file.
+        destination_path (str or Path): Path to the destination file.
+    """
+    source_path = Path(source_path)
+    destination_path = Path(destination_path)
+
+    if source_path.is_file():
+        shutil.copy(source_path, destination_path)
+        print(f"File copied from {source_path} to {destination_path}")
+    else:
+        print(f"Source path {source_path} is not a file.")
 
 def has_overlay(image_path):
     kometa_overlay = False
@@ -49,38 +103,161 @@ def redact(the_url, str_list):
     return ret_val
 
 
-def get_plex(user_token=None):
-    print(f"connecting to {os.getenv('PLEXAPI_AUTH_SERVER_BASEURL')}...")
-    plex = None
+def load_auth():
+    """Return saved auth dict or None."""
     try:
-        session = None
-        if booler(os.getenv("PLEXAPI_SKIP_VERIFYSSL", False)):
-            session = requests.Session()
-            session.verify = False
-            import urllib3
+        with open(AUTH_FILE, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
-            urllib3.disable_warnings()
 
-        if user_token is not None:
-            plex = PlexServer(token=user_token, session=session)
-        else:
-            plex = PlexServer(session=session)
-    except Unauthorized:
-        print("Plex Error: Plex token is invalid")
-        raise Unauthorized
+def save_auth(data):
+    """Save auth dict and lock down file permissions."""
+    with open(AUTH_FILE, 'w') as f:
+        json.dump(data, f)
+    try:
+        os.chmod(AUTH_FILE, 0o600)
+    except Exception:
+        pass
+
+def choose_server(servers):
+    """Prompt the user to choose one of the available Plex Media Server resources."""
+    print("\nAvailable Plex Media Servers:")
+    for idx, res in enumerate(servers, start=1):
+        print(f"  [{idx}] {res.name} ({res.clientIdentifier})")
+    while True:
+        choice = input(f"Select server [1–{len(servers)}]: ").strip()
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(servers):
+                return servers[idx-1]
+        print("❌ Invalid selection; please enter a number from the list.")
+
+def get_timeout():
+    """Prompt user for network timeout value, with a safe default."""
+    val = input(f"Network timeout in seconds [default {DEFAULT_TIMEOUT}]: ").strip()
+    if not val:
+        return DEFAULT_TIMEOUT
+    try:
+        t = float(val)
+        if t <= 0:
+            raise ValueError()
+        return t
+    except ValueError:
+        print(f"⚠️  Invalid timeout '{val}', using default {DEFAULT_TIMEOUT}.")
+        return DEFAULT_TIMEOUT
+
+def get_skip_ssl():
+    """Prompt user whether to skip SSL certificate verification."""
+    val = input("Skip SSL certificate verification? [y/N]: ").strip().lower()
+    return val in ('y', 'yes')
+
+def make_session(skip_ssl):
+    """Return a requests.Session configured for SSL verification or not."""
+    if skip_ssl:
+        sess = requests.Session()
+        sess.verify = False
+        return sess
+    return None
+
+def do_login(timeout, session):
+    """Prompt for user/pass, let user pick server, connect & return PlexServer."""
+    username = input('Plex Username: ')
+    password = getpass.getpass('Plex Password: ')
+    account = MyPlexAccount(username, password)
+    print(f"✔ Logged in as {account.username}")
+
+    servers = [r for r in account.resources() if r.product == 'Plex Media Server']
+    if not servers:
+        raise RuntimeError("No Plex Media Server found on your account.")
+
+    resource = choose_server(servers)
+    print(f"→ Connecting to server: {resource.name} (timeout={timeout}s)")
+
+    # resource.connect accepts a `session` and `timeout` argument
+    plex = resource.connect(timeout=timeout, session=session)
+    print(f"✔ Connected to Plex server: {plex.friendlyName}")
+
+    token = getattr(account, 'authenticationToken', None) or getattr(account, '_token')
+    baseurl = getattr(plex, 'baseurl', None) or getattr(plex, '_baseurl')
+    save_auth({'token': token, 'baseurl': baseurl})
+    print(f"⚑ Saved auth to {AUTH_FILE}")
+    return plex
+
+
+def get_plex():
+    plex = None
+    config = Config('../config.yaml')
+    os.environ['PLEXAPI_HEADER_IDENTIFIER'] = f"{config.get('plex_api.header_identifier')}"
+    os.environ['PLEXAPI_PLEXAPI_TIMEOUT'] = f"{config.get('plex_api.timeout')}"
+    os.environ['PLEXAPI_AUTH_SERVER_BASEURL'] = f"{config.get('plex_api.auth_server.base_url')}"
+    os.environ['PLEXAPI_AUTH_SERVER_TOKEN'] = f"{config.get('plex_api.auth_server.token')}"
+    os.environ['PLEXAPI_LOG_BACKUP_COUNT'] = f"{config.get('plex_api.log.backup_count')}"
+    os.environ['PLEXAPI_LOG_FORMAT'] = f"{config.get('plex_api.log.format')}"
+    os.environ['PLEXAPI_LOG_LEVEL'] = f"{config.get('plex_api.log.level')}"
+    os.environ['PLEXAPI_LOG_PATH'] = f"{config.get('plex_api.log.path')}"
+    os.environ['PLEXAPI_LOG_ROTATE_BYTES'] = f"{config.get('plex_api.log.rotate_bytes')}"
+    os.environ['PLEXAPI_LOG_SHOW_SECRETS'] = f"{config.get('plex_api.log.show_secrets')}"
+    os.environ['PLEXAPI_SKIP_VERIFYSSL'] = f"{config.get('plex_api.skip_verify_ssl')}"                     # ignore self signed certificate errors
+
+    try:
+        print("creating plex with plexapi config")
+        plex = PlexServer()
+        print(f"connected to {plex.friendlyName}")
     except Exception as ex:
-        print(f"Plex Error: {ex.args}")
-        raise ex
+        print(f"plexapi config failed: {ex}")
+        auth = load_auth()
+        if auth:
+            try:
+                print("creating plex with saved auth")
+                plex = PlexServer(auth['url'], token=auth['token'])
+                print(f"connected to {plex.friendlyName}")
+            except Unauthorized:
+                print("Saved auth is invalid. Please re-authenticate.")
+                auth = None
+        else:
+            print("No saved auth found. Please authenticate.")
+            timeout = get_timeout()
+            skip_ssl = get_skip_ssl()
+            session = make_session(skip_ssl)
+            plex = do_login(timeout, session)
 
     return plex
 
+def get_target_libraries(plex):
+    if plex:
+        ALL_LIBS = plex.library.sections()
+    else:
+        print(f"Plex connection failed")
+        return None
+
+    print(f"{len(ALL_LIBS)} libraries found")
+
+    config = Config()
+
+    LIBRARY_NAMES = config.get("general.library_names")
+
+    if LIBRARY_NAMES and len(LIBRARY_NAMES) > 0:
+        LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
+    else:
+        LIB_ARRAY = None
+        print(f"No libraries specified in config")
+        print(f"Processing all {len(ALL_LIBS)} libraries")
+
+    if LIB_ARRAY is None:
+        LIB_ARRAY = []
+        for lib in ALL_LIBS:
+            LIB_ARRAY.append(f"{lib.title.strip()}")
+
+    return LIB_ARRAY
 
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
 
-def get_ids(theList, TMDB_KEY):
+def get_ids(theList):
     imdbid = None
     tmid = None
     tvid = None
@@ -93,12 +270,6 @@ def get_ids(theList, TMDB_KEY):
             tvid = guid.id.replace(tvdb_str, "")
 
     return imdbid, tmid, tvid
-
-
-# def imdb_from_tmdb(tmdb_id, TMDB_KEY):
-#     tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-#     # https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
 
 
 def validate_filename(filename):
@@ -445,7 +616,7 @@ def load_and_upgrade_env(file_path):
             src_file = os.path.join(".", ".env.example")
             tgt_file = os.path.join(".", ".env")
             shutil.copyfile(src_file, tgt_file)
-            print("Please edit .env file to suit and rerun script.")
+            print("Please edit config.yaml to suit and rerun script.")
         else:
             print("No example [.env.example] file.  Cannot create base file.")
         status = -1
@@ -521,15 +692,15 @@ def load_and_upgrade_env(file_path):
         os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None
         or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == "https://plex.domain.tld"
     ):
-        print("You must specify PLEXAPI_AUTH_SERVER_BASEURL in the .env file.")
-        status = -1
+        print("You must specify PLEXAPI_AUTH_SERVER_BASEURL in the config.yaml.")
+        # status = -1
 
     if (
         os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None
         or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == "PLEX-TOKEN"
     ):
-        print("You must specify PLEXAPI_AUTH_SERVER_TOKEN in the .env file.")
-        status = -1
+        print("You must specify PLEXAPI_AUTH_SERVER_TOKEN in the config.yaml.")
+        # status = -1
 
     return status
 

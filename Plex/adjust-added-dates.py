@@ -1,27 +1,21 @@
 #!/usr/bin/env python
-import os
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import (
-    booler,
-    get_all_from_library,
-    get_ids,
-    get_plex,
-    load_and_upgrade_env,
-)
+from config import Config
+from helpers import (get_all_from_library, get_ids, get_plex,
+                     get_target_libraries)
 from logs import blogger, logger, plogger, setup_logger
 from tmdbapis import TMDbAPIs
 
 SCRIPT_NAME = Path(__file__).stem
 
-env_file_path = Path(".env")
-
 #      0.1.1 Log config details
 #      0.1.2 incorporate helper changes, remove testing code
+#      0.2.0 config class
 
-VERSION = "0.1.2"
+VERSION = "0.2.0"
 
 # current dateTime
 now = datetime.now()
@@ -35,42 +29,21 @@ setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
 plex = get_plex()
 
+LIB_ARRAY = get_target_libraries(plex)
+
 logger("connection success", "info", "a")
 
-ADJUST_DATE_FUTURES_ONLY = booler(os.getenv("ADJUST_DATE_FUTURES_ONLY"))
-plogger(f"ADJUST_DATE_FUTURES_ONLY: {ADJUST_DATE_FUTURES_ONLY}", "info", "a")
+plogger(f"Adjusting future dates only: {config.get_bool("adjust_date.futures_only", False)}", "info", "a")
 
-ADJUST_DATE_EPOCH_ONLY = booler(os.getenv("ADJUST_DATE_EPOCH_ONLY"))
-plogger(f"ADJUST_DATE_EPOCH_ONLY: {ADJUST_DATE_EPOCH_ONLY}", "info", "a")
+plogger(f"Adjusting epoch dates only: {config.get_bool("adjust_date.epoch_only", False)}", "info", "a")
 
 EPOCH_DATE = datetime(1970, 1, 1, 0, 0, 0)
 
-TMDB_KEY = os.getenv("TMDB_KEY")
-
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
-
-plogger(f"Acting on libraries: {LIB_ARRAY}", "info", "a")
-
+tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 def is_epoch(the_date):
     ret_val = False
@@ -94,7 +67,7 @@ for lib in LIB_ARRAY:
 
         lib_size = the_lib.totalViewSize()
 
-        if ADJUST_DATE_FUTURES_ONLY:
+        if config.get_bool("adjust_date.futures_only", False):
             TODAY_STR = now.strftime("%Y-%m-%d")
             item_count, items = get_all_from_library(
                 the_lib, None, {"addedAt>>": TODAY_STR}
@@ -125,7 +98,7 @@ for lib in LIB_ARRAY:
 
                         for sub_item in sub_items:
                             try:
-                                imdbid, tmid, tvid = get_ids(sub_item.guids, None)
+                                imdbid, tmid, tvid = get_ids(sub_item.guids)
 
                                 if is_movie:
                                     tmdb_item = tmdb.movie(tmid)
@@ -137,7 +110,7 @@ for lib in LIB_ARRAY:
                                     else:
                                         parent_show = sub_item.show()
                                         imdbid, tmid, tvid = get_ids(
-                                            parent_show.guids, None
+                                            parent_show.guids
                                         )
                                         season_num = sub_item.seasonNumber
                                         episode_num = sub_item.episodeNumber
@@ -150,8 +123,8 @@ for lib in LIB_ARRAY:
                                 added_date = item.addedAt
                                 orig_date = item.originallyAvailableAt
 
-                                if not ADJUST_DATE_EPOCH_ONLY or (
-                                    ADJUST_DATE_EPOCH_ONLY and is_epoch(orig_date)
+                                if not config.get_bool("adjust_date.epoch_only", False) or (
+                                    config.get_bool("adjust_date.epoch_only", False) and is_epoch(orig_date)
                                 ):
                                     try:
                                         delta = added_date - release_date
@@ -205,7 +178,7 @@ for lib in LIB_ARRAY:
 
                                 else:
                                     blogger(
-                                        f"skipping {item.title}: EPOCH_ONLY {ADJUST_DATE_EPOCH_ONLY}, originally available date {orig_date}",
+                                        f"skipping {item.title}: EPOCH_ONLY {config.get_bool("adjust_date.epoch_only", False)}, originally available date {orig_date}",
                                         "info",
                                         "a",
                                         bar,

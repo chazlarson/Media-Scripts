@@ -9,7 +9,9 @@ from pathlib import Path
 
 import urllib3.exceptions
 from alive_progress import alive_bar
-from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from config import Config
+from helpers import (get_all_from_library, get_plex, get_redaction_list,
+                     get_target_libraries)
 from logs import logger, plogger, setup_logger
 from requests import ReadTimeout
 from urllib3.exceptions import ReadTimeoutError
@@ -24,37 +26,19 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
 plex = get_plex()
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-DELAY = int(os.getenv("DELAY"))
-REFRESH_1970_ONLY = booler(os.getenv("REFRESH_1970_ONLY"))
+LIB_ARRAY = get_target_libraries(plex)
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
-
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+DELAY = config.get_int('general.delay', 0)
+REFRESH_1970_ONLY = config.get_bool('refresh_metadata.refresh_1970_only', False)
 
 
 def progress(count, total, status=""):

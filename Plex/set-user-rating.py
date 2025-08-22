@@ -3,8 +3,12 @@ import random
 from datetime import datetime
 from pathlib import Path
 
-from helpers import get_all_from_library, get_plex, load_and_upgrade_env
+from config import Config
+from helpers import (get_all_from_library, get_plex, get_redaction_list,
+                     get_target_libraries)
 from logs import plogger, setup_logger
+
+config = Config('../config.yaml')
 
 # current dateTime
 now = datetime.now()
@@ -16,19 +20,15 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.0.1"
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
-
 plex = get_plex()
-plogger("connection success", "info", "a")
 plogger(f"Plex version {plex.version}", "info", "a")
+
+LIB_ARRAY = get_target_libraries(plex)
 
 new_rating = round(random.random() * 10, 1)
 

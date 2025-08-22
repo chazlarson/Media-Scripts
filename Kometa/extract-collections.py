@@ -1,11 +1,11 @@
-import os
 import platform
 import re
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_plex, get_redaction_list, get_target_libraries
 from logs import plogger, setup_logger
 from plexapi.utils import download
 from ruamel import yaml
@@ -17,8 +17,6 @@ SCRIPT_NAME = Path(__file__).stem
 # 0.0.5 : file_poster not url_poster
 
 VERSION = "0.0.5"
-
-env_file_path = Path(".env")
 
 # current dateTime
 now = datetime.now()
@@ -34,45 +32,20 @@ setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-# TMDB_KEY = os.getenv("TMDB_KEY")
-# TVDB_KEY = os.getenv("TVDB_KEY")
-# CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
-# TOP_COUNT = int(os.getenv("TOP_COUNT"))
-DELAY = int(os.getenv("DELAY"))
-
-if not DELAY:
-    DELAY = 0
-
-PLEX_URL = (
-    os.getenv("PLEX_URL")
-    if os.getenv("PLEX_URL")
-    else os.getenv("PLEXAPI_AUTH_SERVER_BASEURL")
-)
-PLEX_TOKEN = (
-    os.getenv("PLEX_TOKEN")
-    if os.getenv("PLEX_TOKEN")
-    else os.getenv("PLEXAPI_AUTH_SERVER_TOKEN")
-)
-
-if PLEX_URL.endswith("/"):
-    PLEX_URL = PLEX_URL[:-1]
-
-
-if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
-else:
-    lib_array = [LIBRARY_NAME]
+DELAY = config.get_int('general.delay', 0)
 
 artwork_dir = "artwork"
 background_dir = "background"
 config_dir = "config"
 
+PLEX_URL = config.get("plex_api.auth_server.base_url")
+PLEX_TOKEN = config.get("plex_api.auth_server.token")
+
 plex = get_plex()
+
+LIB_ARRAY = get_target_libraries(plex)
 
 coll_obj = {}
 coll_obj["collections"] = {}
@@ -83,7 +56,7 @@ def get_sort_text(argument):
     return switcher.get(argument, "invalid-sort")
 
 
-for lib in lib_array:
+for lib in LIB_ARRAY:
     lib = lib.lstrip()
     safe_lib = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", lib)
     print(f"Processing: [{lib}] | safe: [{safe_lib}]")

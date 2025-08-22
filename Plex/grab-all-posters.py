@@ -10,19 +10,13 @@ from pathlib import Path
 
 import filetype
 from alive_progress import alive_bar
-from database import add_key, add_last_run, add_url, check_key, check_url, get_last_run
-from helpers import (
-    booler,
-    check_for_images,
-    get_all_from_library,
-    get_ids,
-    get_letter_dir,
-    get_plex,
-    has_overlay,
-    load_and_upgrade_env,
-    redact,
-    validate_filename,
-)
+from config import Config
+from database import (add_key, add_last_run, add_url, check_key, check_url,
+                      get_last_run)
+from helpers import (check_for_images, get_all_from_library, get_ids,
+                     get_letter_dir, get_plex, get_redaction_list,
+                     get_target_libraries, has_overlay, redact,
+                     validate_filename)
 from logs import blogger, logger, plogger, setup_logger
 from pathvalidate import sanitize_filename
 from plexapi.utils import download
@@ -84,9 +78,8 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.8.9c"
 
-env_file_path = Path(".env")
+config = Config('../config.yaml')
 
-print(f"{env_file_path.read_text()}")
 # current dateTime
 now = datetime.now()
 
@@ -110,9 +103,6 @@ setup_logger("download_log", DOWNLOAD_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
-
 ID_FILES = True
 
 URL_ARRAY = []
@@ -122,15 +112,7 @@ URL_ARRAY = []
 STOP_FILE_NAME = "stop.dat"
 SKIP_FILE_NAME = "skip.dat"
 
-try:
-    DEFAULT_YEARS_BACK = abs(int(os.getenv("DEFAULT_YEARS_BACK")))
-except:
-    plogger(
-        f"DEFAULT_YEARS_BACK: {os.getenv('DEFAULT_YEARS_BACK')} not an integer. Defaulting to 1",
-        "info",
-        "a",
-    )
-    DEFAULT_YEARS_BACK = 1
+DEFAULT_YEARS_BACK = abs(config.get_int('image_download.general.default_years_back', 1))
 
 WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
 
@@ -143,43 +125,17 @@ epoch = datetime(1970, 1, 1)
 if IS_WINDOWS and fallback_date is not None and fallback_date < epoch:
     fallback_date = None
 
-PLEX_URL = (
-    os.getenv("PLEX_URL")
-    if os.getenv("PLEX_URL")
-    else os.getenv("PLEXAPI_AUTH_SERVER_BASEURL")
-)
-PLEX_TOKEN = (
-    os.getenv("PLEX_TOKEN")
-    if os.getenv("PLEX_TOKEN")
-    else os.getenv("PLEXAPI_AUTH_SERVER_TOKEN")
-)
 
-if PLEX_URL.endswith("/"):
-    PLEX_URL = PLEX_URL[:-1]
+POSTER_DIR = config.get('image_download.general.poster_dir')
 
-if PLEX_URL is None or PLEX_URL == "https://plex.domain.tld":
-    plogger("You must specify a PLEX URL in the .env file.", "info", "a")
-    exit()
-
-if PLEX_TOKEN is None or PLEX_TOKEN == "PLEX-TOKEN":
-    plogger("You must specify A PLEX TOKEN in the .env file.", "info", "a")
-    exit()
-
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-POSTER_DIR = os.getenv("POSTER_DIR")
-
-SUPERCHAT = os.getenv("SUPERCHAT")
+SUPERCHAT = config.get('general.superchat')
 
 if POSTER_DIR is None:
     POSTER_DIR = "extracted_posters"
 
-try:
-    POSTER_DEPTH = int(os.getenv("POSTER_DEPTH"))
-except:
-    POSTER_DEPTH = 0
+POSTER_DEPTH = config.get_int('image_download.general.poster_depth', 0)
 
-POSTER_DOWNLOAD = booler(os.getenv("POSTER_DOWNLOAD"))
+POSTER_DOWNLOAD = config.get_bool('image_download.general.poster_download', True)
 if not POSTER_DOWNLOAD:
     print("================== ATTENTION ==================")
     print("Downloading disabled; file identification not possible")
@@ -187,44 +143,43 @@ if not POSTER_DOWNLOAD:
     print("================== ATTENTION ==================")
     ID_FILES = False
 
-POSTER_CONSOLIDATE = booler(os.getenv("POSTER_CONSOLIDATE"))
-INCLUDE_COLLECTION_ARTWORK = booler(os.getenv("INCLUDE_COLLECTION_ARTWORK"))
-ONLY_COLLECTION_ARTWORK = booler(os.getenv("ONLY_COLLECTION_ARTWORK"))
-DELAY = int(os.getenv("DELAY"))
+POSTER_CONSOLIDATE = config.get_bool('image_download.general.poster_consolidate', True)
+INCLUDE_COLLECTION_ARTWORK = config.get_bool('image_download.image.include_collection_artwork', True)
+ONLY_COLLECTION_ARTWORK = config.get_bool('image_download.image.only_collection_artwork', False)
 
-GRAB_BACKGROUNDS = booler(os.getenv("GRAB_BACKGROUNDS"))
-GRAB_SEASONS = booler(os.getenv("GRAB_SEASONS"))
-ONLY_SEASONS = booler(os.getenv("ONLY_SEASONS"))
+DELAY = config.get_int('general.delay', 1)
 
-GRAB_EPISODES = booler(os.getenv("GRAB_EPISODES"))
-ONLY_EPISODES = booler(os.getenv("ONLY_EPISODES"))
+GRAB_BACKGROUNDS = config.get_bool('image_download.general.grab_backgrounds', True)
+GRAB_SEASONS = config.get_bool('image_download.general.grab_seasons', True)
+ONLY_SEASONS = config.get_bool('image_download.general.only_seasons', False)
 
-ONLY_CURRENT = booler(os.getenv("ONLY_CURRENT"))
+GRAB_EPISODES = config.get_bool('image_download.general.grab_episodes', True)
+ONLY_EPISODES = config.get_bool('image_download.general.only_episodes', False)
+
+ONLY_CURRENT = config.get_bool('image_download.general.only_current', False)
 
 if ONLY_CURRENT:
-    POSTER_DIR = os.getenv("CURRENT_POSTER_DIR")
+    POSTER_DIR = config.get('image_download.general.current_poster_dir', 'current_posters')
 
-TRACK_URLS = booler(os.getenv("TRACK_URLS"))
-TRACK_COMPLETION = booler(os.getenv("TRACK_COMPLETION"))
+TRACK_URLS = config.get_bool('image_download.general.track_urls', True)
+TRACK_COMPLETION = config.get_bool('image_download.general.track_completion', False)
 
-ASSET_DIR = os.getenv("ASSET_DIR")
-if ASSET_DIR is None:
-    ASSET_DIR = "assets"
+ASSET_DIR = config.get('image_download.general.asset_dir', 'assets')
 
 ASSET_PATH = Path(ASSET_DIR)
 
-USE_ASSET_NAMING = booler(os.getenv("USE_ASSET_NAMING"))
-USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
-ASSETS_BY_LIBRARIES = booler(os.getenv("ASSETS_BY_LIBRARIES"))
-NO_FS_WARNING = booler(os.getenv("NO_FS_WARNING"))
-ADD_SOURCE_EXIF_COMMENT = booler(os.getenv("ADD_SOURCE_EXIF_COMMENT"))
+USE_ASSET_NAMING = config.get_bool('image_download.general.use_asset_naming', False)
+USE_ASSET_FOLDERS = config.get_bool('image_download.general.use_asset_folders', False)
+ASSETS_BY_LIBRARIES = config.get_bool('image_download.general.assets_by_libraries', False)
+NO_FS_WARNING = config.get_bool('image_download.general.no_fs_warning', False)
+ADD_SOURCE_EXIF_COMMENT = config.get_bool('image_download.general.add_source_exif_comment', False)
 SRC_ARRAY = []
-TRACK_IMAGE_SOURCES = booler(os.getenv("TRACK_IMAGE_SOURCES"))
-IGNORE_SHRINKING_LIBRARIES = booler(os.getenv("IGNORE_SHRINKING_LIBRARIES"))
-RETAIN_OVERLAID_IMAGES = booler(os.getenv("RETAIN_OVERLAID_IMAGES"))
-FIND_OVERLAID_IMAGES = booler(os.getenv("FIND_OVERLAID_IMAGES"))
-RETAIN_KOMETA_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
-RETAIN_TCM_OVERLAID_IMAGES = booler(os.getenv("RETAIN_TCM_IMAGES"))
+TRACK_IMAGE_SOURCES = config.get_bool('image_download.general.track_image_sources', False)
+IGNORE_SHRINKING_LIBRARIES = config.get_bool('image_download.general.ignore_shrinking_libraries', False)
+RETAIN_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_overlaid_images', False)
+FIND_OVERLAID_IMAGES = config.get_bool('image_download.general.find_overlaid_images', False)
+RETAIN_KOMETA_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_kometa_overlaid_images', False)
+RETAIN_TCM_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_tcm_overlaid_images', False)
 
 if RETAIN_OVERLAID_IMAGES:
     RETAIN_KOMETA_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
@@ -237,8 +192,8 @@ if not USE_ASSET_NAMING:
     USE_ASSET_SUBFOLDERS = False
     FOLDERS_ONLY = False
 else:
-    USE_ASSET_SUBFOLDERS = booler(os.getenv("USE_ASSET_SUBFOLDERS"))
-    FOLDERS_ONLY = booler(os.getenv("FOLDERS_ONLY"))
+    USE_ASSET_SUBFOLDERS = config.get_bool('image_download.general.use_asset_subfolders', False)
+    FOLDERS_ONLY = config.get_bool('image_download.general.folders_only', False)
     if FOLDERS_ONLY:
         ONLY_CURRENT = FOLDERS_ONLY
     if ASSET_DIR is None:
@@ -266,7 +221,7 @@ else:
 if not DELAY:
     DELAY = 0
 
-KEEP_JUNK = booler(os.getenv("KEEP_JUNK"))
+KEEP_JUNK = config.get_bool('image_download.general.keep_junk', False)
 
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
@@ -280,14 +235,14 @@ SCRIPT_STRING = ""
 if POSTER_DOWNLOAD:
     SCRIPT_STRING = SCRIPT_SEED
 
-RESET_LIBRARIES = os.getenv("RESET_LIBRARIES")
+RESET_LIBRARIES = config.get('image_download.general.reset_libraries', False)
 
 if RESET_LIBRARIES:
     RESET_ARRAY = [s.strip() for s in RESET_LIBRARIES.split(",")]
 else:
     RESET_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
 
-RESET_COLLECTIONS = os.getenv("RESET_COLLECTIONS")
+RESET_COLLECTIONS = config.get('image_download.general.reset_collections', False)
 
 if RESET_COLLECTIONS:
     RESET_COLL_ARRAY = [s.strip() for s in RESET_COLLECTIONS.split(",")]
@@ -295,56 +250,24 @@ else:
     RESET_COLL_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
 
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-ONLY_THESE_COLLECTIONS = os.getenv("ONLY_THESE_COLLECTIONS")
+ONLY_THESE_COLLECTIONS = config.get('image_download.what_to_grab.only_these_collections', '')
 
 if ONLY_THESE_COLLECTIONS:
     COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
 else:
     COLLECTION_ARRAY = []
 
-THREADED_DOWNLOADS = booler(os.getenv("THREADED_DOWNLOADS"))
+THREADED_DOWNLOADS = config.get_bool('image_download.general.threaded_downloads', False)
 plogger(f"Threaded downloads: {THREADED_DOWNLOADS}", "info", "a")
 
-imdb_str = "imdb://"
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
-
-redaction_list = []
-redaction_list.append(os.getenv("PLEXAPI_AUTH_SERVER_BASEURL"))
-redaction_list.append(os.getenv("PLEXAPI_AUTH_SERVER_TOKEN"))
+redaction_list = get_redaction_list()
 
 plex = get_plex()
 
-logger("Plex connection succeeded", "info", "a")
-
+LIB_ARRAY = get_target_libraries(plex)
 
 def lib_type_supported(lib):
     return lib.type == "movie" or lib.type == "show"
-
-
-ALL_LIBS = plex.library.sections()
-ALL_LIB_NAMES = []
-
-logger(f"{len(ALL_LIBS)} libraries found:", "info", "a")
-for lib in ALL_LIBS:
-    logger(
-        f"{lib.title.strip()}: {lib.type} - supported: {lib_type_supported(lib)}",
-        "info",
-        "a",
-    )
-    ALL_LIB_NAMES.append(f"{lib.title.strip()}")
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    for lib in ALL_LIBS:
-        if lib_type_supported(lib):
-            LIB_ARRAY.append(lib.title.strip())
-
 
 def get_asset_names(item):
     ret_val = {}
@@ -1230,16 +1153,17 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
 
 
 for lib in LIB_ARRAY:
-    if lib in ALL_LIB_NAMES:
-        try:
-            highwater = 0
-            start_queue_length = len(my_futures)
 
-            if len(my_futures) > 0:
-                plogger(f"queue length: {len(my_futures)}", "info", "a")
+    try:
+        highwater = 0
+        start_queue_length = len(my_futures)
 
-            plogger(f"Loading {lib} ...", "info", "a")
-            the_lib = plex.library.section(lib)
+        if len(my_futures) > 0:
+            plogger(f"queue length: {len(my_futures)}", "info", "a")
+
+        plogger(f"Loading {lib} ...", "info", "a")
+        the_lib = plex.library.section(lib)
+        if lib_type_supported(the_lib):
             the_uuid = the_lib.uuid
             superchat(f"{the_lib} uuid {the_uuid}", "info", "a")
 
@@ -1555,29 +1479,23 @@ for lib in LIB_ARRAY:
                     with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
                         myfile.write(f"{SCRIPT_STRING}{os.linesep}")
 
-        except StopIteration:
-            if stop_file.is_file():
-                progress_str = "stop file found, leaving loop"
-            if skip_file.is_file():
-                progress_str = "skip file found, skipping library"
+    except StopIteration:
+        if stop_file.is_file():
+            progress_str = "stop file found, leaving loop"
+        if skip_file.is_file():
+            progress_str = "skip file found, skipping library"
 
-            plogger(progress_str, "info", "a")
+        plogger(progress_str, "info", "a")
 
-            if stop_file.is_file():
-                stop_file.unlink()
-                break
-            if skip_file.is_file():
-                skip_file.unlink()
+        if stop_file.is_file():
+            stop_file.unlink()
+            break
+        if skip_file.is_file():
+            skip_file.unlink()
 
-        except Exception as ex:
-            progress_str = f"Problem processing {lib}; {ex}"
-            plogger(progress_str, "info", "a")
-    else:
-        logger(
-            f"Library {lib} not found: available libraries on this server are: {ALL_LIB_NAMES}",
-            "info",
-            "a",
-        )
+    except Exception as ex:
+        progress_str = f"Problem processing {lib}; {ex}"
+        plogger(progress_str, "info", "a")
 
 idx = 1
 max = len(my_futures)

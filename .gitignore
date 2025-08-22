@@ -10,6 +10,8 @@
 **/*.pickle
 **/*.sqlite
 
+config.yaml
+
 Kometa/metadata-items
 
 Plex/movies

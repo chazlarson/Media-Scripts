@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import logging
-import os
 import time
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from helpers import get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_plex, get_redaction_list, get_target_libraries
 
 SCRIPT_NAME = Path(__file__).stem
 
@@ -18,8 +18,6 @@ now = datetime.now()
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-env_file_path = Path(".env")
-
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
     filemode="w",
@@ -30,22 +28,13 @@ logging.basicConfig(
 logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-DELAY = int(os.getenv("DELAY"))
-
-if not DELAY:
-    DELAY = 0
-
-if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
-else:
-    lib_array = [LIBRARY_NAME]
+DELAY = config.get_int("settings.delay", 0)
 
 plex = get_plex()
+
+LIB_ARRAY = get_target_libraries(plex)
 
 coll_obj = {}
 coll_obj["collections"] = {}
@@ -56,7 +45,7 @@ def get_sort_text(argument):
     return switcher.get(argument, "invalid-sort")
 
 
-for lib in lib_array:
+for lib in LIB_ARRAY:
     print(f"{lib} collection(s):")
     movies = plex.library.section(lib)
     items = movies.collections()

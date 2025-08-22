@@ -7,14 +7,16 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
-from helpers import get_plex, load_and_upgrade_env
+from config import Config
+from helpers import get_plex
 from logs import plogger, setup_logger
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 
 # DONE 0.1.1: guard against empty library map
+# DONE 0.2.0: config class
 
 # current dateTime
 now = datetime.now()
@@ -22,26 +24,23 @@ now = datetime.now()
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-PLEX_OWNER = os.getenv("TARGET_PLEX_OWNER")
+PLEX_OWNER = config.get("target.plex_owner")
 
-LIBRARY_MAP = os.getenv("LIBRARY_MAP", "{}")
+LIBRARY_MAP = config.get("target.library_map", "{}")
 
 try:
     lib_map = json.loads(LIBRARY_MAP)
 except:
     plogger(
-        "LIBRARY_MAP in the .env file appears to be broken.  Defaulting to an empty list.",
+        "LIBRARY_MAP in the config.yaml appears to be broken.  Defaulting to an empty list.",
         "info",
         "a",
     )
@@ -74,6 +73,7 @@ current_show = None
 last_library = None
 
 plex = get_plex()
+
 PMI = plex.machineIdentifier
 
 account = plex.myPlexAccount()
