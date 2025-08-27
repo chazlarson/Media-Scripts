@@ -273,11 +273,11 @@ ASSET_DIR=assets                             # top-level directory for those ass
 ```
 The asset file system will be rooted at the directory in the `ASSET_DIR` setting, and `USE_ASSET_FOLDERS` controls whether the images are stored as:
 
-`USE_ASSET_FOLDERS=1`
+`USE_ASSET_FOLDERS=0`
 ```
 Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}.jpg
 ```
-or `USE_ASSET_FOLDERS=0`
+or `USE_ASSET_FOLDERS=1`
 ```
 Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}/poster.jpg
 ```
