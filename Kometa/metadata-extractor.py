@@ -68,6 +68,8 @@ if REMOVE_LABELS:
 
 PLEXAPI_AUTH_SERVER_TOKEN = config.get("plex_api.auth_server.token")
 
+INCLUDE_FILES = config.get_bool("metadata.include_files", False)
+ONLY_ONE_GENRE = config.get_bool("metadata.only_first_genre", False)
 
 tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
@@ -77,6 +79,7 @@ os.makedirs(local_dir, exist_ok=True)
 
 show_dir = f"{local_dir}/shows"
 movie_dir = f"{local_dir}/movies"
+
 
 os.makedirs(show_dir, exist_ok=True)
 os.makedirs(movie_dir, exist_ok=True)
@@ -155,12 +158,15 @@ def getDownloadBasePath():
 
 
 def doDownload(url, savefile, savepath):
-    file_path = download(
-        url,
-        PLEXAPI_AUTH_SERVER_TOKEN,
-        filename=savefile,
-        savepath=savepath,
-    )
+    if INCLUDE_FILES:
+        file_path = download(
+            url,
+            PLEXAPI_AUTH_SERVER_TOKEN,
+            filename=savefile,
+            savepath=savepath,
+        )
+    else:
+        file_path = None
 
     return file_path
 
@@ -253,29 +259,31 @@ def get_common_video_info(item):
 
         tmpDict = {"match": matchDict}
 
-        tmpDict["content_rating"] = item.contentRating
-        tmpDict["title"] = item.title
-        if item.titleSort is not None:
+        if config.get_bool("metadata.include_content_rating"):
+            tmpDict["content_rating"] = item.contentRating
+        if config.get_bool("metadata.include_title"):
+            tmpDict["title"] = item.title
+        if config.get_bool("metadata.include_sort_title") and item.titleSort is not None:
             tmpDict["sort_title"] = item.titleSort
-        if item.originalTitle is not None:
+        if config.get_bool("metadata.include_original_title") and item.originalTitle is not None:
             tmpDict["original_title"] = item.originalTitle
 
-        if item.originallyAvailableAt is not None:
+        if config.get_bool("metadata.include_originally_available") and item.originallyAvailableAt is not None:
             tmpDict["originally_available"] = item.originallyAvailableAt.strftime(
                 "%Y-%m-%d"
             )
 
-        if item.userRating is not None:
+        if config.get_bool("metadata.include_user_rating") and item.userRating is not None:
             tmpDict["user_rating"] = item.userRating
-        if item.audienceRating is not None:
+        if config.get_bool("metadata.include_audience_rating") and item.audienceRating is not None:
             tmpDict["audience_rating"] = item.audienceRating
-        if item.rating is not None:
+        if config.get_bool("metadata.include_critic_rating") and item.rating is not None:
             tmpDict["critic_rating"] = item.rating
-        if item.studio is not None:
+        if config.get_bool("metadata.include_studio") and item.studio is not None:
             tmpDict["studio"] = item.studio
-        if item.tagline is not None:
+        if config.get_bool("metadata.include_tagline") and item.tagline is not None:
             tmpDict["tagline"] = item.tagline
-        if item.summary is not None:
+        if config.get_bool("metadata.include_summary") and item.summary is not None:
             tmpDict["summary"] = item.summary
         poster_path = getPoster(item)
         if poster_path is not None:
@@ -286,21 +294,24 @@ def get_common_video_info(item):
             tmpDict["file_background"] = background_path
 
         if item.type == "movie":
-            if item.editionTitle is not None:
+            if config.get_bool("metadata.include_edition") and item.editionTitle is not None:
                 tmpDict["edition"] = item.editionTitle
-            if len(item.directors) > 0:
+            if config.get_bool("metadata.include_director") and len(item.directors) > 0:
                 tmpDict["director"] = [str(item) for item in item.directors]
-            if len(item.countries) > 0:
+            if config.get_bool("metadata.include_country") and len(item.countries) > 0:
                 tmpDict["country"] = [str(item) for item in item.countries]
-            if len(item.genres) > 0:
-                tmpDict["genre"] = [str(item) for item in item.genres]
-            if len(item.writers) > 0:
+            if config.get_bool("metadata.include_genre") and len(item.genres) > 0:
+                if ONLY_ONE_GENRE:
+                    tmpDict["genre"] = [str(item.genres[0])]
+                else:
+                    tmpDict["genre"] = [str(item) for item in item.genres]
+            if config.get_bool("metadata.include_writer") and len(item.writers) > 0:
                 tmpDict["writer"] = [str(item) for item in item.writers]
-            if len(item.producers) > 0:
+            if config.get_bool("metadata.include_producer") and len(item.producers) > 0:
                 tmpDict["producer"] = [str(item) for item in item.producers]
-            if len(item.collections) > 0:
+            if config.get_bool("metadata.include_collection") and len(item.collections) > 0:
                 tmpDict["collection"] = [str(item) for item in item.collections]
-            if len(item.labels) > 0:
+            if config.get_bool("metadata.include_labels") and len(item.labels) > 0:
                 tmpDict["label"] = [str(item) for item in item.labels]
 
             # metadata_language1	default, ar-SA, ca-ES, cs-CZ, da-DK, de-DE, el-GR, en-AU, en-CA, en-GB, en-US, es-ES, es-MX, et-EE, fa-IR, fi-FI, fr-CA, fr-FR, he-IL, hi-IN, hu-HU, id-ID, it-IT, ja-JP, ko-KR, lt-LT, lv-LV, nb-NO, nl-NL, pl-PL, pt-BR, pt-PT, ro-RO, ru-RU, sk-SK, sv-SE, th-TH, tr-TR, uk-UA, vi-VN, zh-CN, zh-HK, zh-TW	Movies, Shows
@@ -316,11 +327,11 @@ def get_common_video_info(item):
                 )
 
         else:
-            if len(item.genres) > 0:
+            if config.get_bool("metadata.include_genre") and len(item.genres) > 0:
                 tmpDict["genre"] = [str(item) for item in item.genres]
-            if len(item.collections) > 0:
+            if config.get_bool("metadata.include_collection") and len(item.collections) > 0:
                 tmpDict["collection"] = [str(item) for item in item.collections]
-            if len(item.labels) > 0:
+            if config.get_bool("metadata.include_labels") and len(item.labels) > 0:
                 tmpDict["label"] = [str(item) for item in item.labels]
 
             if item.episodeSort > -1:
@@ -375,10 +386,10 @@ def get_common_video_info(item):
                     "yes" if item.enableCreditsMarkerGeneration > 0 else "no"
                 )
 
-            if item.audioLanguage != "":
+            if config.get_bool("metadata.include_audio_language") and item.audioLanguage != "":
                 tmpDict["audio_language"] = item.audioLanguage
 
-            if item.subtitleLanguage != "":
+            if config.get_bool("metadata.include_subtitle_language") and item.subtitleLanguage != "":
                 tmpDict["subtitle_language"] = item.subtitleLanguage
 
             # subtitle mode. (-1 = Account default, 0 = Manually selected, 1 = Shown with foreign audio, 2 = Always enabled).
@@ -394,16 +405,16 @@ def get_season_info(season):
     try:
         tmpDict = {"title": season.title}
 
-        if season.userRating is not None:
+        if config.get_bool("metadata.include_user_rating") and season.userRating is not None:
             tmpDict["user_rating"] = season.userRating
 
-        if season.summary != "":
+        if config.get_bool("metadata.include_summary") and season.summary != "":
             tmpDict["summary"] = season.summary
 
-        if len(season.collections) > 0:
+        if config.get_bool("metadata.include_collection") and len(season.collections) > 0:
             tmpDict["collection"] = [str(item) for item in season.collections]
 
-        if len(season.labels) > 0:
+        if config.get_bool("metadata.include_labels") and len(season.labels) > 0:
             tmpDict["label"] = [str(item) for item in season.labels]
 
         poster_path = getPoster(season)
@@ -414,10 +425,10 @@ def get_season_info(season):
         if background_path is not None:
             tmpDict["file_background"] = background_path
 
-        if season.audioLanguage != "":
+        if config.get_bool("metadata.include_audio_language") and season.audioLanguage != "":
             tmpDict["audio_language"] = season.audioLanguage
 
-        if season.subtitleLanguage != "":
+        if config.get_bool("metadata.include_subtitle_language") and season.subtitleLanguage != "":
             tmpDict["subtitle_language"] = season.subtitleLanguage
 
         # subtitle mode. (-1 = Account default, 0 = Manually selected, 1 = Shown with foreign audio, 2 = Always enabled).
@@ -433,36 +444,36 @@ def get_episode_info(episode):
     try:
         tmpDict = {"title": episode.title}
 
-        if episode.titleSort is not None:
+        if config.get_bool("metadata.include_sort_title") and episode.titleSort is not None:
             tmpDict["sort_title"] = episode.titleSort
 
-        if episode.originallyAvailableAt is not None:
+        if config.get_bool("metadata.include_originally_available") and episode.originallyAvailableAt is not None:
             tmpDict["originally_available"] = episode.originallyAvailableAt.strftime(
                 "%Y-%m-%d"
             )
 
         # content_rating	Text to change Content Rating.	Movies, Shows, Episodes
 
-        if episode.userRating is not None:
+        if config.get_bool("metadata.include_user_rating") and episode.userRating is not None:
             tmpDict["user_rating"] = episode.userRating
-        if episode.audienceRating is not None:
+        if config.get_bool("metadata.include_audience_rating") and episode.audienceRating is not None:
             tmpDict["audience_rating"] = episode.audienceRating
-        if episode.rating is not None:
+        if config.get_bool("metadata.include_critic_rating") and episode.rating is not None:
             tmpDict["critic_rating"] = episode.rating
 
-        if season.summary != "":
-            tmpDict["summary"] = season.summary
+        if config.get_bool("metadata.include_summary") and episode.summary != "":
+            tmpDict["summary"] = episode.summary
 
-        if len(episode.directors) > 0:
+        if config.get_bool("metadata.include_director") and len(episode.directors) > 0:
             tmpDict["director"] = [str(item) for item in episode.directors]
-        if len(episode.writers) > 0:
+        if config.get_bool("metadata.include_writer") and len(episode.writers) > 0:
             tmpDict["writer"] = [str(item) for item in episode.writers]
-        if len(episode.collections) > 0:
+        if config.get_bool("metadata.include_collection") and len(episode.collections) > 0:
             tmpDict["collection"] = [str(item) for item in episode.collections]
-        if len(episode.labels) > 0:
+        if config.get_bool("metadata.include_labels") and len(episode.labels) > 0:
             tmpDict["label"] = [str(item) for item in episode.labels]
 
-        if len(episode.producers) > 0:
+        if config.get_bool("metadata.include_producer") and len(episode.producers) > 0:
             tmpDict["producer"] = [str(item) for item in episode.producers]
 
         poster_path = getPoster(item)
