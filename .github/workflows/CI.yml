@@ -1,0 +1,190 @@
+---
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  setup_release:
+    name: Setup Release
+    outputs:
+      publish_release: ${{ steps.setup_release.outputs.publish_release }}
+      release_body: ${{ steps.setup_release.outputs.release_body }}
+      release_commit: ${{ steps.setup_release.outputs.release_commit }}
+      release_generate_release_notes: ${{ steps.setup_release.outputs.release_generate_release_notes }}
+      release_tag: ${{ steps.setup_release.outputs.release_tag }}
+      release_version: ${{ steps.setup_release.outputs.release_version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Release
+        id: setup_release
+        uses: LizardByte/setup-release-action@v2024.919.143601
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs:
+      - setup_release
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: Media-Scripts
+          submodules: recursive
+
+      - name: Set up Python
+        uses: LizardByte/setup-python-action@v2024.609.5111
+        with:
+          python-version: '3.11'
+
+      - name: Set up Python Dependencies
+        shell: bash
+        working-directory: Media-Scripts
+        run: |
+          echo "Installing Requirements"
+          python --version
+          python -m pip --no-python-version-warning --disable-pip-version-check install --upgrade pip setuptools
+
+          # install dev requirements
+          python -m pip install --upgrade \
+            -r requirements.txt
+
+      - name: Package Release
+        shell: bash
+        run: |
+          7z \
+            "-xr!*.git*" \
+            "-xr!*.pyc" \
+            "-xr!__pycache__" \
+            a "./Media-Scripts.zip" "Media-Scripts"
+
+          mkdir artifacts
+          mv ./Media-Scripts.zip ./artifacts/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Media-Scripts
+          if-no-files-found: error  # 'warn' or 'ignore' are also available, defaults to `warn`
+          path: |
+            ${{ github.workspace }}/artifacts
+
+      # - name: Create/Update GitHub Release
+      #   if: ${{ needs.setup_release.outputs.publish_release == 'true' }}
+      #   uses: LizardByte/create-release-action@v2024.919.143026
+      #   with:
+      #     allowUpdates: true
+      #     body: ${{ needs.setup_release.outputs.release_body }}
+      #     generateReleaseNotes: ${{ needs.setup_release.outputs.release_generate_release_notes }}
+      #     name: ${{ needs.setup_release.outputs.release_tag }}
+      #     prerelease: true
+      #     tag: ${{ needs.setup_release.outputs.release_tag }}
+      #     token: ${{ secrets.GH_BOT_TOKEN }}
+
+  pytest:
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Media-Scripts
+
+      - name: Extract artifacts zip
+        shell: bash
+        run: |
+          # extract zip
+          7z x Media-Scripts.zip -o.
+
+          # move all files from "Themerr-plex.bundle" to root, with no target directory
+          cp -r ./Media-Scripts/. .
+
+          # remove zip
+          rm Media-Scripts.zip
+
+      - name: Set up Python
+        uses: LizardByte/setup-python-action@v2024.609.5111
+        with:
+          python-version: '2.7'
+
+      - name: Bootstrap Plex server
+        env:
+          PLEXAPI_PLEXAPI_TIMEOUT: "60"
+        id: bootstrap
+        uses: LizardByte/plexhints@v2024.809.14117
+        with:
+          without_music: true
+          without_photos: true
+
+      - name: Install python dependencies
+        shell: bash
+        run: |
+          python -m pip --no-python-version-warning --disable-pip-version-check install --upgrade \
+            pip setuptools wheel
+          python -m pip --no-python-version-warning --disable-pip-version-check install --no-build-isolation \
+            -r requirements.txt
+
+      - name: Test with pytest
+        env:
+          PLEX_PLUGIN_LOG_PATH: ${{ steps.bootstrap.outputs.PLEX_PLUGIN_LOG_PATH }}
+          PLEXAPI_AUTH_SERVER_BASEURL: ${{ steps.bootstrap.outputs.PLEX_SERVER_BASEURL }}
+          PLEXAPI_AUTH_SERVER_TOKEN: ${{ steps.bootstrap.outputs.PLEXTOKEN }}
+          PLEXAPI_PLEXAPI_TIMEOUT: "60"
+          PLEXTOKEN: ${{ steps.bootstrap.outputs.PLEXTOKEN }}
+        id: test
+        shell: bash
+        run: |
+          python -m pytest \
+            -rxXs \
+            --tb=native \
+            --verbose \
+            --color=yes \
+            --cov=Contents/Code \
+            tests
+
+      - name: Debug log file
+        if: always()
+        shell: bash
+        run: |
+          echo "Debugging log file"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            log_file=$(cygpath.exe -u \
+              "${{ steps.bootstrap.outputs.PLEX_PLUGIN_LOG_PATH }}/dev.chazlarson.mediascripts-plex.log")
+          else
+            log_file="${{ steps.bootstrap.outputs.PLEX_PLUGIN_LOG_PATH }}/dev.chazlarson.mediascripts-plex.log"
+          fi
+          cat "${log_file}"
+
+      - name: Upload coverage
+        # any except canceled or skipped
+        if: >-
+          always() &&
+          (steps.test.outcome == 'success' || steps.test.outcome == 'failure') &&
+          startsWith(github.repository, 'chazlarson/')
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          flags: ${{ runner.os }}
+          token: ${{ secrets.CODECOV_TOKEN }}
