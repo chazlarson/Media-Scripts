@@ -107,6 +107,11 @@ This presents a web UI that lets you scroll through the images that Plex provide
 
 See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
 
+## TODO:
+1. Dockerize
+1. add a top-level console UI
+1. go to a YAML-based config
+
 ## Other script repos of interest
 
 1. [bullmoose](https://github.com/bullmoose20/Plex-Stuff)
