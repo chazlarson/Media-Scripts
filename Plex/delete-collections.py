@@ -33,6 +33,7 @@ LIBRARY_NAME = os.getenv("LIBRARY_NAME")
 LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
 DELAY = int(os.getenv("DELAY"))
 KEEP_COLLECTIONS = os.getenv("KEEP_COLLECTIONS")
+DELETE_COLLECTIONS_CONTAINING = os.getenv("DELETE_COLLECTIONS_CONTAINING")
 
 if not DELAY:
     DELAY = 0
@@ -80,8 +81,9 @@ for lib in LIB_ARRAY:
             if title in keeper_array:
                 bar.text = f"-> keeping: {title}"
             else:
-                bar.text = f"-> deleting: {title}"
-                item.delete()
+                if (DELETE_COLLECTIONS_CONTAINING and title.find(DELETE_COLLECTIONS_CONTAINING) > -1) or not DELETE_COLLECTIONS_CONTAINING:
+                    bar.text = f"-> deleting: {title}"
+                    item.delete()
 
             bar()
 

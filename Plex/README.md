@@ -113,6 +113,7 @@ ONLY_COLLECTION_MEMBERS=0
 
 # DELETE_COLLECTION ENV VARS
 KEEP_COLLECTIONS=bing,bang                   # List of collections to keep
+# DELETE_COLLECTIONS_CONTAINING="- Saga"     # Substring; if a collection's title contains this string, it will be deleted
 
 # REMATCH-ITEMS ENV VARS
 UNMATCHED_ONLY=1                             # If 1, only rematch things that are currently unmatched
@@ -778,8 +779,12 @@ This script will simply delete all collections from the libraries specified in t
 
 Script-specific variables in .env:
 ```shell
-KEEP_COLLECTIONS=bing,bang                      # comma-separated list of collections to keep
+KEEP_COLLECTIONS=bing,bang                   # comma-separated list of collections to keep
+# DELETE_COLLECTIONS_CONTAINING="- Saga"     # Substring; if a collection's title contains this string, it will be deleted
 ```
+
+If `DELETE_COLLECTIONS_CONTAINING` is not empty, then only collections containing that substring will be deleted.
+
 ****
 ### Usage
 1. setup as above
