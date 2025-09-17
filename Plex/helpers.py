@@ -729,3 +729,11 @@ def check_for_images(file_path):
         return True
 
     return False
+
+def get_redaction_list():
+    config = Config()
+    redaction_list = []
+    redaction_list.append(config.get("plex_api.auth_server.base_url"))
+    redaction_list.append(config.get("plex_api.auth_server.token"))
+
+    return redaction_list

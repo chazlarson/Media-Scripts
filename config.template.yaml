@@ -148,23 +148,23 @@ metadata:
   include_files: false
 
   include_audience_rating: true
+  include_audio_language: true
+  include_collection: true
   include_content_rating: true
   include_country: true
   include_critic_rating: true
-  include_user_rating: true
   include_director: true
+  include_edition: true
   include_genre: true
+  include_labels: true
   include_original_title: true
   include_originally_available: true
   include_producer: true
   include_sort_title: true
   include_studio: true
+  include_subtitle_language: true
   include_summary: true
   include_tagline: true
   include_title: true
+  include_user_rating: true
   include_writer: true
-  include_edition: true
-  include_collection: true
-  include_labels: true
-  include_audio_language: true
-  include_subtitle_language: true

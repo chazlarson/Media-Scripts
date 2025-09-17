@@ -143,43 +143,41 @@ if not POSTER_DOWNLOAD:
     print("================== ATTENTION ==================")
     ID_FILES = False
 
-POSTER_CONSOLIDATE = config.get_bool('image_download.general.poster_consolidate', True)
-INCLUDE_COLLECTION_ARTWORK = config.get_bool('image_download.image.include_collection_artwork', True)
-ONLY_COLLECTION_ARTWORK = config.get_bool('image_download.image.only_collection_artwork', False)
+POSTER_CONSOLIDATE = config.get_bool('image_download.general.poster_consolidate', False)
+INCLUDE_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.include_collection_artwork', False)
+ONLY_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.only_collection_artwork', False)
 
 DELAY = config.get_int('general.delay', 1)
 
-GRAB_BACKGROUNDS = config.get_bool('image_download.general.grab_backgrounds', True)
-GRAB_SEASONS = config.get_bool('image_download.general.grab_seasons', True)
-ONLY_SEASONS = config.get_bool('image_download.general.only_seasons', False)
+GRAB_POSTERS = config.get_bool('image_download.what_to_grab.artwork', True)
+# GRAB_BACKGROUNDS = config.get_bool('image_download.what_to_grab.backgrounds', True)
+GRAB_SEASONS = config.get_bool('image_download.what_to_grab.seasons', True)
+GRAB_EPISODES = config.get_bool('image_download.what_to_grab.episodes', True)
 
-GRAB_EPISODES = config.get_bool('image_download.general.grab_episodes', True)
-ONLY_EPISODES = config.get_bool('image_download.general.only_episodes', False)
-
-ONLY_CURRENT = config.get_bool('image_download.general.only_current', False)
+ONLY_CURRENT = config.get_bool('image_download.what_to_grab.only_current', False)
 
 if ONLY_CURRENT:
-    POSTER_DIR = config.get('image_download.general.current_poster_dir', 'current_posters')
+    POSTER_DIR = config.get('image_download.where_to_put_it.current_poster_dir', 'current_posters')
 
-TRACK_URLS = config.get_bool('image_download.general.track_urls', True)
-TRACK_COMPLETION = config.get_bool('image_download.general.track_completion', False)
+TRACK_URLS = config.get_bool('image_download.tracking.track_urls', True)
+TRACK_COMPLETION = config.get_bool('image_download.tracking.track_completion', False)
+TRACK_IMAGE_SOURCES = config.get_bool('image_download.tracking.track_image_sources', False)
 
-ASSET_DIR = config.get('image_download.general.asset_dir', 'assets')
+ASSET_DIR = config.get('image_download.where_to_put_it.asset_dir', 'assets')
 
 ASSET_PATH = Path(ASSET_DIR)
 
-USE_ASSET_NAMING = config.get_bool('image_download.general.use_asset_naming', False)
-USE_ASSET_FOLDERS = config.get_bool('image_download.general.use_asset_folders', False)
-ASSETS_BY_LIBRARIES = config.get_bool('image_download.general.assets_by_libraries', False)
-NO_FS_WARNING = config.get_bool('image_download.general.no_fs_warning', False)
+USE_ASSET_NAMING = config.get_bool('image_download.where_to_put_it.use_asset_naming', False)
+USE_ASSET_FOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_folders', False)
+ASSETS_BY_LIBRARIES = config.get_bool('image_download.where_to_put_it.assets_by_libraries', False)
+NO_FS_WARNING = config.get_bool('image_download.where_to_put_it.no_fs_warning', False)
 ADD_SOURCE_EXIF_COMMENT = config.get_bool('image_download.general.add_source_exif_comment', False)
 SRC_ARRAY = []
-TRACK_IMAGE_SOURCES = config.get_bool('image_download.general.track_image_sources', False)
 IGNORE_SHRINKING_LIBRARIES = config.get_bool('image_download.general.ignore_shrinking_libraries', False)
-RETAIN_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_overlaid_images', False)
-FIND_OVERLAID_IMAGES = config.get_bool('image_download.general.find_overlaid_images', False)
-RETAIN_KOMETA_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_kometa_overlaid_images', False)
-RETAIN_TCM_OVERLAID_IMAGES = config.get_bool('image_download.general.retain_tcm_overlaid_images', False)
+RETAIN_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_overlaid_images', False)
+FIND_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.find_overlaid_images', False)
+RETAIN_KOMETA_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_kometa_overlaid_images', False)
+RETAIN_TCM_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_tcm_overlaid_images', False)
 
 if RETAIN_OVERLAID_IMAGES:
     RETAIN_KOMETA_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
@@ -192,7 +190,7 @@ if not USE_ASSET_NAMING:
     USE_ASSET_SUBFOLDERS = False
     FOLDERS_ONLY = False
 else:
-    USE_ASSET_SUBFOLDERS = config.get_bool('image_download.general.use_asset_subfolders', False)
+    USE_ASSET_SUBFOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_subfolders', False)
     FOLDERS_ONLY = config.get_bool('image_download.general.folders_only', False)
     if FOLDERS_ONLY:
         ONLY_CURRENT = FOLDERS_ONLY
@@ -214,14 +212,19 @@ else:
         print("Other file hierarchies are incompatible with the")
         print("KOMETA asset naming setup at this time.")
         print("================== ATTENTION ==================")
-        print("To skip this in future runs, add 'NO_FS_WARNING=1' to .env")
+        print("To skip this in future runs, add this setting to config.yml:")
+        print("")
+        print("image_download:")
+        print("  where_to_put_it:")
+        print("    no_fs_warning: 1")
+        print("")
         print("pausing for 15 seconds...")
         time.sleep(15)
 
 if not DELAY:
     DELAY = 0
 
-KEEP_JUNK = config.get_bool('image_download.general.keep_junk', False)
+KEEP_JUNK = config.get_bool('image_download.what_to_grab.keep_junk', False)
 
 SCRIPT_FILE = "get_images.sh"
 SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
@@ -421,7 +424,7 @@ def get_subdir(item):
     if item.type == "collection":
         level_01, msg = validate_filename(f"collection-{item.title}")
     else:
-        imdbid, tmid, tvid = get_ids(item.guids, None)
+        imdbid, tmid, tvid = get_ids(item.guids)
         if item.type == "season":
             level_01, msg = validate_filename(
                 f"{item.parentTitle}-{TOPLEVEL_TMID}"
@@ -591,7 +594,7 @@ def process_the_thing(params):
                 try:
                     thumbPath = download(
                         f"{src_URL}",
-                        PLEX_TOKEN,
+                        config.get('plex_api.auth_server.token'),
                         filename=tgt_filename,
                         savepath=folder_path,
                     )
@@ -777,7 +780,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         src_URL = art.key
                         if src_URL[0] == "/":
-                            src_URL = f"{PLEX_URL}{art.key}&X-Plex-Token={PLEX_TOKEN}"
+                            src_URL = f"{config.get('plex_api.auth_server.base_url')}{art.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
                             art_params["source"] = "local"
 
                         art_params["src_URL"] = src_URL
@@ -842,7 +845,7 @@ def get_posters(lib, item, uuid, title):
     show_title = None
 
     if item.type != "collection":
-        imdbid, tmid, tvid = get_ids(item.guids, None)
+        imdbid, tmid, tvid = get_ids(item.guids)
         if item.type == "show":
             show_title = item.title
         if item.type == "season":
@@ -1040,7 +1043,7 @@ def get_posters(lib, item, uuid, title):
 
                         if src_URL[0] == "/":
                             src_URL = (
-                                f"{PLEX_URL}{poster.key}&X-Plex-Token={PLEX_TOKEN}"
+                                f"{config.get('plex_api.auth_server.base_url')}{poster.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
                             )
                             art_params["source"] = "local"
 
@@ -1089,7 +1092,7 @@ def get_posters(lib, item, uuid, title):
 
                 attempts += 1
 
-        if GRAB_BACKGROUNDS:
+        if config.get_bool('image_download.what_to_grab.backgrounds', True):
             get_art(item, artwork_path, tmid, tvid, uuid, lib_title)
     else:
         plogger(
@@ -1165,7 +1168,7 @@ for lib in LIB_ARRAY:
         the_lib = plex.library.section(lib)
         if lib_type_supported(the_lib):
             the_uuid = the_lib.uuid
-            superchat(f"{the_lib} uuid {the_uuid}", "info", "a")
+            superchat(f"{the_lib.title} uuid {the_uuid}", "info", "a")
 
             if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == "ALL_LIBRARIES":
                 plogger(
@@ -1179,13 +1182,13 @@ for lib in LIB_ARRAY:
 
                 if last_run_lib is None:
                     plogger(
-                        f"no last run date for {the_lib}, using {fallback_date}",
+                        f"no last run date for {the_lib.title}, using {fallback_date}",
                         "info",
                         "a",
                     )
                     last_run_lib = fallback_date
 
-            superchat(f"{the_lib} last run date: {last_run_lib}", "info", "a")
+            superchat(f"{the_lib.title} last run date: {last_run_lib}", "info", "a")
 
             ID_ARRAY = []
             the_title = the_lib.title

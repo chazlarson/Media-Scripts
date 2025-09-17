@@ -1,0 +1,41 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run current Kometa file",
+      "type": "debugpy",
+      "justMyCode": false,
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/Kometa",
+      "purpose": [
+        "debug-in-terminal"
+      ],
+      "args": [ ]
+    },
+    {
+      "name": "Run current Plex file",
+      "type": "debugpy",
+      "justMyCode": false,
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/Plex",
+      "purpose": [
+        "debug-in-terminal"
+      ],
+      "args": [ ]
+    },
+    {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
