@@ -18,6 +18,9 @@ VERSION = "0.2.0"
 # DONE 0.1.1: guard against empty library map
 # DONE 0.2.0: config class
 
+print("CURRENTLY BROKEN")
+exit()
+
 # current dateTime
 now = datetime.now()
 
@@ -32,9 +35,9 @@ plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 config = Config('../config.yaml')
 
-PLEX_OWNER = config.get("target.plex_owner")
+PLEX_OWNER = config.get("status.plex_owner")
 
-LIBRARY_MAP = config.get("target.library_map", "{}")
+LIBRARY_MAP = config.get("status.library_map", "{}")
 
 try:
     lib_map = json.loads(LIBRARY_MAP)

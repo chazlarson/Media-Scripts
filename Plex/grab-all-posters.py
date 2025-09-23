@@ -73,10 +73,11 @@ from plexapi.utils import download
 #      0.8.9b change one blogger to plogger since there's no bar in that context
 #      0.8.9c use sanitize_filename on illegal names and actually use that name
 #      0.8.9d add JUNK reason to filename for visibility outside superchat
+#      0.9.0  change to config class instead of env
 
 SCRIPT_NAME = Path(__file__).stem
 
-VERSION = "0.8.9c"
+VERSION = "0.9.0"
 
 config = Config('../config.yaml')
 
@@ -153,6 +154,7 @@ GRAB_POSTERS = config.get_bool('image_download.what_to_grab.artwork', True)
 # GRAB_BACKGROUNDS = config.get_bool('image_download.what_to_grab.backgrounds', True)
 GRAB_SEASONS = config.get_bool('image_download.what_to_grab.seasons', True)
 GRAB_EPISODES = config.get_bool('image_download.what_to_grab.episodes', True)
+GRAB_LOGOS = config.get_bool('image_download.what_to_grab.logos', True)
 
 ONLY_CURRENT = config.get_bool('image_download.what_to_grab.only_current', False)
 
@@ -470,7 +472,7 @@ def get_progress_string(item):
     return ret_val
 
 
-def get_image_name(params, tgt_ext, background=False):
+def get_image_name(params, tgt_ext, background=False, logo=False):
     ret_val = ""
 
     item_type = params["type"]
@@ -491,6 +493,8 @@ def get_image_name(params, tgt_ext, background=False):
 
         if background:
             ret_val = f"_background{base_name}"
+        elif logo:
+            ret_val = f"_logo{base_name}"
         else:
             if item_type == "season":
                 # _Season##.ext
@@ -511,6 +515,8 @@ def get_image_name(params, tgt_ext, background=False):
 
         if background:
             ret_val = f"background-{base_name}"
+        elif logo:
+            ret_val = f"logo-{base_name}"
         else:
             if item_type == "season" or item_type == "episode":
                 ret_val = f"{item_se_str}-{safe_name}-{base_name}"
@@ -542,6 +548,7 @@ def process_the_thing(params):
     # assets/One Show/Adam-12 Collection
 
     background = params["background"]
+    logo = params["logo"]
     src_URL = params["src_URL"]
     provider = params["provider"]
     source = params["source"]
@@ -554,7 +561,7 @@ def process_the_thing(params):
     result["status"] = "Nothing happened"
 
     tgt_ext = ".dat" if ID_FILES else ".jpg"
-    tgt_filename = get_image_name(params, tgt_ext, background)
+    tgt_filename = get_image_name(params, tgt_ext, background, logo)
     # in asset case, I have '_poster.ext'
     superchat(f"target filename {tgt_filename}", "info", "a")
 
@@ -668,6 +675,173 @@ class poster_placeholder:
         self.provider = provider
         self.key = key
 
+    # property logoUrl
+    # lockLogo()[source]
+    # unlockLogo()[source]
+    # logos()[source]
+    # uploadLogo(url=None, filepath=None)[source]
+
+def get_logo(item, artwork_path, tmid, tvid, uuid, lib_title):
+    global SCRIPT_STRING
+
+    superchat(
+        f"entering get_logo {item.title}, {artwork_path}, {tmid}, {tvid}, {uuid}, {lib_title}",
+        "info",
+        "a",
+    )
+
+    attempts = 0
+    if ONLY_CURRENT:
+        all_logos = []
+        all_logos.append(poster_placeholder("current", item.logoUrl))
+    else:
+        all_logos = item.logos()
+
+    if USE_ASSET_NAMING:
+        logo_path = artwork_path
+    else:
+        logo_path = Path(artwork_path, "logos")
+
+    while attempts < 5:
+        try:
+            progress_str = f"{get_progress_string(item)} - {len(all_logos)} logos"
+
+            blogger(progress_str, "info", "a", bar)
+
+            import fnmatch
+
+            if ONLY_CURRENT:
+                no_point_in_looking = False
+            else:
+                count = 0
+                logos_to_go = 0
+
+                if os.path.exists(logo_path):
+                    # if I'm using asset naming, the names all start with `logo``
+                    if USE_ASSET_NAMING:
+                        count = len(
+                            fnmatch.filter(os.listdir(logo_path), "logo*.*")
+                        )
+                    else:
+                        count = len(fnmatch.filter(os.listdir(logo_path), "*.*"))
+                    logger(f"{count} files in {logo_path}", "info", "a")
+
+                logos_to_go = count - POSTER_DEPTH
+
+                if logos_to_go < 0:
+                    logo_to_go = abs(logos_to_go)
+                else:
+                    logo_to_go = 0
+
+                logger(
+                    f"{logo_to_go} needed to reach depth {POSTER_DEPTH}", "info", "a"
+                )
+
+                no_more_to_get = count >= len(all_logos)
+                full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                no_point_in_looking = full_for_now or no_more_to_get
+                if no_more_to_get:
+                    logger(
+                        f"Grabbed all available logos: {no_more_to_get}", "info", "a"
+                    )
+                if full_for_now:
+                    logger(
+                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already",
+                        "info",
+                        "a",
+                    )
+
+            if not no_point_in_looking:
+                idx = 1
+                for logo in all_logos:
+                    if logo.key is not None:
+                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                            logger(
+                                f"Reached max depth of {POSTER_DEPTH}; exiting loop",
+                                "info",
+                                "a",
+                            )
+                            break
+
+                        art_params = {}
+                        art_params["tmid"] = tmid
+                        art_params["tvid"] = tvid
+                        art_params["idx"] = idx
+                        art_params["path"] = logo_path
+                        art_params["provider"] = logo.provider
+                        art_params["source"] = "remote"
+                        art_params["uuid"] = uuid
+                        art_params["lib_title"] = lib_title
+
+                        art_params["type"] = item.TYPE
+                        art_params["title"] = item.title
+
+                        try:
+                            art_params["seasonNumber"] = item.seasonNumber
+                        except:
+                            art_params["seasonNumber"] = None
+
+                        try:
+                            art_params["episodeNumber"] = item.episodeNumber
+                        except:
+                            art_params["episodeNumber"] = None
+
+                        art_params["se_str"] = get_SE_str(item)
+
+                        art_params["logo"] = True
+                        art_params["background"] = False
+
+                        src_URL = logo.key
+                        if src_URL[0] == "/":
+                            src_URL = f"{config.get('plex_api.auth_server.base_url')}{logo.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
+                            art_params["source"] = "local"
+
+                        art_params["src_URL"] = src_URL
+
+                        bar.text = f"{progress_str} - {idx}"
+                        logger(f"processing {progress_str} - {idx}", "info", "a")
+
+                        superchat(
+                            f"Built out params for {item.title}: {art_params}",
+                            "info",
+                            "a",
+                        )
+                        if not TRACK_URLS or (
+                            TRACK_URLS and not check_url(src_URL, uuid)
+                        ):
+                            if THREADED_DOWNLOADS:
+                                future = executor.submit(
+                                    process_the_thing, art_params
+                                )  # does not block
+                                # append it to the queue
+                                my_futures.append(future)
+                                superchat(
+                                    f"Added {item.title} to the download queue",
+                                    "info",
+                                    "a",
+                                )
+                            else:
+                                superchat(
+                                    f"Downloading {item.title} directly", "info", "a"
+                                )
+                                process_the_thing(art_params)
+                        else:
+                            logger(
+                                f"SKIPPING {item.title} as its URL was found in the URL tracking table: {src_URL} ",
+                                "info",
+                                "a",
+                            )
+
+                    else:
+                        logger("skipping empty internal art object", "info", "a")
+
+                    idx += 1
+
+            attempts = 6
+        except Exception as ex:
+            progress_str = f"EX: {ex} {item.title}"
+            logger(progress_str, "info", "a")
+            attempts += 1
 
 def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
     global SCRIPT_STRING
@@ -777,6 +951,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
                         art_params["se_str"] = get_SE_str(item)
 
                         art_params["background"] = True
+                        art_params["logo"] = False
 
                         src_URL = art.key
                         if src_URL[0] == "/":
@@ -1038,6 +1213,7 @@ def get_posters(lib, item, uuid, title):
                         art_params["se_str"] = get_SE_str(item)
 
                         art_params["background"] = False
+                        art_params["logo"] = False
 
                         src_URL = poster.key
 
@@ -1094,6 +1270,10 @@ def get_posters(lib, item, uuid, title):
 
         if config.get_bool('image_download.what_to_grab.backgrounds', True):
             get_art(item, artwork_path, tmid, tvid, uuid, lib_title)
+
+        if config.get_bool('image_download.what_to_grab.logos', True):
+            get_logo(item, artwork_path, tmid, tvid, uuid, lib_title)
+
     else:
         plogger(
             "Skipping {item.title}, error determining target subdirectory", "info", "a"

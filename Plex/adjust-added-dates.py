@@ -37,9 +37,9 @@ LIB_ARRAY = get_target_libraries(plex)
 
 logger("connection success", "info", "a")
 
-plogger(f"Adjusting future dates only: {config.get_bool("adjust_date.futures_only", False)}", "info", "a")
+plogger(f"Adjusting future dates only: {config.get_bool('adjust_date.futures_only', False)}", "info", "a")
 
-plogger(f"Adjusting epoch dates only: {config.get_bool("adjust_date.epoch_only", False)}", "info", "a")
+plogger(f"Adjusting epoch dates only: {config.get_bool('adjust_date.epoch_only', False)}", "info", "a")
 
 EPOCH_DATE = datetime(1970, 1, 1, 0, 0, 0)
 
@@ -178,7 +178,7 @@ for lib in LIB_ARRAY:
 
                                 else:
                                     blogger(
-                                        f"skipping {item.title}: EPOCH_ONLY {config.get_bool("adjust_date.epoch_only", False)}, originally available date {orig_date}",
+                                        f"skipping {item.title}: EPOCH_ONLY {config.get_bool('adjust_date.epoch_only', False)}, originally available date {orig_date}",
                                         "info",
                                         "a",
                                         bar,

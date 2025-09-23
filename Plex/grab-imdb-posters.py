@@ -27,7 +27,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
+logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 config = Config('../config.yaml')
@@ -72,7 +72,7 @@ for lib in LIB_ARRAY:
 
     for item in items:
         item_count = item_count + 1
-        imdb_id, tmdb_id, tvdb_id = get_ids(item.guids, TMDB_KEY)
+        imdb_id, tmdb_id, tvdb_id = get_ids(item.guids)
 
         tmpDict = {}
         tmpDict["title"] = item.title
