@@ -224,6 +224,8 @@ image_download:
     backgrounds: 1 # should get-all-posters retrieve backgrounds?
     artwork: 1 # current background is downloaded with current poster
 
+    logos: 1 # should get-all-posters retrieve logos?
+
     ### quantity-related
     only_current: 0 # should get-all-posters retrieve ONLY current artwork?
     poster_depth: 20 # grab this many posters [0 grabs all] [ONLY_CURRENT overrides this]
