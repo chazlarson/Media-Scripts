@@ -20,6 +20,7 @@ from helpers import (check_for_images, get_all_from_library, get_ids,
 from logs import blogger, logger, plogger, setup_logger
 from pathvalidate import sanitize_filename
 from plexapi.utils import download
+import plexapi
 
 # TODO: lib_stats[lib_key] = item_count in sqlite
 # TODO: Track Collection status in sqlite with guid
@@ -78,6 +79,7 @@ from plexapi.utils import download
 SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.9.0"
+MIN_PLEXAPI_VERSION = "4.16.1"
 
 config = Config('../config.yaml')
 
@@ -103,6 +105,14 @@ setup_logger("activity_log", ACTIVITY_LOG)
 setup_logger("download_log", DOWNLOAD_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
+
+if plexapi.__version__ < MIN_PLEXAPI_VERSION:
+    plogger(f"This script requires PlexAPI {MIN_PLEXAPI_VERSION} or later.  You have {plexapi.__version__}.", "error", "a")
+    plogger(f"Please update the requirements. Exiting...", "error", "a")
+    exit()
+else:
+    plogger(f"Running under PlexAPI {plexapi.__version__}.", "info", "a")
+
 
 ID_FILES = True
 
@@ -1271,8 +1281,9 @@ def get_posters(lib, item, uuid, title):
         if config.get_bool('image_download.what_to_grab.backgrounds', True):
             get_art(item, artwork_path, tmid, tvid, uuid, lib_title)
 
-        if config.get_bool('image_download.what_to_grab.logos', True):
-            get_logo(item, artwork_path, tmid, tvid, uuid, lib_title)
+        if not item.TYPE == "collection":
+            if config.get_bool('image_download.what_to_grab.logos', True):
+                get_logo(item, artwork_path, tmid, tvid, uuid, lib_title)
 
     else:
         plogger(

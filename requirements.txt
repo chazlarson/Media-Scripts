@@ -1,7 +1,7 @@
 alive-progress==2.4.1
 imdbpy
 pathvalidate
-PlexAPI
+PlexAPI>=4.16.1
 pre-commit
 pyopenssl
 python-dotenv
@@ -18,7 +18,6 @@ sqlalchemy<2.0
 tabulate
 validators
 pillow
-
 Flask
 GitPython
 num2words
