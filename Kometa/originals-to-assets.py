@@ -22,8 +22,9 @@ SCRIPT_NAME = Path(__file__).stem
 # 0.0.4 more chatty logging and bail if the original isn't found
 # 0.0.5 Actually fix TV libraries
 # 0.0.6 use parent directory name rather than stem
+# 0.0.7 add USE_ASSET_TYPE_SUBFOLDERS option
 
-VERSION = "0.0.6"
+VERSION = "0.0.7"
 
 env_file_path = Path(".env")
 
@@ -87,6 +88,7 @@ if ASSET_DIR is None:
 ASSET_PATH = Path(ASSET_DIR)
 
 USE_ASSET_FOLDERS = booler(os.getenv("USE_ASSET_FOLDERS"))
+USE_ASSET_TYPE_SUBFOLDERS = booler(os.getenv("USE_ASSET_TYPE_SUBFOLDERS"))
 
 if ASSET_DIR is None:
     ASSET_DIR = "assets"
@@ -191,27 +193,47 @@ def target_asset(item):
         superchat(f"Episode asset name: {asset_name}", "info", "a")
 
     if USE_ASSET_FOLDERS:
-        # Movie/Show poster      <path_to_assets>/ASSET_NAME/poster.ext
-        target_file = Path(ASSET_PATH, asset_name, "poster.jpg")
-        # Season poster          <path_to_assets>/ASSET_NAME/Season##.ext
+        if USE_ASSET_TYPE_SUBFOLDERS:
+            # If using type subfolders, then assets go in a subfolder for their type (movie or show):
+            #   Movie/Show poster:     -> <ASSET_PATH>/<movie|show>/<ASSET_NAME>
+            #   Season/Episode poster: -> <ASSET_PATH>/show/<ASSET_NAME>
+            type_subfolder = "movie" if item.TYPE == "movie" else "show"
+            base_path = Path(ASSET_PATH, type_subfolder, asset_name)
+        else:
+            # Flat asset structure: all assets go directly in an ASSET_PATH/<ASSET_NAME> folder
+            base_path = Path(ASSET_PATH, asset_name)
+
         if item.TYPE == "season":
-            target_file = Path(
-                ASSET_PATH, asset_name, f"Season{str(item_season).zfill(2)}.jpg"
-            )
-        # Episode poster         <path_to_assets>/ASSET_NAME/S##E##.ext
-        if item.TYPE == "episode":
-            target_file = Path(ASSET_PATH, asset_name, f"{item_se_str}.jpg")
+            # Season poster:  <base_path>/Season##.jpg
+            target_file = base_path / f"Season{str(item_season).zfill(2)}.jpg"
+        elif item.TYPE == "episode":
+            # Episode poster: <base_path>/S##E##.jpg
+            target_file = base_path / f"{item_se_str}.jpg"
+        else:
+            # Movie/Show poster: <base_path>/poster.jpg
+            target_file = base_path / "poster.jpg"
     else:
-        # Movie/Show poster      <path_to_assets>/ASSET_NAME.ext
-        target_file = Path(ASSET_PATH, f"{asset_name}.jpg")
-        # Season poster          <path_to_assets>/ASSET_NAME_Season##.ext
+        if USE_ASSET_TYPE_SUBFOLDERS:
+            # If using type subfolders, then assets go in a subfolder for their type (movie or show):
+            #   Movie/Show poster:     -> <ASSET_PATH>/<movie|show>
+            #   Season/Episode poster: -> <ASSET_PATH>/show
+            type_subfolder = "movie" if item.TYPE == "movie" else "show"
+            base_path = Path(ASSET_PATH, type_subfolder)
+        else:
+            # Flat asset structure: all assets go directly in the ASSET_PATH
+            base_path = ASSET_PATH
+
         if item.TYPE == "season":
-            target_file = Path(
-                ASSET_PATH, f"{asset_name}_Season{str(item_season).zfill(2)}.jpg"
+            target_file = (
+                base_path
+                / f"{asset_name}_Season{str(item_season).zfill(2)}.jpg"  # <ASSET_NAME>_Season##.jpg
             )
-        # Episode poster         <path_to_assets>/ASSET_NAME_S##E##.ext
-        if item.TYPE == "episode":
-            target_file = Path(ASSET_PATH, f"{asset_name}_{item_se_str}.jpg")
+        elif item.TYPE == "episode":
+            target_file = (
+                base_path / f"{asset_name}_{item_se_str}.jpg"  # <ASSET_NAME>_S##E##.jpg
+            )
+        else:
+            target_file = base_path / f"{asset_name}.jpg"  # <ASSET_NAME>.jpg
 
     superchat(f"Target file: {target_file}", "info", "a")
 

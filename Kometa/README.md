@@ -269,17 +269,37 @@ If you don't have overlays on any episodes, this script will not put any episode
 ```
 # ORIGINAL TO ASSETS
 USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
+USE_ASSET_TYPE_SUBFOLDERS=1                  # optionally, should the asset directory use asset type subfolders? (e.g. 'movie', 'show')
 ASSET_DIR=assets                             # top-level directory for those assets
 ```
-The asset file system will be rooted at the directory in the `ASSET_DIR` setting, and `USE_ASSET_FOLDERS` controls whether the images are stored as:
+The asset file system will be rooted at the directory in the `ASSET_DIR` setting, while `USE_ASSET_FOLDERS` and `USE_ASSET_TYPE_SUBFOLDERS` controls whether the images are stored as:
 
 `USE_ASSET_FOLDERS=0`
 ```
-Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}.jpg
+# movie|show
+Media-Scripts/Plex/assets/<ASSET_NAME>.jpg
+# season
+Media-Scripts/Plex/assets/<ASSET_NAME>_Season##.jpg
+# episode
+Media-Scripts/Plex/assets/<ASSET_NAME>_S##E##.jpg
 ```
 or `USE_ASSET_FOLDERS=1`
 ```
-Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}/poster.jpg
+# movie|show
+Media-Scripts/Plex/assets/<ASSET_NAME>/poster.jpg
+# season
+Media-Scripts/Plex/assets/<ASSET_NAME>/Season##.jpg
+# episode
+Media-Scripts/Plex/assets/<ASSET_NAME>/S##E##.jpg
+```
+with `USE_ASSET_TYPE_SUBFOLDERS=1`
+```
+# movie|show
+Media-Scripts/Plex/assets/<movie|show>/...
+# season
+Media-Scripts/Plex/assets/show/...
+# episode
+Media-Scripts/Plex/assets/show/...
 ```
 
 example output:
