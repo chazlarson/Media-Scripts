@@ -57,6 +57,7 @@ DRY_RUN = config.get_bool('reset_posters.dry_run', False)
 FLUSH_STATUS_AT_START = config.get_bool('reset_posters.flush_status_at_start', False)
 RESET_SEASONS_WITH_SERIES = config.get_bool('reset_posters.reset_seasons_with_series', False)
 OVERRIDE_OVERLAY_STATUS = config.get_bool('reset_posters.override_overlay_status', False)
+RESET_SQUARE_ART = config.get_bool('reset_posters.reset_square_art', False)
 
 REMOVE_LABELS = config.get_bool('reset_posters.remove_labels', False)
 RESET_SEASONS = config.get_bool('reset_posters.reset_seasons', False)
@@ -85,31 +86,35 @@ def get_log_title(item):
         return f"{item.title}"
 
 
-def pick_poster(poster_list, fallback):
-    the_poster = None
-    if len(posters) > 0:
-        blogger("-> picking the first poster in the list", "info", "a", bar)
-        the_poster = posters[0]
+def pick_art(art_list, fallback, art_name):
+    the_art = None
+    if len(art_list) > 0:
+        blogger(f"-> picking the first {art_name} in the list", "info", "a", bar)
+        the_art = art_list[0]
     else:
         if RESET_SEASONS_WITH_SERIES:
-            the_poster = fallback
+            the_art = fallback
             blogger("-> empty list, using fallback", "info", "a", bar)
 
-    return the_poster
+    return the_art
 
 
-def apply_poster(item, item_poster):
-    if item_poster is not None:
+def apply_art(item, item_art, art_name):
+    if item_art is not None:
+        item_url = getattr(item_art, "thumb", None) or getattr(item_art, "key", None)
         blogger(
-            f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}",
+            f"-> setting {item.type} {art_name} : {get_log_title(item)} to {item_url}",
             "info",
             "a",
             bar,
         )
         if not DRY_RUN:
-            item.setPoster(item_poster)
+            if art_name == "square art":
+                item.setSquareArt(item_art)
+            else:
+                item.setPoster(item_art)
     else:
-        blogger("-> No poster; no action being taken", "info", "a", bar)
+        blogger(f"-> No {art_name}; no action being taken", "info", "a", bar)
 
 
 def track_completion(id_array, status_file, item_id):
@@ -188,9 +193,22 @@ for lib in LIB_ARRAY:
                             bar,
                         )
 
-                        showPoster = pick_poster(posters, None)
+                        showPoster = pick_art(posters, None, "poster")
 
-                        apply_poster(item, showPoster)
+                        apply_art(item, showPoster, "poster")
+
+                        showSquare = None
+                        if RESET_SQUARE_ART:
+                            blogger(f"-> getting square art: {item_title}", "info", "a", bar)
+                            squares = item.squareArts()
+                            blogger(
+                                f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                "info",
+                                "a",
+                                bar,
+                            )
+                            showSquare = pick_art(squares, None, "square art")
+                            apply_art(item, showSquare, "square art")
 
                         # Wait between items in case hammering the Plex server turns out badly.
                         sleep_for_a_while()
@@ -235,9 +253,29 @@ for lib in LIB_ARRAY:
                                             bar,
                                         )
 
-                                        seasonPoster = pick_poster(posters, showPoster)
+                                        seasonPoster = pick_art(posters, showPoster, "poster")
 
-                                        apply_poster(s, seasonPoster)
+                                        apply_art(s, seasonPoster, "poster")
+
+                                        seasonSquare = None
+                                        if RESET_SQUARE_ART:
+                                            blogger(
+                                                f"-> getting season square art: {item_title}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
+                                            squares = s.squareArts()
+                                            blogger(
+                                                f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
+                                            seasonSquare = pick_art(
+                                                squares, showSquare, "square art"
+                                            )
+                                            apply_art(s, seasonSquare, "square art")
 
                                         # Wait between items in case hammering the Plex server turns out badly.
                                         sleep_for_a_while()
@@ -269,11 +307,35 @@ for lib in LIB_ARRAY:
                                                     bar,
                                                 )
 
-                                                episodePoster = pick_poster(
-                                                    posters, None
+                                                episodePoster = pick_art(
+                                                    posters, None, "poster"
                                                 )
 
-                                                apply_poster(e, episodePoster)
+                                                apply_art(e, episodePoster, "poster")
+
+                                                if RESET_SQUARE_ART:
+                                                    blogger(
+                                                        f"-> getting episode square art: {item_title}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    squares = e.squareArts()
+
+                                                    blogger(
+                                                        f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+
+                                                    episodeSquare = pick_art(
+                                                        squares, None, "square art"
+                                                    )
+
+                                                    apply_art(
+                                                        e, episodeSquare, "square art"
+                                                    )
 
                                                 # Wait between items in case hammering the Plex server turns out badly.
                                                 sleep_for_a_while()

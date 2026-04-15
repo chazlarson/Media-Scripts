@@ -39,6 +39,7 @@ image_download:
     artwork: 1 # current background is downloaded with current poster
 
     logos: 1
+    square_art: 0 # should get-all-posters retrieve Plex square art?
 
     ### quantity-related
     only_current: 0 # should get-all-posters retrieve ONLY current artwork?
@@ -97,6 +98,7 @@ reset_posters:
   remove_labels: 0 # attempt to remove the TARGET_LABELs from items after resetting the poster
   reset_seasons: 1 # reset-posters-* resets season artwork as well in TV libraries
   reset_episodes: 1 # reset-posters-* resets episode artwork as well in TV libraries [requires RESET_SEASONS=True]
+  reset_square_art: 0 # reset-posters-plex.py also resets Plex square art where available
   retain_reset_status_file: 0 # Don't delete the reset progress file at the end
   flush_status_at_start: 0 # Delete the reset progress file at the start instead of reading it
   reset_seasons_with_series: 0 # If there isn't a season poster, use the series poster

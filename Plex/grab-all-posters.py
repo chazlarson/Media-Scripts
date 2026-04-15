@@ -2,6 +2,7 @@
 
 import os
 import platform
+import logging
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -113,6 +114,11 @@ if plexapi.__version__ < MIN_PLEXAPI_VERSION:
 else:
     plogger(f"Running under PlexAPI {plexapi.__version__}.", "info", "a")
 
+# PlexAPI's rotating file logger can break under the alive-progress/Python 3.14
+# combination used by this script. We already maintain script-local logs, so
+# silence PlexAPI's internal logger here to keep downloads working.
+logging.getLogger("plexapi").disabled = True
+
 
 ID_FILES = True
 
@@ -165,6 +171,7 @@ GRAB_POSTERS = config.get_bool('image_download.what_to_grab.artwork', True)
 GRAB_SEASONS = config.get_bool('image_download.what_to_grab.seasons', True)
 GRAB_EPISODES = config.get_bool('image_download.what_to_grab.episodes', True)
 GRAB_LOGOS = config.get_bool('image_download.what_to_grab.logos', True)
+GRAB_SQUARE_ART = config.get_bool('image_download.what_to_grab.square_art', False)
 
 ONLY_CURRENT = config.get_bool('image_download.what_to_grab.only_current', False)
 
@@ -482,7 +489,7 @@ def get_progress_string(item):
     return ret_val
 
 
-def get_image_name(params, tgt_ext, background=False, logo=False):
+def get_image_name(params, tgt_ext, background=False, logo=False, square=False):
     ret_val = ""
 
     item_type = params["type"]
@@ -505,6 +512,13 @@ def get_image_name(params, tgt_ext, background=False, logo=False):
             ret_val = f"_background{base_name}"
         elif logo:
             ret_val = f"_logo{base_name}"
+        elif square:
+            if item_type == "season":
+                ret_val = f"_Season{str(item_season).zfill(2)}_square{base_name}"
+            elif item_type == "episode":
+                ret_val = f"_{item_se_str}_square{base_name}"
+            else:
+                ret_val = f"_square{base_name}"
         else:
             if item_type == "season":
                 # _Season##.ext
@@ -527,6 +541,8 @@ def get_image_name(params, tgt_ext, background=False, logo=False):
             ret_val = f"background-{base_name}"
         elif logo:
             ret_val = f"logo-{base_name}"
+        elif square:
+            ret_val = f"square-{base_name}"
         else:
             if item_type == "season" or item_type == "episode":
                 ret_val = f"{item_se_str}-{safe_name}-{base_name}"
@@ -559,6 +575,7 @@ def process_the_thing(params):
 
     background = params["background"]
     logo = params["logo"]
+    square = params.get("square", False)
     src_URL = params["src_URL"]
     provider = params["provider"]
     source = params["source"]
@@ -571,7 +588,7 @@ def process_the_thing(params):
     result["status"] = "Nothing happened"
 
     tgt_ext = ".dat" if ID_FILES else ".jpg"
-    tgt_filename = get_image_name(params, tgt_ext, background, logo)
+    tgt_filename = get_image_name(params, tgt_ext, background, logo, square)
     # in asset case, I have '_poster.ext'
     superchat(f"target filename {tgt_filename}", "info", "a")
 
@@ -800,6 +817,7 @@ def get_logo(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         art_params["logo"] = True
                         art_params["background"] = False
+                        art_params["square"] = False
 
                         src_URL = logo.key
                         if src_URL[0] == "/":
@@ -962,6 +980,7 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         art_params["background"] = True
                         art_params["logo"] = False
+                        art_params["square"] = False
 
                         src_URL = art.key
                         if src_URL[0] == "/":
@@ -1006,6 +1025,182 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                     else:
                         logger("skipping empty internal art object", "info", "a")
+
+                    idx += 1
+
+            attempts = 6
+        except Exception as ex:
+            progress_str = f"EX: {ex} {item.title}"
+            logger(progress_str, "info", "a")
+            attempts += 1
+
+
+def get_square(item, artwork_path, tmid, tvid, uuid, lib_title):
+    global SCRIPT_STRING
+
+    superchat(
+        f"entering get_square {item.title}, {artwork_path}, {tmid}, {tvid}, {uuid}, {lib_title}",
+        "info",
+        "a",
+    )
+
+    attempts = 0
+    if ONLY_CURRENT:
+        all_squares = []
+        if item.squareArtUrl is not None:
+            all_squares.append(poster_placeholder("current", item.squareArtUrl))
+    else:
+        all_squares = item.squareArts()
+
+    if len(all_squares) > 0:
+        plogger(
+            f"{get_progress_string(item)} - {len(all_squares)} square art candidate(s)",
+            "info",
+            "a",
+        )
+
+    if USE_ASSET_NAMING:
+        square_path = artwork_path
+    else:
+        square_path = Path(artwork_path, "squares")
+
+    while attempts < 5:
+        try:
+            progress_str = f"{get_progress_string(item)} - {len(all_squares)} square arts"
+
+            blogger(progress_str, "info", "a", bar)
+
+            import fnmatch
+
+            if ONLY_CURRENT:
+                no_point_in_looking = False
+            else:
+                count = 0
+                squares_to_go = 0
+
+                if os.path.exists(square_path):
+                    if USE_ASSET_NAMING:
+                        count = len(
+                            fnmatch.filter(os.listdir(square_path), "square*.*")
+                        )
+                    else:
+                        count = len(fnmatch.filter(os.listdir(square_path), "*.*"))
+                    logger(f"{count} files in {square_path}", "info", "a")
+
+                squares_to_go = count - POSTER_DEPTH
+
+                if squares_to_go < 0:
+                    square_to_go = abs(squares_to_go)
+                else:
+                    square_to_go = 0
+
+                logger(
+                    f"{square_to_go} needed to reach depth {POSTER_DEPTH}", "info", "a"
+                )
+
+                no_more_to_get = count >= len(all_squares)
+                full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                no_point_in_looking = full_for_now or no_more_to_get
+                if no_more_to_get:
+                    logger(
+                        f"Grabbed all available square art: {no_more_to_get}",
+                        "info",
+                        "a",
+                    )
+                if full_for_now:
+                    logger(
+                        f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already",
+                        "info",
+                        "a",
+                    )
+
+            if not no_point_in_looking:
+                idx = 1
+                for square_art in all_squares:
+                    if square_art.key is not None:
+                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                            logger(
+                                f"Reached max depth of {POSTER_DEPTH}; exiting loop",
+                                "info",
+                                "a",
+                            )
+                            break
+
+                        art_params = {}
+                        art_params["tmid"] = tmid
+                        art_params["tvid"] = tvid
+                        art_params["idx"] = idx
+                        art_params["path"] = square_path
+                        art_params["provider"] = square_art.provider
+                        art_params["source"] = "remote"
+                        art_params["uuid"] = uuid
+                        art_params["lib_title"] = lib_title
+
+                        art_params["type"] = item.TYPE
+                        art_params["title"] = item.title
+
+                        try:
+                            art_params["seasonNumber"] = item.seasonNumber
+                        except:
+                            art_params["seasonNumber"] = None
+
+                        try:
+                            art_params["episodeNumber"] = item.episodeNumber
+                        except:
+                            art_params["episodeNumber"] = None
+
+                        art_params["se_str"] = get_SE_str(item)
+
+                        art_params["background"] = False
+                        art_params["logo"] = False
+                        art_params["square"] = True
+
+                        src_URL = square_art.key
+                        if src_URL[0] == "/":
+                            src_URL = f"{config.get('plex_api.auth_server.base_url')}{square_art.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
+                            art_params["source"] = "local"
+
+                        art_params["src_URL"] = src_URL
+
+                        bar.text = f"{progress_str} - {idx}"
+                        logger(f"processing {progress_str} - {idx}", "info", "a")
+
+                        superchat(
+                            f"Built out params for {item.title}: {art_params}",
+                            "info",
+                            "a",
+                        )
+                        if not TRACK_URLS or (
+                            TRACK_URLS and not check_url(src_URL, uuid)
+                        ):
+                            if THREADED_DOWNLOADS:
+                                future = executor.submit(
+                                    process_the_thing, art_params
+                                )
+                                my_futures.append(future)
+                                superchat(
+                                    f"Added {item.title} to the download queue",
+                                    "info",
+                                    "a",
+                                )
+                            else:
+                                superchat(
+                                    f"Downloading {item.title} directly", "info", "a"
+                                )
+                                process_the_thing(art_params)
+                        else:
+                            plogger(
+                                f"SKIPPING {item.title} as its URL was found in the URL tracking table: {src_URL} ",
+                                "info",
+                                "a",
+                            )
+
+                    else:
+                        plogger(
+                            f"No square art available for {item.title}",
+                            "info",
+                            "a",
+                        )
 
                     idx += 1
 
@@ -1104,186 +1299,189 @@ def get_posters(lib, item, uuid, title):
         # for assets this should be:
         # assets/One Show/Adam-12 Collection
 
-        attempts = 0
-        if ONLY_CURRENT:
-            superchat(f"only grabbing current artwork for {item.title}", "info", "a")
-            all_posters = []
-            all_posters.append(poster_placeholder("current", item.thumb))
-        else:
-            superchat(f"grabbing ALL artwork for {item.title}", "info", "a")
-            all_posters = item.posters()
-            superchat(
-                f"{len(all_posters)} poster[s] available for {item.title}", "info", "a"
-            )
-
-        while attempts < 5:
-            superchat(
-                f"attempt {attempts + 1} at grabbing artwork for {item.title}",
-                "info",
-                "a",
-            )
-            try:
-                progress_str = (
-                    f"{get_progress_string(item)} - {len(all_posters)} posters"
+        if GRAB_POSTERS:
+            attempts = 0
+            if ONLY_CURRENT:
+                superchat(f"only grabbing current artwork for {item.title}", "info", "a")
+                all_posters = []
+                all_posters.append(poster_placeholder("current", item.thumb))
+            else:
+                superchat(f"grabbing ALL artwork for {item.title}", "info", "a")
+                all_posters = item.posters()
+                superchat(
+                    f"{len(all_posters)} poster[s] available for {item.title}", "info", "a"
                 )
 
-                plogger(progress_str, "info", "a")
-
-                import fnmatch
-
-                if ONLY_CURRENT:
-                    no_point_in_looking = False
-                else:
-                    count = 0
-                    posters_to_go = 0
-
-                    if USE_ASSET_NAMING:
-                        search_filter = "poster*.*"
-                    else:
-                        search_filter = "*.*"
-
-                    if item.type == "season":
-                        search_filter = f"Season{str(item.seasonNumber).zfill(2)}*.*"
-                    if item.type == "episode":
-                        search_filter = f"{get_SE_str(item)}*.*"
-
-                    if os.path.exists(artwork_path):
-                        logger(f"{artwork_path} exists", "info", "a")
-                        count = len(
-                            fnmatch.filter(os.listdir(artwork_path), search_filter)
-                        )
-                        logger(f"{count} files in {artwork_path}", "info", "a")
-
-                    posters_to_go = count - POSTER_DEPTH
-
-                    if posters_to_go < 0:
-                        poster_to_go = abs(posters_to_go)
-                    else:
-                        poster_to_go = 0
-
-                    logger(
-                        f"{poster_to_go} needed to reach depth {POSTER_DEPTH}",
-                        "info",
-                        "a",
+            while attempts < 5:
+                superchat(
+                    f"attempt {attempts + 1} at grabbing artwork for {item.title}",
+                    "info",
+                    "a",
+                )
+                try:
+                    progress_str = (
+                        f"{get_progress_string(item)} - {len(all_posters)} posters"
                     )
 
-                    no_more_to_get = count >= len(all_posters)
-                    full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
-                    no_point_in_looking = full_for_now or no_more_to_get
-                    if no_more_to_get:
+                    plogger(progress_str, "info", "a")
+
+                    import fnmatch
+
+                    if ONLY_CURRENT:
+                        no_point_in_looking = False
+                    else:
+                        count = 0
+                        posters_to_go = 0
+
+                        if USE_ASSET_NAMING:
+                            search_filter = "poster*.*"
+                        else:
+                            search_filter = "*.*"
+
+                        if item.type == "season":
+                            search_filter = f"Season{str(item.seasonNumber).zfill(2)}*.*"
+                        if item.type == "episode":
+                            search_filter = f"{get_SE_str(item)}*.*"
+
+                        if os.path.exists(artwork_path):
+                            logger(f"{artwork_path} exists", "info", "a")
+                            count = len(
+                                fnmatch.filter(os.listdir(artwork_path), search_filter)
+                            )
+                            logger(f"{count} files in {artwork_path}", "info", "a")
+
+                        posters_to_go = count - POSTER_DEPTH
+
+                        if posters_to_go < 0:
+                            poster_to_go = abs(posters_to_go)
+                        else:
+                            poster_to_go = 0
+
                         logger(
-                            f"Grabbed all available posters: {no_more_to_get}",
-                            "info",
-                            "a",
-                        )
-                    if full_for_now:
-                        logger(
-                            f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already",
+                            f"{poster_to_go} needed to reach depth {POSTER_DEPTH}",
                             "info",
                             "a",
                         )
 
-                if not no_point_in_looking:
-                    idx = 1
-                    for poster in all_posters:
-                        if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                        no_more_to_get = count >= len(all_posters)
+                        full_for_now = count >= POSTER_DEPTH and POSTER_DEPTH > 0
+                        no_point_in_looking = full_for_now or no_more_to_get
+                        if no_more_to_get:
                             logger(
-                                f"Reached max depth of {POSTER_DEPTH}; exiting loop",
+                                f"Grabbed all available posters: {no_more_to_get}",
                                 "info",
                                 "a",
                             )
-                            break
-
-                        art_params = {}
-                        art_params["rating_key"] = item.ratingKey
-                        art_params["tmid"] = tmid
-                        art_params["tvid"] = tvid
-                        # art_params['item'] = item
-                        art_params["idx"] = idx
-                        art_params["path"] = artwork_path
-                        art_params["provider"] = poster.provider
-                        art_params["source"] = "remote"
-
-                        art_params["type"] = item.TYPE
-                        art_params["title"] = item.title
-
-                        art_params["uuid"] = uuid
-                        art_params["lib_title"] = lib_title
-
-                        try:
-                            art_params["seasonNumber"] = item.seasonNumber
-                        except:
-                            art_params["seasonNumber"] = None
-
-                        try:
-                            art_params["episodeNumber"] = item.episodeNumber
-                        except:
-                            art_params["episodeNumber"] = None
-
-                        art_params["se_str"] = get_SE_str(item)
-
-                        art_params["background"] = False
-                        art_params["logo"] = False
-
-                        src_URL = poster.key
-
-                        if src_URL[0] == "/":
-                            src_URL = (
-                                f"{config.get('plex_api.auth_server.base_url')}{poster.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
+                        if full_for_now:
+                            logger(
+                                f"full_for_now: {full_for_now} - {POSTER_DEPTH} image(s) retrieved already",
+                                "info",
+                                "a",
                             )
-                            art_params["source"] = "local"
 
-                        art_params["src_URL"] = src_URL
-
-                        bar.text = f"{progress_str} - {idx}"
-                        logger(f"processing {progress_str} - {idx}", "info", "a")
-
-                        superchat(
-                            f"Built out params for {item.title}: {art_params}",
-                            "info",
-                            "a",
-                        )
-                        if not TRACK_URLS or (
-                            TRACK_URLS and not check_url(src_URL, uuid)
-                        ):
-                            if THREADED_DOWNLOADS:
-                                future = executor.submit(
-                                    process_the_thing, art_params
-                                )  # does not block
-                                # append it to the queue
-                                my_futures.append(future)
-                                superchat(
-                                    f"Added {item.title} to the download queue",
+                    if not no_point_in_looking:
+                        idx = 1
+                        for poster in all_posters:
+                            if POSTER_DEPTH > 0 and idx > POSTER_DEPTH:
+                                logger(
+                                    f"Reached max depth of {POSTER_DEPTH}; exiting loop",
                                     "info",
                                     "a",
                                 )
-                            else:
-                                superchat(
-                                    f"Downloading {item.title} directly", "info", "a"
+                                break
+
+                            art_params = {}
+                            art_params["rating_key"] = item.ratingKey
+                            art_params["tmid"] = tmid
+                            art_params["tvid"] = tvid
+                            # art_params['item'] = item
+                            art_params["idx"] = idx
+                            art_params["path"] = artwork_path
+                            art_params["provider"] = poster.provider
+                            art_params["source"] = "remote"
+
+                            art_params["type"] = item.TYPE
+                            art_params["title"] = item.title
+
+                            art_params["uuid"] = uuid
+                            art_params["lib_title"] = lib_title
+
+                            try:
+                                art_params["seasonNumber"] = item.seasonNumber
+                            except:
+                                art_params["seasonNumber"] = None
+
+                            try:
+                                art_params["episodeNumber"] = item.episodeNumber
+                            except:
+                                art_params["episodeNumber"] = None
+
+                            art_params["se_str"] = get_SE_str(item)
+
+                            art_params["background"] = False
+                            art_params["logo"] = False
+                            art_params["square"] = False
+
+                            src_URL = poster.key
+
+                            if src_URL[0] == "/":
+                                src_URL = (
+                                    f"{config.get('plex_api.auth_server.base_url')}{poster.key}&X-Plex-Token={config.get('plex_api.auth_server.token')}"
                                 )
-                                process_the_thing(art_params)
-                        else:
-                            logger(
-                                f"SKIPPING {item.title} as its URL was found in the URL tracking table: {src_URL} ",
+                                art_params["source"] = "local"
+
+                            art_params["src_URL"] = src_URL
+
+                            bar.text = f"{progress_str} - {idx}"
+                            logger(f"processing {progress_str} - {idx}", "info", "a")
+
+                            superchat(
+                                f"Built out params for {item.title}: {art_params}",
                                 "info",
                                 "a",
                             )
+                            if not TRACK_URLS or (
+                                TRACK_URLS and not check_url(src_URL, uuid)
+                            ):
+                                if THREADED_DOWNLOADS:
+                                    future = executor.submit(
+                                        process_the_thing, art_params
+                                    )  # does not block
+                                    # append it to the queue
+                                    my_futures.append(future)
+                                    superchat(
+                                        f"Added {item.title} to the download queue",
+                                        "info",
+                                        "a",
+                                    )
+                                else:
+                                    superchat(
+                                        f"Downloading {item.title} directly", "info", "a"
+                                    )
+                                    process_the_thing(art_params)
+                            else:
+                                logger(
+                                    f"SKIPPING {item.title} as its URL was found in the URL tracking table: {src_URL} ",
+                                    "info",
+                                    "a",
+                                )
 
-                        idx += 1
+                            idx += 1
 
-                attempts = 6
-            except Exception as ex:
-                progress_str = f"EX: {ex} {item.title}"
-                logger(progress_str, "info", "a")
+                    attempts = 6
+                except Exception as ex:
+                    progress_str = f"EX: {ex} {item.title}"
+                    logger(progress_str, "info", "a")
 
-                attempts += 1
-
+                    attempts += 1
         if config.get_bool('image_download.what_to_grab.backgrounds', True):
             get_art(item, artwork_path, tmid, tvid, uuid, lib_title)
 
         if not item.TYPE == "collection":
             if config.get_bool('image_download.what_to_grab.logos', True):
                 get_logo(item, artwork_path, tmid, tvid, uuid, lib_title)
+            if GRAB_SQUARE_ART:
+                get_square(item, artwork_path, tmid, tvid, uuid, lib_title)
 
     else:
         plogger(

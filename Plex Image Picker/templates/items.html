@@ -10,17 +10,42 @@
     {% set current_index = alphabet.index(letter) + 1 %}
   {% endif %}
 
-  <div class="btn-group mb-3" role="group" aria-label="Alphabet filter">
-    {% for loop_letter in ['All'] + alphabet %}
-      {% set idx = loop.index0 %}
+  <div class="d-flex justify-content-between mb-3">
+    <div class="btn-group" role="group" aria-label="Alphabet filter">
+      {% for loop_letter in ['All'] + alphabet %}
+        {% set idx = loop.index0 %}
+        <a href="{{ url_for('list_items',
+                             section_key=section.key,
+                             page=1,
+                             letter=loop_letter,
+                             view_mode=view_mode) }}"
+           class="btn btn-sm btn-outline-secondary{% if idx == current_index %} active{% endif %}">
+          {{ loop_letter }}
+        </a>
+      {% endfor %}
+    </div>
+
+    {# --- View Mode Toggle Buttons --- #}
+    <div class="btn-group" role="group" aria-label="View mode toggle">
       <a href="{{ url_for('list_items',
                            section_key=section.key,
-                           page=1,
-                           letter=loop_letter) }}"
-         class="btn btn-sm btn-outline-secondary{% if idx == current_index %} active{% endif %}">
-        {{ loop_letter }}
+                           page=page,
+                           letter=letter,
+                           view_mode='list') }}"
+         class="btn btn-sm btn-outline-secondary{% if view_mode == 'list' %} active{% endif %}"
+         data-bs-toggle="tooltip" data-bs-placement="top" title="List View">
+        <i class="bi bi-list"></i>
       </a>
-    {% endfor %}
+      <a href="{{ url_for('list_items',
+                           section_key=section.key,
+                           page=page,
+                           letter=letter,
+                           view_mode='icons') }}"
+         class="btn btn-sm btn-outline-secondary{% if view_mode == 'icons' %} active{% endif %}"
+         data-bs-toggle="tooltip" data-bs-placement="top" title="Icon View">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+      </a>
+    </div>
   </div>
 
   <ul class="list-group mb-4">

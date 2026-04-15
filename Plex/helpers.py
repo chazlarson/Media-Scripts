@@ -114,6 +114,10 @@ def load_auth():
 
 def save_auth(data):
     """Save auth dict and lock down file permissions."""
+    if "baseurl" in data and "url" not in data:
+        # Keep a legacy-compatible alias because older reconnect code and
+        # existing auth files may use either field name.
+        data["url"] = data["baseurl"]
     with open(AUTH_FILE, 'w') as f:
         json.dump(data, f)
     try:
@@ -211,7 +215,10 @@ def get_plex():
         if auth:
             try:
                 print("creating plex with saved auth")
-                plex = PlexServer(auth['url'], token=auth['token'])
+                saved_url = auth.get('baseurl') or auth.get('url')
+                if not saved_url:
+                    raise KeyError("Saved auth is missing both 'baseurl' and 'url'")
+                plex = PlexServer(saved_url, token=auth['token'])
                 print(f"connected to {plex.friendlyName}")
             except Unauthorized:
                 print("Saved auth is invalid. Please re-authenticate.")

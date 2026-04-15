@@ -250,6 +250,32 @@ def getBackground(item):
     return imgPath
 
 
+def getSquare(item):
+    imgPath = "TODO"
+    imdb_id, tmdb_id, tvdb_id = get_ids(item.guids)
+    base_path = getDownloadBasePath()
+
+    if imdb_id is not None:
+        img_path = f"{base_path}/imdb-{imdb_id}-{item.ratingKey}/"
+    elif tmdb_id is not None:
+        img_path = f"{base_path}/tmdb-{tmdb_id}-{item.ratingKey}/"
+    elif tvdb_id is not None:
+        img_path = f"{base_path}/tvdb-{imdb_id}-{item.ratingKey}/"
+    else:
+        img_path = f"{base_path}/NO-MATCH-{item.ratingKey}/"
+
+    Path(img_path).mkdir(parents=True, exist_ok=True)
+
+    try:
+        imgPath = doDownload(item.squareArtUrl, "square.jpg", img_path)
+    except:
+        print(f"something happened while downloading {img_path + '/square.jpg'}")
+        file = Path(f"{img_path}/square.jpg")
+        print(f"{file} exists: {file.exists()}")
+
+    return imgPath
+
+
 def get_common_video_info(item):
     try:
         if item.type == "movie":
@@ -292,6 +318,10 @@ def get_common_video_info(item):
         background_path = getBackground(item)
         if background_path is not None:
             tmpDict["file_background"] = background_path
+
+        square_path = getSquare(item)
+        if square_path is not None:
+            tmpDict["file_square"] = square_path
 
         if item.type == "movie":
             if config.get_bool("metadata.include_edition") and item.editionTitle is not None:
@@ -425,6 +455,10 @@ def get_season_info(season):
         if background_path is not None:
             tmpDict["file_background"] = background_path
 
+        square_path = getSquare(season)
+        if square_path is not None:
+            tmpDict["file_square"] = square_path
+
         if config.get_bool("metadata.include_audio_language") and season.audioLanguage != "":
             tmpDict["audio_language"] = season.audioLanguage
 
@@ -476,13 +510,17 @@ def get_episode_info(episode):
         if config.get_bool("metadata.include_producer") and len(episode.producers) > 0:
             tmpDict["producer"] = [str(item) for item in episode.producers]
 
-        poster_path = getPoster(item)
+        poster_path = getPoster(episode)
         if poster_path is not None:
             tmpDict["file_poster"] = poster_path
 
-        background_path = getBackground(item)
+        background_path = getBackground(episode)
         if background_path is not None:
             tmpDict["file_background"] = background_path
+
+        square_path = getSquare(episode)
+        if square_path is not None:
+            tmpDict["file_square"] = square_path
 
     except Exception as e:
         print(f"Exception {e}")

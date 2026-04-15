@@ -91,13 +91,20 @@ def download():
     )
     os.makedirs(base_dir, exist_ok=True)
     # Choose URL and filename
-    url = item.posterUrl if art_type == "poster" else item.artUrl
+    if art_type == "poster":
+        url = item.posterUrl
+    elif art_type == "background":
+        url = item.artUrl
+    else:
+        url = item.squareArtUrl
     if item.type == "season":
         filename = f"Season {item.index:02d}.jpg"
     elif item.type == "episode":
         s = item.seasonNumber
         e = item.index
         filename = f"S{s:02d}E{e:02d}.jpg"
+    elif art_type == "square":
+        filename = "square.jpg"
     else:
         filename = f"{art_type}.jpg"
     # Download and save
