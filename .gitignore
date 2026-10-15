@@ -9,6 +9,7 @@
 **/*.log
 **/*.pickle
 **/*.sqlite
+**/.python-version
 
 Kometa/metadata-items
 
