@@ -4,15 +4,15 @@
 <form method="post">
   <div class="mb-3">
     <label class="form-label">Base URL</label>
-    <input type="text" name="base_url" class="form-control" placeholder="http://localhost:32400" required>
+    <input type="text" name="base_url" class="form-control" placeholder="http://localhost:32400" value="{{ default_base_url }}" required>
   </div>
   <div class="mb-3">
     <label class="form-label">Token</label>
-    <input type="text" name="token" class="form-control" placeholder="YOUR_PLEX_TOKEN" required>
+    <input type="text" name="token" class="form-control" placeholder="YOUR_PLEX_TOKEN" value="{{ default_token }}" required>
   </div>
   <div class="mb-3">
     <label class="form-label">Base Image Asset directory</label>
-    <input type="text" name="asset_dir" class="form-control" placeholder="assets">
+    <input type="text" name="asset_dir" class="form-control" placeholder="assets" value="{{ default_asset_dir }}">
   </div>
   <button type="submit" class="btn btn-primary">Connect</button>
 </form>
