@@ -20,6 +20,7 @@
     <select name="art_type" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
       <option value="poster" {% if art_type=='poster' %}selected{% endif %}>Poster</option>
       <option value="background" {% if art_type=='background' %}selected{% endif %}>Background</option>
+      <option value="square" {% if art_type=='square' %}selected{% endif %}>Square</option>
     </select>
   </form>
 </div>
@@ -57,17 +58,41 @@
 
 {# Determine art items based on type and scope #}
 {% if section.type=='movie' %}
-  {% set all_art = art_type=='poster' and item.posters() or item.arts() %}
+  {% if art_type=='poster' %}
+    {% set all_art = item.posters() %}
+  {% elif art_type=='background' %}
+    {% set all_art = item.arts() %}
+  {% else %}
+    {% set all_art = item.squareArts() %}
+  {% endif %}
 {% else %}
   {% if episode %}
     {% set sel_season = item.seasons()|selectattr('seasonNumber','equalto',season|int)|first %}
     {% set ep = sel_season.episodes()|selectattr('index','equalto',episode|int)|first %}
-    {% set all_art = art_type=='poster' and ep.posters() or ep.arts() %}
+    {% if art_type=='poster' %}
+      {% set all_art = ep.posters() %}
+    {% elif art_type=='background' %}
+      {% set all_art = ep.arts() %}
+    {% else %}
+      {% set all_art = ep.squareArts() %}
+    {% endif %}
   {% elif season %}
     {% set sel_season = item.seasons()|selectattr('seasonNumber','equalto',season|int)|first %}
-    {% set all_art = art_type=='poster' and sel_season.posters() or sel_season.arts() %}
+    {% if art_type=='poster' %}
+      {% set all_art = sel_season.posters() %}
+    {% elif art_type=='background' %}
+      {% set all_art = sel_season.arts() %}
+    {% else %}
+      {% set all_art = sel_season.squareArts() %}
+    {% endif %}
   {% else %}
-    {% set all_art = art_type=='poster' and item.posters() or item.arts() %}
+    {% if art_type=='poster' %}
+      {% set all_art = item.posters() %}
+    {% elif art_type=='background' %}
+      {% set all_art = item.arts() %}
+    {% else %}
+      {% set all_art = item.squareArts() %}
+    {% endif %}
   {% endif %}
 {% endif %}
 

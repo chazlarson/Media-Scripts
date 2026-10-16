@@ -1,36 +1,19 @@
-import os
 import sys
 import textwrap
 from collections import Counter
 
-from dotenv import load_dotenv
-from plexapi.server import PlexServer
+from config import Config
+from helpers import get_ids, get_plex, get_target_libraries
 from tmdbapis import TMDbAPIs
 
-load_dotenv()
+config = Config('../config.yaml')
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
-TVDB_KEY = os.getenv("TVDB_KEY")
-CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
-TOP_COUNT = int(os.getenv("TOP_COUNT"))
-DELAY = int(os.getenv("DELAY"))
+CAST_DEPTH = config.get_int("actor.cast_depth")
+TOP_COUNT = config.get_int("actor.top_count")
 
-if not DELAY:
-    DELAY = 0
+DELAY = config.get_int('general.delay', 0)
 
-if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
-else:
-    lib_array = [LIBRARY_NAME]
-
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 actors = Counter()
 
@@ -42,17 +25,6 @@ with open("template.tmpl") as tmpl:
 
 with open("collection.tmpl") as tmpl:
     COLL_TMPL = tmpl.read()
-
-
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
-    return tmid, tvid
 
 
 def progress(count, total, status=""):
@@ -67,9 +39,11 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-print(f"connecting to {PLEX_URL}...")
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
-for lib in lib_array:
+plex = get_plex()
+
+LIB_ARRAY = get_target_libraries(plex)
+
+for lib in LIB_ARRAY:
     METADATA_TITLE = f"{lib} Top {TOP_COUNT} Actors.yml"
 
     print(f"getting items from [{lib}]...")
@@ -79,15 +53,15 @@ for lib in lib_array:
     item_count = 1
     for item in items:
         tmpDict = {}
-        tmdb_id, tvdb_id = getTID(item.guids)
+        imdbid, tmid, tvid = get_ids(item.guids)
         item_count = item_count + 1
         try:
             progress(item_count, item_total, item.title)
             cast = ""
             if item.TYPE == "show":
-                cast = tmdb.tv_show(tmdb_id).cast
+                cast = tmdb.tv_show(tmid).cast
             else:
-                cast = tmdb.movie(tmdb_id).casts["cast"]
+                cast = tmdb.movie(tmid).casts["cast"]
             count = 0
             for actor in cast:
                 if count < CAST_DEPTH:

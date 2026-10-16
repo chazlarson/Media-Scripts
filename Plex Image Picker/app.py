@@ -220,9 +220,9 @@ def download():
             name = f"Season {s:02d}"
         else:
             name = art_type
-        suffix = (
-            f"_{art_type}" if art_type == "background" and (season or episode) else ""
-        )
+        suffix = ""
+        if art_type in {"background", "square"} and (season or episode):
+            suffix = f"_{art_type}"
         filename = f"{name}{suffix}{ext}"
     else:
         filename = f"{art_type}{ext}"

@@ -8,13 +8,9 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from alive_progress import alive_bar
-from helpers import (
-    booler,
-    get_all_from_library,
-    get_overlay_status,
-    get_plex,
-    load_and_upgrade_env,
-)
+from config import Config
+from helpers import (get_all_from_library, get_overlay_status, get_plex,
+                     get_target_libraries)
 from logs import blogger, plogger, setup_logger
 
 start = timer()
@@ -33,65 +29,45 @@ SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.3"
 
-env_file_path = Path(".env")
-
 ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 setup_logger("activity_log", ACTIVITY_LOG)
 
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TARGET_LABELS = os.getenv("TARGET_LABELS")
+TARGET_LABELS = config.get('reset_posters.target_labels', '')
 
 if TARGET_LABELS == "this label, that label":
     print(
-        "TARGET_LABELS in the .env file must be empty or have a meaningful value.",
+        "TARGET_LABELS in the config.yaml must be empty or have a meaningful value.",
         "info",
         "a",
     )
     exit()
-
-TRACK_RESET_STATUS = booler(os.getenv("TRACK_RESET_STATUS"))
-RETAIN_RESET_STATUS_FILE = booler(os.getenv("RETAIN_RESET_STATUS_FILE"))
-DRY_RUN = booler(os.getenv("DRY_RUN"))
-FLUSH_STATUS_AT_START = booler(os.getenv("FLUSH_STATUS_AT_START"))
-RESET_SEASONS_WITH_SERIES = booler(os.getenv("RESET_SEASONS_WITH_SERIES"))
-OVERRIDE_OVERLAY_STATUS = booler(os.getenv("OVERRIDE_OVERLAY_STATUS"))
-
-REMOVE_LABELS = booler(os.getenv("REMOVE_LABELS"))
-RESET_SEASONS = booler(os.getenv("RESET_SEASONS"))
-RESET_EPISODES = booler(os.getenv("RESET_EPISODES"))
-
-DELAY = 0
-try:
-    DELAY = int(os.getenv("DELAY"))
-except:
-    DELAY = 0
-
-if TARGET_LABELS:
-    LBL_ARRAY = TARGET_LABELS.split(",")
 else:
-    LBL_ARRAY = ["xy22y1973"]
+    if TARGET_LABELS:
+        LBL_ARRAY = TARGET_LABELS.split(",")
+    else:
+        LBL_ARRAY = ["xy22y1973"]
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = LIBRARY_NAMES.split(",")
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
+TRACK_RESET_STATUS = config.get_bool('reset_posters.track_reset_status', False)
+RETAIN_RESET_STATUS_FILE = config.get_bool('reset_posters.retain_reset_status_file', False)
+DRY_RUN = config.get_bool('reset_posters.dry_run', False)
+FLUSH_STATUS_AT_START = config.get_bool('reset_posters.flush_status_at_start', False)
+RESET_SEASONS_WITH_SERIES = config.get_bool('reset_posters.reset_seasons_with_series', False)
+OVERRIDE_OVERLAY_STATUS = config.get_bool('reset_posters.override_overlay_status', False)
+RESET_SQUARE_ART = config.get_bool('reset_posters.reset_square_art', False)
+
+REMOVE_LABELS = config.get_bool('reset_posters.remove_labels', False)
+RESET_SEASONS = config.get_bool('reset_posters.reset_seasons', False)
+RESET_EPISODES = config.get_bool('reset_posters.reset_episodes', False)
+
+DELAY = config.get_int('general.delay', 0)
 
 plex = get_plex()
-plogger("connection success", "info", "a")
 
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    all_libs = plex.library.sections()
-    for lib in all_libs:
-        if lib.type == "movie" or lib.type == "show":
-            LIB_ARRAY.append(lib.title.strip())
-
+LIB_ARRAY = get_target_libraries(plex)
 
 def sleep_for_a_while():
     sleeptime = DELAY
@@ -110,31 +86,35 @@ def get_log_title(item):
         return f"{item.title}"
 
 
-def pick_poster(poster_list, fallback):
-    the_poster = None
-    if len(posters) > 0:
-        blogger("-> picking the first poster in the list", "info", "a", bar)
-        the_poster = posters[0]
+def pick_art(art_list, fallback, art_name):
+    the_art = None
+    if len(art_list) > 0:
+        blogger(f"-> picking the first {art_name} in the list", "info", "a", bar)
+        the_art = art_list[0]
     else:
         if RESET_SEASONS_WITH_SERIES:
-            the_poster = fallback
+            the_art = fallback
             blogger("-> empty list, using fallback", "info", "a", bar)
 
-    return the_poster
+    return the_art
 
 
-def apply_poster(item, item_poster):
-    if item_poster is not None:
+def apply_art(item, item_art, art_name):
+    if item_art is not None:
+        item_url = getattr(item_art, "thumb", None) or getattr(item_art, "key", None)
         blogger(
-            f"-> setting {item.type} poster : {get_log_title(item)} to {item_poster.thumb}",
+            f"-> setting {item.type} {art_name} : {get_log_title(item)} to {item_url}",
             "info",
             "a",
             bar,
         )
         if not DRY_RUN:
-            item.setPoster(item_poster)
+            if art_name == "square art":
+                item.setSquareArt(item_art)
+            else:
+                item.setPoster(item_art)
     else:
-        blogger("-> No poster; no action being taken", "info", "a", bar)
+        blogger(f"-> No {art_name}; no action being taken", "info", "a", bar)
 
 
 def track_completion(id_array, status_file, item_id):
@@ -213,9 +193,22 @@ for lib in LIB_ARRAY:
                             bar,
                         )
 
-                        showPoster = pick_poster(posters, None)
+                        showPoster = pick_art(posters, None, "poster")
 
-                        apply_poster(item, showPoster)
+                        apply_art(item, showPoster, "poster")
+
+                        showSquare = None
+                        if RESET_SQUARE_ART:
+                            blogger(f"-> getting square art: {item_title}", "info", "a", bar)
+                            squares = item.squareArts()
+                            blogger(
+                                f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                "info",
+                                "a",
+                                bar,
+                            )
+                            showSquare = pick_art(squares, None, "square art")
+                            apply_art(item, showSquare, "square art")
 
                         # Wait between items in case hammering the Plex server turns out badly.
                         sleep_for_a_while()
@@ -260,9 +253,29 @@ for lib in LIB_ARRAY:
                                             bar,
                                         )
 
-                                        seasonPoster = pick_poster(posters, showPoster)
+                                        seasonPoster = pick_art(posters, showPoster, "poster")
 
-                                        apply_poster(s, seasonPoster)
+                                        apply_art(s, seasonPoster, "poster")
+
+                                        seasonSquare = None
+                                        if RESET_SQUARE_ART:
+                                            blogger(
+                                                f"-> getting season square art: {item_title}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
+                                            squares = s.squareArts()
+                                            blogger(
+                                                f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
+                                            seasonSquare = pick_art(
+                                                squares, showSquare, "square art"
+                                            )
+                                            apply_art(s, seasonSquare, "square art")
 
                                         # Wait between items in case hammering the Plex server turns out badly.
                                         sleep_for_a_while()
@@ -294,11 +307,35 @@ for lib in LIB_ARRAY:
                                                     bar,
                                                 )
 
-                                                episodePoster = pick_poster(
-                                                    posters, None
+                                                episodePoster = pick_art(
+                                                    posters, None, "poster"
                                                 )
 
-                                                apply_poster(e, episodePoster)
+                                                apply_art(e, episodePoster, "poster")
+
+                                                if RESET_SQUARE_ART:
+                                                    blogger(
+                                                        f"-> getting episode square art: {item_title}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    squares = e.squareArts()
+
+                                                    blogger(
+                                                        f"-> Plex has {len(squares)} square art images for: {item_title}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+
+                                                    episodeSquare = pick_art(
+                                                        squares, None, "square art"
+                                                    )
+
+                                                    apply_art(
+                                                        e, episodeSquare, "square art"
+                                                    )
 
                                                 # Wait between items in case hammering the Plex server turns out badly.
                                                 sleep_for_a_while()

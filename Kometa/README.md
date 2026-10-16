@@ -6,15 +6,11 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 See the top-level [README](../README.md) for setup instructions.
 
-All these scripts use the same `.env` and requirements.
+All these scripts use the same `config.yaml` and requirements.
 
-Any that communicate with Plex require:
-```
-PLEXAPI_AUTH_SERVER_BASEURL=https://plex.domain.tld
-                            # Just the base URL, no /web or anything at the end.
-                            # i.e. http://192.168.1.11:32400 or the like
-PLEXAPI_AUTH_SERVER_TOKEN=PLEX-TOKEN
-```
+### `config.template.yaml` contents
+
+The `config.yaml` template can be viewed here: [../config.template.yaml](../config.template.yaml).
 
 ## Scripts:
 1. [clean-overlay-backup.py](#clean-overlay-backuppy) - clean out leftover overlay backup art
@@ -34,18 +30,21 @@ You've deleted stuff from Plex and want to clean up the leftover backup art that
 
 ### Settings
 
-The script uses these settings from the `.env`:
-```
-LIBRARY_NAMES=Movies,TV Shows,Movies 4K      # comma-separated list of libraries to act on
-DELAY=1                                      # optional delay between items
-KOMETA_CONFIG_DIR=/opt/kometa/config/              # path to Kometa config directory
+The script uses these settings from the `config.yaml`:
+```yaml
+general:
+  delay: 1 # optional delay between items
+  library_names: Movies,TV Shows,Movies 4K # comma-separated list of libraries to act on
+
+kometa:
+  config_dir: /kometa/is/here # location of Kometa config dir as seen by this script
 ```
 
 ### Usage
 1. setup as above
 2. Run with `python clean-overlay-backup.py`
 
-The script will catalog the backup files and current Plex contents for each library listed in the `.env`.
+The script will catalog the backup files and current Plex contents for each library listed in the `config.yaml`.
 
 It then compares the two lists, and any files in the backup dir that do not correspond to current items in Plkex are deleted.
 
@@ -56,7 +55,7 @@ connecting to https://plex.bing.bang...
 Loading Movies ...
 Loading movies from Movies  ...
 Completed loading 6965 of 6965 movie(s) from Movies
-Clean Overlay Backup Movies |████████████████████████████████████████| 6965/6965 [100%] in 11.0s (633.23/s) 
+Clean Overlay Backup Movies |████████████████████████████████████████| 6965/6965 [100%] in 11.0s (633.23/s)
 Processed 6965 of 6965
 0 items to delete
 279 items in Plex with no backup art
@@ -72,6 +71,7 @@ You're getting started with Kometa and you want to export your existing collecti
 Here is a quick and dirty [emphasis on "quick" and "dirty"] way to do that.
 
 ### Usage
+
 1. setup as above
 2. Run with `python extract-collections.py`
 
@@ -110,7 +110,7 @@ Here is a basic script to do that.
 
 The script will clone or update the `Kometa-Images` repo, then iterate through it applying overlays to each image and storing them in a parallel file system rooted at `Kometa-Images-Overlaid`, ready for you to use with the Kometa Asset Directory [after moving them to that directory] or via template variables.
 
-It chooses the overlay by name based on the "group" that each collection is part of: 
+It chooses the overlay by name based on the "group" that each collection is part of:
 ```
 Kometa-Images
 ├── aspect
@@ -143,7 +143,7 @@ If there isn't a specific image for a "group", then `Kometa/default_collection_o
 Fetch/Pull on Kometa-Images
 Using default_collection_overlays/overlay-template.png as global overlay
 building list of targets
-Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37) 
+Applying overlays |████████████████████████████▎           | ▇▅▃ 5027/7119 [71%] in 3:53 (21.6/s, eta: 1:37)
 Kometa-Images/genre/Sword & Sandal.jpg
 ```
 
@@ -266,15 +266,20 @@ Note, this will only copy images that have received overlays, and for which the 
 
 If you don't have overlays on any episodes, this script will not put any episode images in the asset directory, and so on.
 
+```yaml
+image_download:
+  where_to_put_it:
+    use_asset_folders: 1 # should those Kometa-Asset-Directory names use asset folders?
+    use_asset_type_subfolders: 0 # optionally nest those assets under movie/ or show/
+    asset_dir: "assets" # top-level directory for those Kometa-Asset-Directory images
+kometa:
+  config_dir: /kometa/is/here/ # Original Posters live under this Kometa config dir
 ```
-# ORIGINAL TO ASSETS
-USE_ASSET_FOLDERS=1                          # should the asset directory use asset folders?
-USE_ASSET_TYPE_SUBFOLDERS=1                  # optionally, should the asset directory use asset type subfolders? (e.g. 'movie', 'show')
-ASSET_DIR=assets                             # top-level directory for those assets
-```
-The asset file system will be rooted at the directory in the `ASSET_DIR` setting, while `USE_ASSET_FOLDERS` and `USE_ASSET_TYPE_SUBFOLDERS` controls whether the images are stored as:
 
-`USE_ASSET_FOLDERS=0`
+The asset file system is rooted at `asset_dir`. `use_asset_folders` controls file vs folder layout, and `use_asset_type_subfolders` optionally nests that layout under `movie/` or `show/`.
+
+`use_asset_folders: 0`
+
 ```
 # movie|show
 Media-Scripts/Plex/assets/<ASSET_NAME>.jpg
@@ -283,7 +288,9 @@ Media-Scripts/Plex/assets/<ASSET_NAME>_Season##.jpg
 # episode
 Media-Scripts/Plex/assets/<ASSET_NAME>_S##E##.jpg
 ```
-or `USE_ASSET_FOLDERS=1`
+
+`use_asset_folders: 1`
+
 ```
 # movie|show
 Media-Scripts/Plex/assets/<ASSET_NAME>/poster.jpg
@@ -292,15 +299,8 @@ Media-Scripts/Plex/assets/<ASSET_NAME>/Season##.jpg
 # episode
 Media-Scripts/Plex/assets/<ASSET_NAME>/S##E##.jpg
 ```
-with `USE_ASSET_TYPE_SUBFOLDERS=1`
-```
-# movie|show
-Media-Scripts/Plex/assets/<movie|show>/...
-# season
-Media-Scripts/Plex/assets/show/...
-# episode
-Media-Scripts/Plex/assets/show/...
-```
+
+`use_asset_type_subfolders: 1` adds a `movie` or `show` directory under `asset_dir` (seasons and episodes use `show`).
 
 example output:
 ```
@@ -309,7 +309,7 @@ connecting to https://test-plex.DOMAIN.TLD...
 Loading Test-Movies ...
 Loading movies  ...
 Completed loading 35 of 35 movie(s) from Test-Movies
-Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s) 
+Grab all posters Test-Movies |████████████████████████████████████████| 35/35 [100%] in 0.2s (190.63/s)
 Processed 35 of 35
 Complete!
 ```
@@ -320,6 +320,24 @@ You want to seed a Kometa metadata file with the contents of one or more librari
 
 Here is a basic script to do that.
 
+Script-specific variables in `config.yaml`:
+
+```yaml
+metadata:
+  download_images: false # should the script download files like images and themes
+  only_first_genre: true # should the script include only the first genre that Plex has assigned to the item?
+
+  include_audience_rating: true
+  include_content_rating: true
+  # ... rest of fields redacted for space...
+```
+
+There has recently been a regression in some PlexAPI code such that for the moment you should leave `download_images: false`
+
+This should be cleared up relatively soon.
+
+You can turn off individual fields with the `include_` flags.
+
 ### Usage
 1. setup as above
 1. Run with `metadata-extractor.py`
@@ -329,6 +347,8 @@ The script will read all metadata from one of more libraries and format it into 
 IMPORTANT NOTES:
 
 This script backs up all Kometa-supported metadata [with a few minor exceptions], which includes things you may not have changed.  It also includes the "Overlay" label.  It backs up this label because it *also* backs up the current art, which might be overlaid.  You will probably want to edit or trim this file before using it to restore.
+
+NOTE: This functionality is hobbled currently by the image-downloading issue.
 
 Metadata not backed up:
 ```
@@ -390,10 +410,12 @@ For each movie, gets the cast from TMDB; keeps track across all movies how many 
 
 At the end, builds a basic Kometa metadata file for the top N actors.
 
-Script-specific variables in .env:
-```
-CAST_DEPTH=20                   ### HOW DEEP TO GO INTO EACH MOVIE CAST
-TOP_COUNT=10                    ### PUT THIS MANY INTO THE FILE AT THE END
+Script-specific variables in `config.yaml`:
+
+```yaml
+actor:
+  cast_depth: 20 # how deep to go into the cast for actor collections
+  top_count: 10 # how many actors to export
 ```
 
 `CAST_DEPTH` is meant to prevent some journeyman character actor from showing up in the top ten; I'm thinking of someone like Clint Howard who's been in the cast of many movies, but I'm guessing when you think of the top ten actors in your library you're not thinking about Clint.  Maybe you are, though, in which case set that higher.
