@@ -175,3 +175,10 @@ metadata:
   include_title: true
   include_user_rating: true
   include_writer: true
+
+tmdb_people:
+  poster_dir: people_posters # tmdb-people.py saves profile images here
+  person_depth: 10 # how many name-search results to download
+
+original_language:
+  input_files: "" # comma-separated files for get_TMDB_Original_Language.py; empty queries Plex

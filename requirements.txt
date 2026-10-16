@@ -4,7 +4,6 @@ pathvalidate
 PlexAPI>=4.16.1
 pre-commit
 pyopenssl
-python-dotenv
 requests
 PyYAML
 ruamel.yaml

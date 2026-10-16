@@ -1,22 +1,20 @@
-import os
 from pathlib import Path
 from timeit import default_timer as timer
 
 import requests
 from alive_progress import alive_bar
-from dotenv import load_dotenv
+from config import Config
 from tmdbapis import TMDbAPIs
 
 start = timer()
 
-load_dotenv()
+config = Config("../config.yaml")
 
-TMDB_KEY = os.getenv("TMDB_KEY")
-POSTER_DIR = os.getenv("POSTER_DIR")
-PERSON_DEPTH = 0
+TMDB_KEY = config.get("general.tmdb_key")
+POSTER_DIR = config.get("tmdb_people.poster_dir", "people_posters")
 try:
-    PERSON_DEPTH = int(os.getenv("PERSON_DEPTH"))
-except:
+    PERSON_DEPTH = int(config.get("tmdb_people.person_depth", 0))
+except (TypeError, ValueError):
     PERSON_DEPTH = 0
 
 

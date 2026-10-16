@@ -9,7 +9,6 @@ from pathlib import Path
 import plexapi
 import requests
 from config import Config
-from dotenv import load_dotenv, set_key, unset_key
 from pathvalidate import is_valid_filename, sanitize_filename
 from PIL import Image
 from plexapi.exceptions import Unauthorized
@@ -610,106 +609,6 @@ def get_letter_dir(thing):
             ret_val = first_char
 
     return ret_val
-
-
-def load_and_upgrade_env(file_path):
-    status = 0
-
-    if os.path.exists(file_path):
-        load_dotenv(dotenv_path=file_path, override=True)
-    else:
-        print("No environment [.env] file.  Creating base file.")
-        if os.path.exists(".env.example"):
-            src_file = os.path.join(".", ".env.example")
-            tgt_file = os.path.join(".", ".env")
-            shutil.copyfile(src_file, tgt_file)
-            print("Please edit config.yaml to suit and rerun script.")
-        else:
-            print("No example [.env.example] file.  Cannot create base file.")
-        status = -1
-
-    PLEX_URL = os.getenv("PLEX_URL")
-    PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-
-    if PLEX_URL is not None:
-        # Add the PLEXAPI env vars
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_PLEXAPI_TIMEOUT",
-            value_to_set="360",
-        )
-
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_AUTH_SERVER_BASEURL",
-            value_to_set=PLEX_URL,
-        )
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_AUTH_SERVER_TOKEN",
-            value_to_set=PLEX_TOKEN,
-        )
-        unset_key(
-            dotenv_path=file_path,
-            key_to_unset="PLEX_URL",
-            quote_mode="always",
-            encoding="utf-8",
-        )
-        unset_key(
-            dotenv_path=file_path,
-            key_to_unset="PLEX_TOKEN",
-            quote_mode="always",
-            encoding="utf-8",
-        )
-
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_LOG_BACKUP_COUNT",
-            value_to_set="3",
-        )
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_LOG_FORMAT",
-            value_to_set="%(asctime)s %(module)12s:%(lineno)-4s %(levelname)-9s %(message)s",
-        )
-        set_key(
-            dotenv_path=file_path, key_to_set="PLEXAPI_LOG_LEVEL", value_to_set="INFO"
-        )
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_LOG_PATH",
-            value_to_set="plexapi.log",
-        )
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_LOG_ROTATE_BYTES",
-            value_to_set="512000",
-        )
-        set_key(
-            dotenv_path=file_path,
-            key_to_set="PLEXAPI_LOG_SHOW_SECRETS",
-            value_to_set="false",
-        )
-
-        # and load the new file
-        load_dotenv(dotenv_path=file_path)
-        status = 1
-
-    if (
-        os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") is None
-        or os.getenv("PLEXAPI_AUTH_SERVER_BASEURL") == "https://plex.domain.tld"
-    ):
-        print("You must specify PLEXAPI_AUTH_SERVER_BASEURL in the config.yaml.")
-        # status = -1
-
-    if (
-        os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") is None
-        or os.getenv("PLEXAPI_AUTH_SERVER_TOKEN") == "PLEX-TOKEN"
-    ):
-        print("You must specify PLEXAPI_AUTH_SERVER_TOKEN in the config.yaml.")
-        # status = -1
-
-    return status
 
 
 def check_for_images(file_path):
