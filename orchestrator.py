@@ -9,6 +9,8 @@ this file as its command:
     python orchestrator.py plex/check-square-art --sample-size 1
 """
 
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -35,6 +37,9 @@ CONFIG_OPTIONAL = {
     "kometa-mal-auth.py",
     "kometa-trakt-auth.py",
 }
+
+# When set, config.yaml and everything a script writes live under this directory.
+CONFIG_DIR_ENV = "MEDIA_SCRIPTS_CONFIG_DIR"
 
 
 class ScriptLookupError(Exception):
@@ -90,7 +95,51 @@ def resolve_script(token):
     raise ScriptLookupError(f"'{token}' matches more than one script: {names}")
 
 
+def config_dir():
+    raw = os.environ.get(CONFIG_DIR_ENV)
+    if not raw:
+        return None
+    return Path(raw)
+
+
+def prepare_config_dir():
+    """Create the mounted config directory, its per-script folders, and a starter config."""
+    directory = config_dir()
+    if directory is None:
+        return None
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in CATEGORIES:
+        (directory / name).mkdir(parents=True, exist_ok=True)
+    target = directory / "config.yaml"
+    template = ROOT / "config.template.yaml"
+    if not target.exists() and template.is_file():
+        shutil.copy(template, target)
+        print(f"Created {target} from config.template.yaml")
+    return directory
+
+
+def script_cwd(path):
+    """Directory a script runs in.
+
+    Locally that is the script's own folder. In a container it is the matching
+    folder under MEDIA_SCRIPTS_CONFIG_DIR, so ../config.yaml is the mounted
+    config and relative output stays on that mount.
+    """
+    directory = config_dir()
+    if directory is None:
+        return path.parent
+    for name, category_dir in CATEGORIES.items():
+        if path.parent == category_dir:
+            work = directory / name
+            work.mkdir(parents=True, exist_ok=True)
+            return work
+    return path.parent
+
+
 def config_path():
+    directory = config_dir()
+    if directory is not None:
+        return directory / "config.yaml"
     return ROOT / "config.yaml"
 
 
@@ -100,8 +149,8 @@ def require_config(script_name, args):
     if args and args[0] in {"-h", "--help"}:
         return None
     return (
-        "config.yaml was not found at the repository root. "
-        "Copy config.template.yaml to config.yaml and edit it."
+        f"config.yaml was not found at {config_path()}. "
+        "Copy config.template.yaml to that path and edit it."
     )
 
 
@@ -112,8 +161,8 @@ def run_script(path, args):
         print(problem, file=sys.stderr)
         return 2
     completed = subprocess.run(
-        [sys.executable, path.name, *args],
-        cwd=path.parent,
+        [sys.executable, str(path), *args],
+        cwd=script_cwd(path),
         check=False,
     )
     return completed.returncode
@@ -137,8 +186,12 @@ A category prefix is optional unless two scripts share a name.
   python orchestrator.py grab-all-posters
   python orchestrator.py plex/check-square-art --sample-size 1
 
-Each script runs from its own directory and reads ../config.yaml.
+Each script reads ../config.yaml from its working directory.
 Copy config.template.yaml to config.yaml at the repository root.
+
+In a container, set MEDIA_SCRIPTS_CONFIG_DIR (the image uses /config).
+That directory holds config.yaml plus plex/, kometa/, and tmdb/ folders
+where the scripts write logs, posters, and other output.
 """
     )
 
@@ -177,6 +230,8 @@ def interactive_menu():
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
+
+    prepare_config_dir()
 
     if not argv:
         if sys.stdin.isatty():

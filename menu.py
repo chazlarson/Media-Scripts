@@ -2,12 +2,13 @@
 
 import sys
 import yaml
-import subprocess
 from pathlib import Path
 
 def load_config():
     """Load configuration from config.yaml"""
-    config_path = Path("config.yaml")
+    from orchestrator import config_path as configured_config
+
+    config_path = configured_config()
     if not config_path.exists():
         print("❌ config.yaml not found. Please create it first.")
         sys.exit(1)
@@ -73,18 +74,15 @@ def run_script(script_path):
     print("-"*40)
 
     try:
-        # Change to the script's directory and run it
-        script_dir = Path(script_path).parent
-        script_name = Path(script_path).name
+        from orchestrator import run_script as launch
 
-        subprocess.run(
-            [sys.executable, script_name],
-            cwd=script_dir,
-            check=True
-        )
+        code = launch(Path(script_path), [])
+        script_name = Path(script_path).name
+        if code != 0:
+            raise RuntimeError(f"exit code {code}")
         print(f"\n✅ {script_name} completed successfully!")
-    except subprocess.CalledProcessError as e:
-        print(f"\n❌ {script_path} failed with exit code {e.returncode}")
+    except RuntimeError as e:
+        print(f"\n❌ {script_path} failed with {e}")
     except KeyboardInterrupt:
         print(f"\n⚠️  {script_path} interrupted by user")
     except Exception as e:

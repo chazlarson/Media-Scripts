@@ -122,10 +122,17 @@ python orchestrator.py plex/check-square-art --sample-size 1
 python orchestrator.py menu
 ```
 
-With no arguments on a terminal, it opens `menu.py`. Each script still runs from its own directory and reads `../config.yaml`. The Plex Image Picker stays a separate app and is not included here.
+With no arguments on a terminal, it opens `menu.py`. Each script reads `../config.yaml` from its working directory. The Plex Image Picker stays a separate app and is not included here.
 
-## TODO:
-1. Dockerize, using `orchestrator.py` as the container command
+### Docker
+
+```
+docker build -t media-scripts .
+docker run --rm -v /path/to/config:/config media-scripts list
+docker run --rm -v /path/to/config:/config media-scripts grab-all-posters
+```
+
+`/config` is the only mount. The first run copies `config.template.yaml` to `/config/config.yaml` when that file is missing. Scripts then write logs, posters, and other output under `/config/plex`, `/config/kometa`, and `/config/tmdb`. Relative paths in `config.yaml` are relative to those folders. `kometa.config_dir` still needs to be a path the container can see if a script reads the Kometa config directory.
 
 ## Other script repos of interest
 
