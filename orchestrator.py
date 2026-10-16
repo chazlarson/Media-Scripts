@@ -7,10 +7,8 @@ this file as its command:
     python orchestrator.py list
     python orchestrator.py grab-all-posters
     python orchestrator.py plex/check-square-art --sample-size 1
-    python orchestrator.py picker
 """
 
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -37,8 +35,6 @@ CONFIG_OPTIONAL = {
     "kometa-mal-auth.py",
     "kometa-trakt-auth.py",
 }
-
-PICKER_DIR = ROOT / "Plex Image Picker"
 
 
 class ScriptLookupError(Exception):
@@ -123,21 +119,6 @@ def run_script(path, args):
     return completed.returncode
 
 
-def run_picker(args):
-    """Start the Plex Image Picker web UI."""
-    if not (PICKER_DIR / "app.py").is_file():
-        print(f"Plex Image Picker was not found at {PICKER_DIR}", file=sys.stderr)
-        return 2
-    command = [sys.executable, "-m", "flask", "run", "--host=0.0.0.0", *args]
-    completed = subprocess.run(
-        command,
-        cwd=PICKER_DIR,
-        env={**os.environ.copy(), "FLASK_APP": "app.py"},
-        check=False,
-    )
-    return completed.returncode
-
-
 def print_help():
     print(
         """Media Scripts orchestrator
@@ -147,7 +128,8 @@ def print_help():
   python orchestrator.py list [plex|kometa|tmdb]
   python orchestrator.py <script> [args...]      Run one script
   python orchestrator.py run <script> [args...]
-  python orchestrator.py picker                  Plex Image Picker on 0.0.0.0:5000
+
+The Plex Image Picker is a separate app and is not started from here.
 
 Script names match the filename, with or without .py.
 A category prefix is optional unless two scripts share a name.
@@ -169,8 +151,6 @@ def print_list(category=None):
             print(f"{name}:")
             current = name
         print(f"  {path.stem}")
-    print("picker:")
-    print("  app.py")
 
 
 def cmd_run(argv):
@@ -221,7 +201,11 @@ def main(argv=None):
             return 2
         return 0
     if command == "picker":
-        return run_picker(argv[1:])
+        print(
+            "The Plex Image Picker is not part of this orchestrator.",
+            file=sys.stderr,
+        )
+        return 2
     if command == "run":
         try:
             return cmd_run(argv[1:])

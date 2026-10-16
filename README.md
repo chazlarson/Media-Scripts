@@ -120,10 +120,9 @@ python orchestrator.py list
 python orchestrator.py grab-all-posters
 python orchestrator.py plex/check-square-art --sample-size 1
 python orchestrator.py menu
-python orchestrator.py picker
 ```
 
-With no arguments on a terminal, it opens `menu.py`. Each script still runs from its own directory and reads `../config.yaml`.
+With no arguments on a terminal, it opens `menu.py`. Each script still runs from its own directory and reads `../config.yaml`. The Plex Image Picker stays a separate app and is not included here.
 
 ## TODO:
 1. Dockerize, using `orchestrator.py` as the container command

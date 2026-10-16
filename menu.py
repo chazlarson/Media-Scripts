@@ -48,8 +48,7 @@ def display_main_menu(config):
     print("  1. 🎭 Plex Scripts")
     print("  2. 🎨 Kometa Scripts")
     print("  3. 🎬 TMDB Scripts")
-    print("  4. 🖼️  Plex Image Picker")
-    print("  5. Exit")
+    print("  4. Exit")
     print("-"*60)
 
 def display_script_menu(category, scripts):
@@ -137,7 +136,7 @@ def main():
         try:
             display_main_menu(config)
 
-            choice = input("\nSelect category (1-5): ").strip()
+            choice = input("\nSelect category (1-4): ").strip()
 
             if not choice.isdigit():
                 print("❌ Please enter a valid number")
@@ -152,11 +151,6 @@ def main():
             elif choice == 3:
                 handle_category_selection("🎬 TMDB Scripts", "TMDB", config)
             elif choice == 4:
-                print("\n🖼️  Starting Plex Image Picker on http://0.0.0.0:5000 ...")
-                from orchestrator import run_picker
-
-                run_picker([])
-            elif choice == 5:
                 print("\n👋 Goodbye!")
                 break
             else:
