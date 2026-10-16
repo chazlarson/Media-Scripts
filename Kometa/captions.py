@@ -52,7 +52,7 @@ def download_subtitles_from_channel(channel_url, output_path='.'):
             except Exception as e:
                 print(f"An error occurred while processing video {video.title}: {e}")
 
-        print(f"\n--- Script finished ---")
+        print("\n--- Script finished ---")
         print(f"Successfully processed {len(c.videos)} videos.")
         print(f"Successfully downloaded captions for {caption_count} videos.")
 

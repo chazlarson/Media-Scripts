@@ -8,8 +8,7 @@ from pathlib import Path
 import urllib3.exceptions
 from alive_progress import alive_bar
 from config import Config
-from helpers import (get_all_from_library, get_plex, get_redaction_list,
-                     get_target_libraries)
+from helpers import (get_all_from_library, get_plex, get_target_libraries)
 from logs import plogger, setup_logger
 from requests import ReadTimeout
 from urllib3.exceptions import ReadTimeoutError

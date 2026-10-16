@@ -109,7 +109,7 @@ plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
 if plexapi.__version__ < MIN_PLEXAPI_VERSION:
     plogger(f"This script requires PlexAPI {MIN_PLEXAPI_VERSION} or later.  You have {plexapi.__version__}.", "error", "a")
-    plogger(f"Please update the requirements. Exiting...", "error", "a")
+    plogger("Please update the requirements. Exiting...", "error", "a")
     exit()
 else:
     plogger(f"Running under PlexAPI {plexapi.__version__}.", "info", "a")

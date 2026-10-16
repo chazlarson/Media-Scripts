@@ -13,7 +13,7 @@ import validators
 from alive_progress import alive_bar
 from config import Config
 from helpers import (get_all_from_library, get_ids, get_overlay_status,
-                     get_plex, get_redaction_list, get_target_libraries)
+                     get_plex, get_target_libraries)
 from logs import blogger, logger, plogger, setup_logger
 from tmdbapis import TMDbAPIs
 

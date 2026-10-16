@@ -8,11 +8,12 @@ See the top-level [README](../README.md) for setup instructions.
 
 All these scripts use the same `config.yaml` and requirements.
 
-NOTE: on 09-09-2025 these scripts have changed to using a yaml config rather than an env file.  TYOu will need to transfer your settings manually from one to the other.
+NOTE: on 09-09-2025 these scripts have changed to using a yaml config rather than an env file. You will need to transfer your settings manually from one to the other.
 
 ### `config.template.yaml` contents
 
 The `config.yaml` template can be viewed here: [../config.template.yaml](../config.template.yaml).
+
 
 ## Scripts:
 1. [adjust-added-dates.py](#adjust-added-datespy) - fix broken added and perhaps originally available dates in your library
@@ -31,6 +32,7 @@ The `config.yaml` template can be viewed here: [../config.template.yaml](../conf
 1. [actor-count.py](#actor-countpy) - Generate a list of actor credit counts
 1. [crew-count.py](#crew-countpy) - Generate a list of crew credit counts
 1. [list-low-poster-counts.py](#list-low-poster-countspy) - Generate a list of items that have fewer than some number of posters in Plex
+1. `check-square-art.py` - Report whether target libraries have Plex square art
 
 
 ## adjust-added-dates.py
@@ -698,7 +700,11 @@ Script-specific variables in `config.yaml`:
 ```yaml
 delete_collection:
   keep_collections: "bing,bang" # List of collections to keep
+  delete_collections_containing: "" # if set, only delete collections whose title contains this substring
 ```
+
+If `delete_collections_containing` is not empty, then only collections containing that substring will be deleted.
+
 ****
 ### Usage
 1. setup as above

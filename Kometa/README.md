@@ -270,28 +270,37 @@ If you don't have overlays on any episodes, this script will not put any episode
 image_download:
   where_to_put_it:
     use_asset_folders: 1 # should those Kometa-Asset-Directory names use asset folders?
+    use_asset_type_subfolders: 0 # optionally nest those assets under movie/ or show/
     asset_dir: "assets" # top-level directory for those Kometa-Asset-Directory images
+kometa:
+  config_dir: /kometa/is/here/ # Original Posters live under this Kometa config dir
 ```
 
-The asset file system will be rooted at the directory in the `asset_dir` setting, and `use_asset_folders` controls whether the images are stored as:
+The asset file system is rooted at `asset_dir`. `use_asset_folders` controls file vs folder layout, and `use_asset_type_subfolders` optionally nests that layout under `movie/` or `show/`.
 
-```yaml
-    use_asset_folders: 1
-```
+`use_asset_folders: 0`
 
 ```
-Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}.jpg
+# movie|show
+Media-Scripts/Plex/assets/<ASSET_NAME>.jpg
+# season
+Media-Scripts/Plex/assets/<ASSET_NAME>_Season##.jpg
+# episode
+Media-Scripts/Plex/assets/<ASSET_NAME>_S##E##.jpg
 ```
 
-or
-
-```yaml
-    use_asset_folders: 0
-```
+`use_asset_folders: 1`
 
 ```
-Media-Scripts/Plex/assets/All That Jazz (1979) {imdb-tt0078754} {tmdb-16858}/poster.jpg
+# movie|show
+Media-Scripts/Plex/assets/<ASSET_NAME>/poster.jpg
+# season
+Media-Scripts/Plex/assets/<ASSET_NAME>/Season##.jpg
+# episode
+Media-Scripts/Plex/assets/<ASSET_NAME>/S##E##.jpg
 ```
+
+`use_asset_type_subfolders: 1` adds a `movie` or `show` directory under `asset_dir` (seasons and episodes use `show`).
 
 example output:
 ```

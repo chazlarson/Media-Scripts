@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import sys
 import yaml
 import subprocess
@@ -77,7 +76,7 @@ def run_script(script_path):
         script_dir = Path(script_path).parent
         script_name = Path(script_path).name
 
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, script_name],
             cwd=script_dir,
             check=True

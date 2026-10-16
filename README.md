@@ -42,15 +42,15 @@ ok not really
 ### After you've done one of the above:
 Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
 
-1. Copy `config.yaml.template` to `config.yaml`
+1. Copy `config.template.yaml` to `config.yaml`
 
    Linux or Mac:
    ```
-   cp config.yaml.template config.yaml
+   cp config.template.yaml config.yaml
    ```
    Windows:
    ```
-   copy config.yaml.template config.yaml
+   copy config.template.yaml config.yaml
    ```
 1. Edit `config.yaml` to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
 
@@ -84,6 +84,7 @@ All these scripts use the same `config.yaml` and requirements.
 1. `actor-count.py` - Generate a list of actor credit counts
 1. `crew-count.py` - Generate a list of crew credit counts
 1. `list-low-poster-counts.py` - Generate a list of items that have fewer than some number of posters in Plex
+1. `check-square-art.py` - Report whether target libraries have Plex square art
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
@@ -100,6 +101,7 @@ See the [Kometa Scripts README](Kometa/README.md) for details.
 ## TMDB scripts
 
 1. `tmdb-people.py` - retrieve TMDB images for a list of people
+1. `tmdb_logos.py` - download TMDB logos for items in the configured Plex libraries
 
 See the [TMDB Scripts README](TMDB/README.md) for details.
 
@@ -108,6 +110,11 @@ See the [TMDB Scripts README](TMDB/README.md) for details.
 This presents a web UI that lets you scroll through the images that Plex provides for each item [movie, show, season, episode], selecting the one you want by clicking a button, which downloads it to an asset directory
 
 See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
+
+## TODO:
+1. Dockerize
+
+`menu.py` is the top-level console UI. Configuration lives in `config.yaml`, copied from `config.template.yaml`.
 
 ## Other script repos of interest
 

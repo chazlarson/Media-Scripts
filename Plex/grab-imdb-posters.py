@@ -8,7 +8,7 @@ from pathlib import Path
 
 import imdb
 from config import Config
-from helpers import get_ids, get_plex, get_redaction_list, get_target_libraries
+from helpers import get_ids, get_plex, get_target_libraries
 
 # current dateTime
 now = datetime.now()

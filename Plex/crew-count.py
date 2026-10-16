@@ -3,7 +3,7 @@ import textwrap
 from collections import Counter
 
 from config import Config
-from helpers import get_ids, get_plex, get_redaction_list, get_target_libraries
+from helpers import get_ids, get_plex, get_target_libraries
 from tmdbapis import TMDbAPIs
 
 config = Config('../config.yaml')

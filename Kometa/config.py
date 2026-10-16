@@ -11,8 +11,9 @@ class Config:
 
     def __new__(cls, config_path="config.yaml"):
         if cls._instance is None:
-            cls._instance = super(Config, cls).__new__(cls)
-            cls._instance._initialize(config_path)
+            instance = super(Config, cls).__new__(cls)
+            instance._initialize(config_path)
+            cls._instance = instance
         return cls._instance
 
     def _initialize(self, config_path):
@@ -79,8 +80,13 @@ class Config:
                 current_dict = current_dict[k]
             else:
                 return default
-        if type(current_dict) is str:
-            current_dict = eval(current_dict)
+        if isinstance(current_dict, str):
+            normalized = current_dict.strip().lower()
+            if normalized in {"1", "true", "yes", "y", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "n", "off", ""}:
+                return False
+            return default
         return bool(current_dict)
 
 
@@ -104,10 +110,10 @@ if __name__ == "__main__":
     # Create a dummy config.yaml file for the example
     sample_config_content = """
     tvdb:
-      apikey: "bed9264b-82e9-486b-af01-1bb201bcb595" # Enter TMDb API Key (REQUIRED)
+      apikey: "YOUR_TVDB_API_KEY" # Enter TVDb API Key (REQUIRED)
 
     omdb:
-      apikey: "9e62df51" # Enter OMDb API Key (Optional)
+      apikey: "YOUR_OMDB_API_KEY" # Enter OMDb API Key (Optional)
     """
     with open("config.yaml", "w") as f:
         f.write(sample_config_content)

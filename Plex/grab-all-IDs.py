@@ -37,7 +37,6 @@ print(f"Starting {SCRIPT_NAME}")
 
 config = Config('../config.yaml')
 
-TMDB_KEY = os.getenv("TMDB_KEY")
 NEW = []
 UPDATED = []
 

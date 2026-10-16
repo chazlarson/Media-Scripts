@@ -4,8 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from config import Config
-from helpers import (get_all_from_library, get_plex, get_redaction_list,
-                     get_target_libraries)
+from helpers import (get_all_from_library, get_plex, get_target_libraries)
 from logs import plogger, setup_logger
 
 config = Config('../config.yaml')

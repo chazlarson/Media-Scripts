@@ -2,13 +2,14 @@
 
 import json
 import os
+import sys
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
 from config import Config
-from helpers import (get_plex, get_redaction_list, get_target_libraries,
-                     get_xml_libraries, get_xml_watched)
+from helpers import (get_plex, get_xml_libraries, get_xml_watched)
 from logs import plogger, setup_logger
 
 # current dateTime

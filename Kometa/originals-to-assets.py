@@ -19,8 +19,9 @@ SCRIPT_NAME = Path(__file__).stem
 # 0.0.4 more chatty logging and bail if the original isn't found
 # 0.0.5 Actually fix TV libraries
 # 0.0.6 use parent directory name rather than stem
+# 0.0.7 add USE_ASSET_TYPE_SUBFOLDERS option
 
-VERSION = "0.0.6"
+VERSION = "0.0.7"
 
 # current dateTime
 now = datetime.now()
@@ -47,15 +48,16 @@ ASSET_DIR = config.get("image_download.where_to_put_it.asset_dir", "assets")
 
 ASSET_PATH = Path(ASSET_DIR)
 
-USE_ASSET_FOLDERS = config.get_bool("image_download.where_to_put_it.use_asset_folders", False)
+USE_ASSET_FOLDERS = config.get_bool(
+    "image_download.where_to_put_it.use_asset_folders", False
+)
+USE_ASSET_TYPE_SUBFOLDERS = config.get_bool(
+    "image_download.where_to_put_it.use_asset_type_subfolders", False
+)
 
-KOMETA_CONFIG_DIR = config.get("general.kometa_config_dir", "/opt/kometa/config")
+KOMETA_CONFIG_DIR = config.get("kometa.config_dir") or "/opt/kometa/config"
 
 redaction_list = get_redaction_list()
-
-plex = get_plex()
-
-LIB_ARRAY = get_target_libraries(plex)
 
 def lib_type_supported(lib):
     return lib.type == "movie" or lib.type == "show"
@@ -122,150 +124,172 @@ def target_asset(item):
         superchat(f"Episode asset name: {asset_name}", "info", "a")
 
     if USE_ASSET_FOLDERS:
-        # Movie/Show poster      <path_to_assets>/ASSET_NAME/poster.ext
-        target_file = Path(ASSET_PATH, asset_name, "poster.jpg")
-        # Season poster          <path_to_assets>/ASSET_NAME/Season##.ext
+        if USE_ASSET_TYPE_SUBFOLDERS:
+            # If using type subfolders, then assets go in a subfolder for their type (movie or show):
+            #   Movie/Show poster:     -> <ASSET_PATH>/<movie|show>/<ASSET_NAME>
+            #   Season/Episode poster: -> <ASSET_PATH>/show/<ASSET_NAME>
+            type_subfolder = "movie" if item.TYPE == "movie" else "show"
+            base_path = Path(ASSET_PATH, type_subfolder, asset_name)
+        else:
+            # Flat asset structure: all assets go directly in an ASSET_PATH/<ASSET_NAME> folder
+            base_path = Path(ASSET_PATH, asset_name)
+
         if item.TYPE == "season":
-            target_file = Path(
-                ASSET_PATH, asset_name, f"Season{str(item_season).zfill(2)}.jpg"
-            )
-        # Episode poster         <path_to_assets>/ASSET_NAME/S##E##.ext
-        if item.TYPE == "episode":
-            target_file = Path(ASSET_PATH, asset_name, f"{item_se_str}.jpg")
+            # Season poster:  <base_path>/Season##.jpg
+            target_file = base_path / f"Season{str(item_season).zfill(2)}.jpg"
+        elif item.TYPE == "episode":
+            # Episode poster: <base_path>/S##E##.jpg
+            target_file = base_path / f"{item_se_str}.jpg"
+        else:
+            # Movie/Show poster: <base_path>/poster.jpg
+            target_file = base_path / "poster.jpg"
     else:
-        # Movie/Show poster      <path_to_assets>/ASSET_NAME.ext
-        target_file = Path(ASSET_PATH, f"{asset_name}.jpg")
-        # Season poster          <path_to_assets>/ASSET_NAME_Season##.ext
+        if USE_ASSET_TYPE_SUBFOLDERS:
+            # If using type subfolders, then assets go in a subfolder for their type (movie or show):
+            #   Movie/Show poster:     -> <ASSET_PATH>/<movie|show>
+            #   Season/Episode poster: -> <ASSET_PATH>/show
+            type_subfolder = "movie" if item.TYPE == "movie" else "show"
+            base_path = Path(ASSET_PATH, type_subfolder)
+        else:
+            # Flat asset structure: all assets go directly in the ASSET_PATH
+            base_path = ASSET_PATH
+
         if item.TYPE == "season":
-            target_file = Path(
-                ASSET_PATH, f"{asset_name}_Season{str(item_season).zfill(2)}.jpg"
+            target_file = (
+                base_path
+                / f"{asset_name}_Season{str(item_season).zfill(2)}.jpg"  # <ASSET_NAME>_Season##.jpg
             )
-        # Episode poster         <path_to_assets>/ASSET_NAME_S##E##.ext
-        if item.TYPE == "episode":
-            target_file = Path(ASSET_PATH, f"{asset_name}_{item_se_str}.jpg")
+        elif item.TYPE == "episode":
+            target_file = (
+                base_path / f"{asset_name}_{item_se_str}.jpg"  # <ASSET_NAME>_S##E##.jpg
+            )
+        else:
+            target_file = base_path / f"{asset_name}.jpg"  # <ASSET_NAME>.jpg
 
     superchat(f"Target file: {target_file}", "info", "a")
 
     return target_file
 
 
-for lib in LIB_ARRAY:
-    try:
-        highwater = 0
+def main():
+    plex = get_plex()
+    LIB_ARRAY = get_target_libraries(plex)
 
-        plogger(f"Loading {lib} ...", "info", "a")
-        the_lib = plex.library.section(lib)
-        the_uuid = the_lib.uuid
-        superchat(f"{the_lib} uuid {the_uuid}", "info", "a")
+    for lib in LIB_ARRAY:
+        try:
+            plogger(f"Loading {lib} ...", "info", "a")
+            the_lib = plex.library.section(lib)
+            the_uuid = the_lib.uuid
+            superchat(f"{the_lib} uuid {the_uuid}", "info", "a")
 
-        the_title = the_lib.title
-        superchat(f"This library is called {the_title}", "info", "a")
-        title, msg = validate_filename(the_title)
+            the_title = the_lib.title
+            superchat(f"This library is called {the_title}", "info", "a")
+            validate_filename(the_title)
 
-        items = []
+            items = []
 
-        plogger(f"Loading {the_lib.TYPE}s  ...", "info", "a")
-        item_count, items = get_all_from_library(the_lib, None, None)
-        plogger(
-            f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}",
-            "info",
-            "a",
-        )
-
-        if the_lib.TYPE == "show":
-            plogger("Loading seasons ...", "info", "a")
-            season_count, seasons = get_all_from_library(the_lib, "season", None)
+            plogger(f"Loading {the_lib.TYPE}s  ...", "info", "a")
+            item_count, items = get_all_from_library(the_lib, None, None)
             plogger(
-                f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}",
+                f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}",
                 "info",
                 "a",
             )
-            items.extend(seasons)
-            superchat(f"{len(items)} items to examine", "info", "a")
 
-            plogger("Loading episodes ...", "info", "a")
-            episode_count, episodes = get_all_from_library(the_lib, "episode", None)
-            plogger(
-                f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}",
-                "info",
-                "a",
-            )
-            items.extend(episodes)
-            superchat(f"{len(items)} items to examine", "info", "a")
+            if the_lib.TYPE == "show":
+                plogger("Loading seasons ...", "info", "a")
+                season_count, seasons = get_all_from_library(the_lib, "season", None)
+                plogger(
+                    f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}",
+                    "info",
+                    "a",
+                )
+                items.extend(seasons)
+                superchat(f"{len(items)} items to examine", "info", "a")
 
-        item_total = len(items)
-        if item_total > 0:
-            logger(f"looping over {item_total} items...", "info", "a")
-            item_count = 0
+                plogger("Loading episodes ...", "info", "a")
+                episode_count, episodes = get_all_from_library(the_lib, "episode", None)
+                plogger(
+                    f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}",
+                    "info",
+                    "a",
+                )
+                items.extend(episodes)
+                superchat(f"{len(items)} items to examine", "info", "a")
 
-            plex_links = []
-            external_links = []
+            item_total = len(items)
+            if item_total > 0:
+                logger(f"looping over {item_total} items...", "info", "a")
+                item_count = 0
 
-            with alive_bar(
-                item_total,
-                dual_line=True,
-                title=f"Grab all posters {the_lib.title}",
-            ) as bar:
-                for item in items:
-                    try:
-                        # get rating key
-                        the_key = item.ratingKey
-                        superchat(f"{item.title} key: {the_key}", "info", "a")
+                with alive_bar(
+                    item_total,
+                    dual_line=True,
+                    title=f"Grab all posters {the_lib.title}",
+                ) as bar:
+                    for item in items:
+                        try:
+                            # get rating key
+                            the_key = item.ratingKey
+                            superchat(f"{item.title} key: {the_key}", "info", "a")
 
-                        # find image in originals as Path
-                        original_file = find_original(the_lib.title, the_key)
-                        superchat(
-                            f"{item.title} original file: {original_file}",
-                            "info",
-                            "a",
-                        )
-
-                        if original_file.exists():
+                            # find image in originals as Path
+                            original_file = find_original(the_lib.title, the_key)
                             superchat(
-                                f"{item.title} original file is here.", "info", "a"
-                            )
-
-                            # get asset path as Path
-                            target_file = target_asset(item)
-                            superchat(
-                                f"{item.title} target file: {target_file}",
+                                f"{item.title} original file: {original_file}",
                                 "info",
                                 "a",
                             )
 
-                            # create folders on the way to the target
-                            target_file.parent.mkdir(parents=True, exist_ok=True)
-                            superchat(
-                                f"Created folders for: {target_file}", "info", "a"
-                            )
+                            if original_file.exists():
+                                superchat(
+                                    f"{item.title} original file is here.", "info", "a"
+                                )
 
-                            # copy original image to asset dir, overwriting whatever's there
-                            shutil.copy(original_file, target_file)
-                            superchat(f"copied {original_file}", "info", "a")
-                            superchat(f"    to {target_file}", "info", "a")
-                        else:
+                                # get asset path as Path
+                                target_file = target_asset(item)
+                                superchat(
+                                    f"{item.title} target file: {target_file}",
+                                    "info",
+                                    "a",
+                                )
+
+                                # create folders on the way to the target
+                                target_file.parent.mkdir(parents=True, exist_ok=True)
+                                superchat(
+                                    f"Created folders for: {target_file}", "info", "a"
+                                )
+
+                                # copy original image to asset dir, overwriting whatever's there
+                                shutil.copy(original_file, target_file)
+                                superchat(f"copied {original_file}", "info", "a")
+                                superchat(f"    to {target_file}", "info", "a")
+                            else:
+                                plogger(
+                                    f"{item.title} ORIGINAL NOT FOUND: {original_file}",
+                                    "info",
+                                    "a",
+                                )
+
+                            item_count += 1
+                        except Exception as ex:
                             plogger(
-                                f"{item.title} ORIGINAL NOT FOUND: {original_file}",
-                                "info",
-                                "a",
+                                f"Problem processing {item.title}; {ex}", "info", "a"
                             )
 
-                        item_count += 1
-                    except Exception as ex:
-                        plogger(
-                            f"Problem processing {item.title}; {ex}", "info", "a"
-                        )
+                        bar()
 
-                    bar()
+                plogger(f"Processed {item_count} of {item_total}", "info", "a")
 
-            plogger(f"Processed {item_count} of {item_total}", "info", "a")
+            progress_str = "COMPLETE"
+            logger(progress_str, "info", "a")
 
-        progress_str = "COMPLETE"
-        logger(progress_str, "info", "a")
+        except Exception as ex:
+            progress_str = f"Problem processing {lib}; {ex}"
+            plogger(progress_str, "info", "a")
 
-    except Exception as ex:
-        progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, "info", "a")
+    plogger("Complete!", "info", "a")
 
 
-plogger("Complete!", "info", "a")
+if __name__ == "__main__":
+    main()

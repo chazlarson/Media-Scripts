@@ -236,7 +236,7 @@ def get_target_libraries(plex):
     if plex:
         ALL_LIBS = plex.library.sections()
     else:
-        print(f"Plex connection failed")
+        print("Plex connection failed")
         return None
 
     print(f"{len(ALL_LIBS)} libraries found")
@@ -249,7 +249,7 @@ def get_target_libraries(plex):
         LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
     else:
         LIB_ARRAY = None
-        print(f"No libraries specified in config")
+        print("No libraries specified in config")
         print(f"Processing all {len(ALL_LIBS)} libraries")
 
     if LIB_ARRAY is None:

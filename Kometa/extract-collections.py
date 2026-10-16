@@ -5,7 +5,7 @@ from pathlib import Path
 
 from alive_progress import alive_bar
 from config import Config
-from helpers import get_plex, get_redaction_list, get_target_libraries
+from helpers import get_plex, get_target_libraries
 from logs import plogger, setup_logger
 from plexapi.utils import download
 from ruamel import yaml

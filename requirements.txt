@@ -6,6 +6,7 @@ pre-commit
 pyopenssl
 python-dotenv
 requests
+PyYAML
 ruamel.yaml
 setuptools
 tmdbapis

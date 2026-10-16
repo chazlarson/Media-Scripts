@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import platform
 from datetime import datetime
 from pathlib import Path
