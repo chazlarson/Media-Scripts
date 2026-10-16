@@ -111,10 +111,22 @@ This presents a web UI that lets you scroll through the images that Plex provide
 
 See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
 
-## TODO:
-1. Dockerize
+## Entry point
 
-`menu.py` is the top-level console UI. Configuration lives in `config.yaml`, copied from `config.template.yaml`.
+`orchestrator.py` is the single entry point for local runs and for a container:
+
+```
+python orchestrator.py list
+python orchestrator.py grab-all-posters
+python orchestrator.py plex/check-square-art --sample-size 1
+python orchestrator.py menu
+python orchestrator.py picker
+```
+
+With no arguments on a terminal, it opens `menu.py`. Each script still runs from its own directory and reads `../config.yaml`.
+
+## TODO:
+1. Dockerize, using `orchestrator.py` as the container command
 
 ## Other script repos of interest
 

@@ -21,13 +21,15 @@ def load_config():
 
 def get_available_scripts(directory):
     """Get list of available Python scripts in a directory"""
-    scripts = []
-    script_dir = Path(directory)
-    if script_dir.exists():
-        for file in script_dir.glob("*.py"):
-            if not file.name.startswith("_") and file.name != "menu.py":
-                scripts.append(file.name)
-    return sorted(scripts)
+    from orchestrator import CATEGORIES, runnable_scripts
+
+    category = next(
+        (name for name, path in CATEGORIES.items() if path.name == directory),
+        None,
+    )
+    if category is None:
+        return []
+    return [path.name for _name, path in runnable_scripts(category)]
 
 def display_main_menu(config):
     """Display the main category selection menu"""
@@ -150,9 +152,10 @@ def main():
             elif choice == 3:
                 handle_category_selection("🎬 TMDB Scripts", "TMDB", config)
             elif choice == 4:
-                print("\n🖼️  Starting Plex Image Picker...")
-                print("Navigate to: Plex Image Picker directory and run 'flask run'")
-                input("Press Enter to continue...")
+                print("\n🖼️  Starting Plex Image Picker on http://0.0.0.0:5000 ...")
+                from orchestrator import run_picker
+
+                run_picker([])
             elif choice == 5:
                 print("\n👋 Goodbye!")
                 break
