@@ -1,0 +1,415 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D2ED4481D07F41BBA8234774 /* IdleTycoonApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE1271ED1E2428A97F68C7C /* IdleTycoonApp.swift */; };
+		BC9B84456FAC43F4857D9C05 /* Business.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9F726591794C569A591816 /* Business.swift */; };
+		21DBE6C9A9614671A01415E5 /* GameSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5900AA1CD4024F2CA90A66A7 /* GameSave.swift */; };
+		7C7D15BF4135464BA5D3686A /* Economy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05057D30AE84D6DBC7653A8 /* Economy.swift */; };
+		B8875E0DB115463EA676893E /* GameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8878A838C28A41769DAD9082 /* GameStore.swift */; };
+		D1FE93A5A5A6458B87AA9202 /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1485C58B1379417EA7C459BA /* GameViewModel.swift */; };
+		6718DF01B6EB4575A81ED92F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA512C6F8EF4C1DAF036FE4 /* Theme.swift */; };
+		6B6E691494334F01BD58F825 /* BusinessRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF5FEDC42394BAE9857FCB8 /* BusinessRowView.swift */; };
+		1BD0D5FD76B34CE284D1DA40 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2576400E3843452290A04852 /* ContentView.swift */; };
+		25FACB143E3D441AB18AC90C /* EconomyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A81DB5BDA5491E8549CAC5 /* EconomyTests.swift */; };
+		5D7D0FE0D82E4FC6AC21748F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E80831150A2140D29AF378A1 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AC5F26DAAAAB479F9DD920C5 /* IdleTycoon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IdleTycoon.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D452D2BD9FC94649A99949A4 /* IdleTycoonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IdleTycoonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FE1271ED1E2428A97F68C7C /* IdleTycoonApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleTycoonApp.swift; sourceTree = "<group>"; };
+		FA9F726591794C569A591816 /* Business.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Business.swift; sourceTree = "<group>"; };
+		5900AA1CD4024F2CA90A66A7 /* GameSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSave.swift; sourceTree = "<group>"; };
+		E05057D30AE84D6DBC7653A8 /* Economy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Economy.swift; sourceTree = "<group>"; };
+		8878A838C28A41769DAD9082 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
+		1485C58B1379417EA7C459BA /* GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewModel.swift; sourceTree = "<group>"; };
+		7BA512C6F8EF4C1DAF036FE4 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		CEF5FEDC42394BAE9857FCB8 /* BusinessRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessRowView.swift; sourceTree = "<group>"; };
+		2576400E3843452290A04852 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		53A81DB5BDA5491E8549CAC5 /* EconomyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomyTests.swift; sourceTree = "<group>"; };
+		E80831150A2140D29AF378A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		503DD169140340089981C303 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3FAEA05221DD47809E28CB21 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		951F407D31CD4F32B9C67A55 = {
+			isa = PBXGroup;
+			children = (
+				E755F593EB0A40FB846D12FE /* IdleTycoon */,
+				913CA0379F5E41CBA170EF9E /* IdleTycoonTests */,
+				0F98AB2CBB6C4C0EAB6197B9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0F98AB2CBB6C4C0EAB6197B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AC5F26DAAAAB479F9DD920C5 /* IdleTycoon.app */,
+				D452D2BD9FC94649A99949A4 /* IdleTycoonTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E755F593EB0A40FB846D12FE /* IdleTycoon */ = {
+			isa = PBXGroup;
+			children = (
+				5FE1271ED1E2428A97F68C7C /* IdleTycoonApp.swift */,
+				8A9852AB19504334B5E8D19E /* Models */,
+				499AB77B153A406BB14E50BB /* Services */,
+				DA6CB5D276EF4B9996067141 /* ViewModels */,
+				C44BD8B722874EAE98F6F774 /* Views */,
+				E80831150A2140D29AF378A1 /* Assets.xcassets */,
+			);
+			path = IdleTycoon;
+			sourceTree = "<group>";
+		};
+		8A9852AB19504334B5E8D19E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FA9F726591794C569A591816 /* Business.swift */,
+				5900AA1CD4024F2CA90A66A7 /* GameSave.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		499AB77B153A406BB14E50BB /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E05057D30AE84D6DBC7653A8 /* Economy.swift */,
+				8878A838C28A41769DAD9082 /* GameStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		DA6CB5D276EF4B9996067141 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				1485C58B1379417EA7C459BA /* GameViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C44BD8B722874EAE98F6F774 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7BA512C6F8EF4C1DAF036FE4 /* Theme.swift */,
+				CEF5FEDC42394BAE9857FCB8 /* BusinessRowView.swift */,
+				2576400E3843452290A04852 /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		913CA0379F5E41CBA170EF9E /* IdleTycoonTests */ = {
+			isa = PBXGroup;
+			children = (
+				53A81DB5BDA5491E8549CAC5 /* EconomyTests.swift */,
+			);
+			path = IdleTycoonTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0336EDDDD77C46269C12CC67 /* IdleTycoon */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 821F37FAED2242A3B4E1DD7B /* Build configuration list for PBXNativeTarget "IdleTycoon" */;
+			buildPhases = (
+				213D0AFFF0B34423B0E6D0F1 /* Sources */,
+				503DD169140340089981C303 /* Frameworks */,
+				04EAE7B1DBB44FC4A2F99473 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = IdleTycoon;
+			productName = IdleTycoon;
+			productReference = AC5F26DAAAAB479F9DD920C5 /* IdleTycoon.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AC5102D1CB9C4B6EBC1C35E3 /* IdleTycoonTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F132F95E22DA42E789702EF1 /* Build configuration list for PBXNativeTarget "IdleTycoonTests" */;
+			buildPhases = (
+				952035B92E5F42A9B6C53A31 /* Sources */,
+				3FAEA05221DD47809E28CB21 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				88720EE8601D45AE9D910DB9 /* PBXTargetDependency */,
+			);
+			name = IdleTycoonTests;
+			productName = IdleTycoonTests;
+			productReference = D452D2BD9FC94649A99949A4 /* IdleTycoonTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		1022D035C5F0405A98D82BA8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0D78810A5F70473296A4A81C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0336EDDDD77C46269C12CC67;
+			remoteInfo = IdleTycoon;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		88720EE8601D45AE9D910DB9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0336EDDDD77C46269C12CC67 /* IdleTycoon */;
+			targetProxy = 1022D035C5F0405A98D82BA8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXProject section */
+		0D78810A5F70473296A4A81C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 442CF83211B74679A0F41080 /* Build configuration list for PBXProject "IdleTycoon" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 951F407D31CD4F32B9C67A55;
+			productRefGroup = 0F98AB2CBB6C4C0EAB6197B9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0336EDDDD77C46269C12CC67 /* IdleTycoon */,
+				AC5102D1CB9C4B6EBC1C35E3 /* IdleTycoonTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		04EAE7B1DBB44FC4A2F99473 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D7D0FE0D82E4FC6AC21748F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		213D0AFFF0B34423B0E6D0F1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2ED4481D07F41BBA8234774 /* IdleTycoonApp.swift in Sources */,
+				BC9B84456FAC43F4857D9C05 /* Business.swift in Sources */,
+				21DBE6C9A9614671A01415E5 /* GameSave.swift in Sources */,
+				7C7D15BF4135464BA5D3686A /* Economy.swift in Sources */,
+				B8875E0DB115463EA676893E /* GameStore.swift in Sources */,
+				D1FE93A5A5A6458B87AA9202 /* GameViewModel.swift in Sources */,
+				6718DF01B6EB4575A81ED92F /* Theme.swift in Sources */,
+				6B6E691494334F01BD58F825 /* BusinessRowView.swift in Sources */,
+				1BD0D5FD76B34CE284D1DA40 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		952035B92E5F42A9B6C53A31 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25FACB143E3D441AB18AC90C /* EconomyTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DF0C99FAB21C4648975C0151 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		98FEBE2C57714AC2B6E5D315 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		5F22AADB2F9F4BC19000BEAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Corner Empire";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IdleTycoon;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5AACA9328A6C44BDA11B5C94 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Corner Empire";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IdleTycoon;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		FFB12A7C5F0A4A698923C5C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IdleTycoonTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IdleTycoon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IdleTycoon";
+			};
+			name = Debug;
+		};
+		083E7F4E081C4F8BA916237F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IdleTycoonTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IdleTycoon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IdleTycoon";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		442CF83211B74679A0F41080 /* Build configuration list for PBXProject "IdleTycoon" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DF0C99FAB21C4648975C0151 /* Debug */,
+				98FEBE2C57714AC2B6E5D315 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		821F37FAED2242A3B4E1DD7B /* Build configuration list for PBXNativeTarget "IdleTycoon" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5F22AADB2F9F4BC19000BEAB /* Debug */,
+				5AACA9328A6C44BDA11B5C94 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F132F95E22DA42E789702EF1 /* Build configuration list for PBXNativeTarget "IdleTycoonTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FFB12A7C5F0A4A698923C5C9 /* Debug */,
+				083E7F4E081C4F8BA916237F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0D78810A5F70473296A4A81C /* Project object */;
+}
