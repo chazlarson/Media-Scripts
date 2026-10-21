@@ -7,45 +7,53 @@ from config import Config
 from helpers import get_plex
 from tabulate import tabulate
 
-config = Config('../config.yaml')
+def main():
+    global config, now, RUNTIME_STR, DELAY, plex, coll_obj, sections, item_total, table
+    global bar, section, info
 
-# current dateTime
-now = datetime.now()
+    config = Config('../config.yaml')
 
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+    # current dateTime
+    now = datetime.now()
 
-DELAY = config.get_int("general.delay", 0)
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-plex = get_plex()
+    DELAY = config.get_int("general.delay", 0)
 
-coll_obj = {}
-coll_obj["libraries"] = {}
+    plex = get_plex()
+
+    coll_obj = {}
+    coll_obj["libraries"] = {}
 
 
-sections = plex.library.sections()
-item_total = len(sections)
+    sections = plex.library.sections()
+    item_total = len(sections)
 
-table = [["Key", "Name", "Type", "Agent", "Scanner", "Created At", "Updated At", "Total Size", "UUID"]]
+    table = [["Key", "Name", "Type", "Agent", "Scanner", "Created At", "Updated At", "Total Size", "UUID"]]
 
-with alive_bar(item_total, dual_line=True, title="Library list - Plex") as bar:
-    for section in sections:
-        info = []
-        info.append(section.key)
-        info.append(section.title)
-        info.append(section.type)
-        info.append(section.agent)
-        info.append(section.scanner)
-        info.append(section.createdAt.strftime("%Y-%m-%d %H:%M:%S"))
-        info.append(section.updatedAt.strftime("%Y-%m-%d %H:%M:%S"))
-        info.append(section.totalSize)
-        info.append(section.uuid)
+    with alive_bar(item_total, dual_line=True, title="Library list - Plex") as bar:
+        for section in sections:
+            info = []
+            info.append(section.key)
+            info.append(section.title)
+            info.append(section.type)
+            info.append(section.agent)
+            info.append(section.scanner)
+            info.append(section.createdAt.strftime("%Y-%m-%d %H:%M:%S"))
+            info.append(section.updatedAt.strftime("%Y-%m-%d %H:%M:%S"))
+            info.append(section.totalSize)
+            info.append(section.uuid)
 
-        table.append(info)
+            table.append(info)
 
-        bar()
+            bar()
 
-        # Wait between items in case hammering the Plex server turns out badly.
-        time.sleep(DELAY)
+            # Wait between items in case hammering the Plex server turns out badly.
+            time.sleep(DELAY)
 
-print(tabulate(table, headers="firstrow", tablefmt="fancy_grid"))
+    print(tabulate(table, headers="firstrow", tablefmt="fancy_grid"))
+
+
+if __name__ == "__main__":
+    main()

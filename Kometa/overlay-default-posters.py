@@ -82,7 +82,7 @@ with alive_bar(item_total, dual_line=True, title="Applying overlays") as bar:
             local_overlay_im = local_overlay_im.resize(
                 (2000, 3000), Image.Resampling.LANCZOS
             )
-        except:
+        except Exception:
             local_overlay_im = global_overlay_im
 
         source_image = Image.open(source_path)

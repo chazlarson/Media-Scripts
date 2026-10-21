@@ -13,28 +13,6 @@ from logs import plogger, setup_logger
 from requests import ReadTimeout
 from urllib3.exceptions import ReadTimeoutError
 
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-# DONE 0.2.0: chattier about where we're getting items
-# DONE 0.2.1: Use booler helper to ensure correct var reading
-
-VERSION = "0.2.1"
-
-ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger("activity_log", ACTIVITY_LOG)
-
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
-
-config = Config('../config.yaml')
-
-UNMATCHED_ONLY = config.get_bool('rematch_items.unmatched_only', False)
-
 
 def progress(count, total, status=""):
     bar_len = 40
@@ -47,87 +25,118 @@ def progress(count, total, status=""):
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(80)))
     sys.stdout.flush()
 
+def main():
+    global now, RUNTIME_STR, SCRIPT_NAME, VERSION, ACTIVITY_LOG, config, UNMATCHED_ONLY
+    global plex, LIB_ARRAY, lib, the_lib, item_total, items, item_count, plex_links
+    global external_links, agents, bar, item, tmpDict, matched_it, agt, progress_str
 
-plex = get_plex()
+    # current dateTime
+    now = datetime.now()
 
-LIB_ARRAY = get_target_libraries(plex)
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-for lib in LIB_ARRAY:
-    the_lib = plex.library.section(lib)
-    plogger(f"getting items from [{lib}]...", "info", "a")
+    SCRIPT_NAME = Path(__file__).stem
 
-    if UNMATCHED_ONLY:
-        print(f"getting UNMATCHED items from [{lib}]...")
-        item_total, items = get_all_from_library(the_lib, None, {"unmatched": True})
-    else:
-        item_total, items = get_all_from_library(the_lib)
+    # DONE 0.2.0: chattier about where we're getting items
+    # DONE 0.2.1: Use booler helper to ensure correct var reading
 
-    plogger(f"looping over {item_total} items...", "info", "a")
-    item_count = 0
+    VERSION = "0.2.1"
 
-    plex_links = []
-    external_links = []
+    ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+    setup_logger("activity_log", ACTIVITY_LOG)
 
-    if the_lib.type == "movie":
-        agents = [
-            "com.plexapp.agents.imdb",
-            "tv.plex.agents.movie",
-            "com.plexapp.agents.themoviedb",
-        ]
-    elif the_lib.type == "show":
-        agents = ["com.plexapp.agents.thetvdb", "tv.plex.agents.series"]
-    else:
-        agents = [
-            "com.plexapp.agents.fanarttv",
-            "com.plexapp.agents.none",
-            "tv.plex.agents.music",
-            "com.plexapp.agents.opensubtitles",
-            "com.plexapp.agents.imdb",
-            "com.plexapp.agents.lyricfind",
-            "com.plexapp.agents.thetvdb",
-            "tv.plex.agents.movie",
-            "tv.plex.agents.series",
-            "com.plexapp.agents.plexthememusic",
-            "org.musicbrainz.agents.music",
-            "com.plexapp.agents.themoviedb",
-            "com.plexapp.agents.htbackdrops",
-            "com.plexapp.agents.movieposterdb",
-            "com.plexapp.agents.localmedia",
-            "com.plexapp.agents.lastfm",
-        ]
+    plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-    with alive_bar(len(items), dual_line=True, title="Rematching") as bar:
-        for item in items:
-            tmpDict = {}
-            item_count = item_count + 1
-            matched_it = False
+    config = Config('../config.yaml')
 
-            for agt in agents:
-                if not matched_it:
-                    try:
-                        progress_str = f"{item.title} - agent {agt}"
-                        bar.text(progress_str)
+    UNMATCHED_ONLY = config.get_bool('rematch_items.unmatched_only', False)
 
-                        item.fixMatch(auto=True, agent=agt)
 
-                        matched_it = True
+    plex = get_plex()
 
-                        progress_str = f"{item.title} - DONE"
-                        bar.text(progress_str)
+    LIB_ARRAY = get_target_libraries(plex)
 
-                    except urllib3.exceptions.ReadTimeoutError:
-                        progress(
-                            item_count, item_total, "ReadTimeoutError: " + item.title
-                        )
-                    except urllib3.exceptions.HTTPError:
-                        progress(item_count, item_total, "HTTPError: " + item.title)
-                    except ReadTimeoutError:
-                        progress(
-                            item_count, item_total, "ReadTimeoutError-2: " + item.title
-                        )
-                    except ReadTimeout:
-                        progress(item_count, item_total, "ReadTimeout: " + item.title)
-                    except Exception as ex:
-                        progress(item_count, item_total, "EX: " + item.title)
-                        logging.error(ex)
-            bar()
+    for lib in LIB_ARRAY:
+        the_lib = plex.library.section(lib)
+        plogger(f"getting items from [{lib}]...", "info", "a")
+
+        if UNMATCHED_ONLY:
+            print(f"getting UNMATCHED items from [{lib}]...")
+            item_total, items = get_all_from_library(the_lib, None, {"unmatched": True})
+        else:
+            item_total, items = get_all_from_library(the_lib)
+
+        plogger(f"looping over {item_total} items...", "info", "a")
+        item_count = 0
+
+        plex_links = []
+        external_links = []
+
+        if the_lib.type == "movie":
+            agents = [
+                "com.plexapp.agents.imdb",
+                "tv.plex.agents.movie",
+                "com.plexapp.agents.themoviedb",
+            ]
+        elif the_lib.type == "show":
+            agents = ["com.plexapp.agents.thetvdb", "tv.plex.agents.series"]
+        else:
+            agents = [
+                "com.plexapp.agents.fanarttv",
+                "com.plexapp.agents.none",
+                "tv.plex.agents.music",
+                "com.plexapp.agents.opensubtitles",
+                "com.plexapp.agents.imdb",
+                "com.plexapp.agents.lyricfind",
+                "com.plexapp.agents.thetvdb",
+                "tv.plex.agents.movie",
+                "tv.plex.agents.series",
+                "com.plexapp.agents.plexthememusic",
+                "org.musicbrainz.agents.music",
+                "com.plexapp.agents.themoviedb",
+                "com.plexapp.agents.htbackdrops",
+                "com.plexapp.agents.movieposterdb",
+                "com.plexapp.agents.localmedia",
+                "com.plexapp.agents.lastfm",
+            ]
+
+        with alive_bar(len(items), dual_line=True, title="Rematching") as bar:
+            for item in items:
+                tmpDict = {}
+                item_count = item_count + 1
+                matched_it = False
+
+                for agt in agents:
+                    if not matched_it:
+                        try:
+                            progress_str = f"{item.title} - agent {agt}"
+                            bar.text(progress_str)
+
+                            item.fixMatch(auto=True, agent=agt)
+
+                            matched_it = True
+
+                            progress_str = f"{item.title} - DONE"
+                            bar.text(progress_str)
+
+                        except urllib3.exceptions.ReadTimeoutError:
+                            progress(
+                                item_count, item_total, "ReadTimeoutError: " + item.title
+                            )
+                        except urllib3.exceptions.HTTPError:
+                            progress(item_count, item_total, "HTTPError: " + item.title)
+                        except ReadTimeoutError:
+                            progress(
+                                item_count, item_total, "ReadTimeoutError-2: " + item.title
+                            )
+                        except ReadTimeout:
+                            progress(item_count, item_total, "ReadTimeout: " + item.title)
+                        except Exception as ex:
+                            progress(item_count, item_total, "EX: " + item.title)
+                            logging.error(ex)
+                bar()
+
+
+if __name__ == "__main__":
+    main()

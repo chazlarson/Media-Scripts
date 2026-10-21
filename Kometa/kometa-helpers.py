@@ -17,16 +17,6 @@ def has_overlay(image_path):
     return 0x04BC in exif_tags and exif_tags[0x04BC] == "overlay"
 
 
-def booler(thing):
-    if type(thing) is str:
-        thing = eval(thing)
-    return bool(thing)
-
-
-def redact(thing, badthing):
-    return thing.replace(badthing, "(REDACTED)")
-
-
 def redact(the_url, str_list):
     ret_val = the_url
     for thing in str_list:

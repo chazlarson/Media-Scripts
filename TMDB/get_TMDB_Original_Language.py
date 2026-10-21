@@ -247,7 +247,7 @@ def getTMDBItem(theItem):
     isShow = False
     try:
         isShow = theItem.TYPE == "show"
-    except:
+    except Exception:
         isShow = "movie" not in theItem.Part_File_Combined
 
     tmdbItem = None
@@ -259,7 +259,7 @@ def getTMDBItem(theItem):
                     if item.TMDB_ID
                     else tmdb.find_by_id(tvdb_id=theItem.TVDB_ID[0]).tv_results[0]
                 )
-            except:
+            except Exception:
                 if theItem.tvdb_id is not None:
                     tmdbItem = tmdb.find_by_id(tvdb_id=theItem.TVDB_ID[0]).tv_results[0]
                 else:
@@ -267,7 +267,7 @@ def getTMDBItem(theItem):
         else:
             if tmdb_id is not None:
                 tmdbItem = tmdb.movie(theItem.TMDB_ID[0])
-    except:
+    except Exception:
         tmdbItem = None
     return tmdbItem
 

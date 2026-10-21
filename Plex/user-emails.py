@@ -6,34 +6,42 @@ from pathlib import Path
 from config import Config
 from helpers import get_plex
 
-# current dateTime
-now = datetime.now()
+def main():
+    global now, RUNTIME_STR, SCRIPT_NAME, VERSION, config, plex, plexacc, users
+    global user_total, u
 
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+    # current dateTime
+    now = datetime.now()
 
-SCRIPT_NAME = Path(__file__).stem
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-VERSION = "0.1.0"
+    SCRIPT_NAME = Path(__file__).stem
 
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+    VERSION = "0.1.0"
 
-logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+    logging.basicConfig(
+        filename=f"{SCRIPT_NAME}.log",
+        filemode="w",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
 
-config = Config('../config.yaml')
+    logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+    print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
 
-print("connecting...")
-plex = get_plex()
-plexacc = plex.myPlexAccount()
-print("getting users...")
-users = plexacc.users()
-user_total = len(users)
-print(f"looping over {user_total} users...")
-for u in users:
-    print(f"{u.username} - {u.email}")
+    config = Config('../config.yaml')
+
+    print("connecting...")
+    plex = get_plex()
+    plexacc = plex.myPlexAccount()
+    print("getting users...")
+    users = plexacc.users()
+    user_total = len(users)
+    print(f"looping over {user_total} users...")
+    for u in users:
+        print(f"{u.username} - {u.email}")
+
+
+if __name__ == "__main__":
+    main()
