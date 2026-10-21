@@ -154,14 +154,19 @@ def get_diffs(payload):
             diffs["changes"]["imdb"] = payload["imdb"]
         if ResultSet[0]["tmdb"] != payload["tmdb"]:
             diffs["changes"]["tmdb"] = payload["tmdb"]
-        if ResultSet[0]["tmdb"] != payload["tmdb"]:
-            diffs["changes"]["tmdb"] = payload["tmdb"]
+        if ResultSet[0]["tvdb"] != payload["tvdb"]:
+            diffs["changes"]["tvdb"] = payload["tvdb"]
+        if ResultSet[0]["title"] != payload["title"]:
+            diffs["changes"]["title"] = payload["title"]
+        if ResultSet[0]["year"] != payload["year"]:
+            diffs["changes"]["year"] = payload["year"]
         diffs["updated"] = len(diffs["changes"]) > 0
     else:
         diffs["new"] = True
         diffs["changes"]["imdb"] = payload["imdb"]
         diffs["changes"]["tmdb"] = payload["tmdb"]
-        diffs["changes"]["tmdb"] = payload["tmdb"]
+        diffs["changes"]["tvdb"] = payload["tvdb"]
+        diffs["changes"]["title"] = payload["title"]
         diffs["changes"]["year"] = payload["year"]
 
     return diffs
