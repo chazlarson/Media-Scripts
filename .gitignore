@@ -11,6 +11,8 @@
 **/*.sqlite
 **/.python-version
 
+config.yaml
+
 Kometa/metadata-items
 
 Plex/movies

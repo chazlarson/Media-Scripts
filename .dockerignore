@@ -1,0 +1,8 @@
+plex-image-picker
+.git
+.venv
+**/__pycache__
+**/*.pyc
+config.yaml
+**/*.log
+**/*.sqlite

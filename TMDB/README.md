@@ -6,16 +6,22 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 See the top-level [README](../README.md) for setup instructions.
 
-All these scripts use the same `.env` and requirements.
+All these scripts use the same `config.yaml` and requirements.
 
-### `.env` contents
+### `config.yaml` contents
 
+`general.tmdb_key` and `general.delay` are shared. Script-specific settings:
+
+```yaml
+tmdb_people:
+  poster_dir: people_posters # tmdb-people.py saves profile images here
+  person_depth: 10 # how many name-search results to download
+
+original_language:
+  input_files: "" # comma-separated files for get_TMDB_Original_Language.py; empty queries Plex
 ```
-TMDB_KEY=TMDB_API_KEY                        # https://developers.themoviedb.org/3/getting-started/introduction
-DELAY=1                                      # optional delay between items
-POSTER_DIR=people_posters                    # put downloaded posters here
-PERSON_DEPTH=10                              # how deep to go into the search results for people
-```
+
+The full template is [../config.template.yaml](../config.template.yaml).
 
 ## Scripts:
 1. [tmdb-people.py](#tmdb-peoplepy) - retrieve TMDB images for a list of people
@@ -40,4 +46,4 @@ TMDB people |████████▌                               | █▆�
 ->   starting: Chuck Russell
 ```
 
-If the name search returns more than one result, the script will attempt to download images for the first `PERSON_DEPTH` results.
+If the name search returns more than one result, the script will attempt to download images for the first `tmdb_people.person_depth` results.

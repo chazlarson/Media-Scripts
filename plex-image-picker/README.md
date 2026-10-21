@@ -24,7 +24,7 @@ This script does not use anything from the `.env`, but it does make some assumpt
 ### if you use [`direnv`](https://github.com/direnv/direnv) and [`pyenv`](https://github.com/pyenv/pyenv):
 1. clone the repo
 1. cd into the repo dir
-1. cd into the app directory [`cd "Plex Image Picker"`]
+1. cd into the app directory [`cd plex-image-picker`]
 1. run `direnv allow` as the prompt will tell you to
 1. direnv will build the virtual env and keep requirements up to date
 
@@ -48,7 +48,7 @@ To set it up without those things:
    ```
 1. cd to application directory
    ```
-   cd Plex Image Picker
+   cd plex-image-picker
    ```
 1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
 

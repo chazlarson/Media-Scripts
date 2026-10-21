@@ -42,28 +42,30 @@ ok not really
 ### After you've done one of the above:
 Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
 
-1. cd to script directory [`Plex`, `Kometa`, `TMDB`, etc]
+1. Copy `config.template.yaml` to `config.yaml`
+
+   Linux or Mac:
+   ```
+   cp config.template.yaml config.yaml
+   ```
+   Windows:
+   ```
+   copy config.template.yaml config.yaml
+   ```
+1. Edit `config.yaml` to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
+
+   Edit the file with whatever text editor you wish, so long as you save it as **plain text**.
+
+1. cd to script directory [`Plex`, `Kometa`, etc]
    for example:
    ```
    cd Plex
    ```
-1. Copy `.env.example` to `.env`
 
-   Linux or Mac:
-   ```
-   cp .env.example .env
-   ```
-   Windows:
-   ```
-   copy .env.example .env
-   ```
-1. Edit .env to suit your environment [plex url, token, libraries] and your requirements [what to do, where to download things, etc.]; the settings for each script are detailed in the readme within each folder as shown below.
-
-   Edit the file with whatever text editor you wish.
 1. Run the desired script.
 
 
-All these scripts use the same `.env` and requirements.
+All these scripts use the same `config.yaml` and requirements.
 
 ## Plex scripts:
 
@@ -82,6 +84,7 @@ All these scripts use the same `.env` and requirements.
 1. `actor-count.py` - Generate a list of actor credit counts
 1. `crew-count.py` - Generate a list of crew credit counts
 1. `list-low-poster-counts.py` - Generate a list of items that have fewer than some number of posters in Plex
+1. `check-square-art.py` - Report whether target libraries have Plex square art
 
 See the [Plex Scripts README](Plex/README.md) for details.
 
@@ -98,6 +101,7 @@ See the [Kometa Scripts README](Kometa/README.md) for details.
 ## TMDB scripts
 
 1. `tmdb-people.py` - retrieve TMDB images for a list of people
+1. `tmdb_logos.py` - download TMDB logos for items in the configured Plex libraries
 
 See the [TMDB Scripts README](TMDB/README.md) for details.
 
@@ -105,15 +109,34 @@ See the [TMDB Scripts README](TMDB/README.md) for details.
 
 This presents a web UI that lets you scroll through the images that Plex provides for each item [movie, show, season, episode], selecting the one you want by clicking a button, which downloads it to an asset directory
 
-See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
+See the [Plex Image Picker README](plex-image-picker/README.md) for details.
 
-## TODO:
-1. Dockerize
-1. add a top-level console UI
-1. go to a YAML-based config
+## Entry point
+
+`orchestrator.py` is the single entry point for local runs and for a container:
+
+```
+python orchestrator.py list
+python orchestrator.py grab-all-posters
+python orchestrator.py plex/check-square-art --sample-size 1
+python orchestrator.py menu
+```
+
+With no arguments on a terminal, it opens `menu.py`. Each script reads `../config.yaml` from its working directory. The Plex Image Picker stays a separate app and is not included here.
+
+### Docker
+
+```
+docker build -t media-scripts .
+docker run --rm -v /path/to/config:/config media-scripts list
+docker run --rm -v /path/to/config:/config media-scripts grab-all-posters
+```
+
+`/config` is the only mount. The first run copies `config.template.yaml` to `/config/config.yaml` when that file is missing. Scripts then write logs, posters, and other output under `/config/plex`, `/config/kometa`, and `/config/tmdb`. Relative paths in `config.yaml` are relative to those folders. `kometa.config_dir` still needs to be a path the container can see if a script reads the Kometa config directory.
 
 ## Other script repos of interest
 
 1. [bullmoose](https://github.com/bullmoose20/Plex-Stuff)
 2. [Casvt](https://github.com/Casvt/Plex-scripts)
 3. [maximuskowalski](https://github.com/maximuskowalski/maxmisc)
+1

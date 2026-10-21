@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from timeit import default_timer as timer
 
-from dotenv import load_dotenv
+from config import Config
 from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
 
@@ -14,39 +14,32 @@ from tmdbapis import TMDbAPIs
 
 start = timer()
 
-load_dotenv()
+config = Config("../config.yaml")
 
-PLEX_URL = os.getenv("PLEX_URL")
-PLEX_TOKEN = os.getenv("PLEX_TOKEN")
-KOMETA_CACHE = os.getenv("KOMETA_CACHE")
-INPUT_FILES = os.getenv("INPUT_FILES")
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
-TMDB_KEY = os.getenv("TMDB_KEY")
-TVDB_KEY = os.getenv("TVDB_KEY")
-REMOVE_LABELS = os.getenv("REMOVE_LABELS")
-DELAY = int(os.getenv("DELAY"))
+PLEX_URL = config.get("plex_api.auth_server.base_url")
+PLEX_TOKEN = config.get("plex_api.auth_server.token")
+INPUT_FILES = config.get("original_language.input_files", "")
+LIBRARY_NAMES = config.get("general.library_names", "")
+TMDB_KEY = config.get("general.tmdb_key")
+DELAY = config.get_int("general.delay", 0)
 
 if not DELAY:
     DELAY = 0
 
-if REMOVE_LABELS:
-    lbl_array = REMOVE_LABELS.split(",")
-
 if LIBRARY_NAMES:
-    lib_array = LIBRARY_NAMES.split(",")
+    lib_array = [name.strip() for name in LIBRARY_NAMES.split(",") if name.strip()]
 else:
-    lib_array = [LIBRARY_NAME]
+    lib_array = []
 
 if INPUT_FILES:
-    file_array = INPUT_FILES.split(",")
+    file_array = [name.strip() for name in INPUT_FILES.split(",") if name.strip()]
 else:
     file_array = []
 
 delim = "\t"
 
 # Commented out until this doesn't throw a 400
-# tvdb = tvdb_v4_official.TVDB(TVDB_KEY)
+# tvdb = tvdb_v4_official.TVDB(config.get("general.tvdb_key"))
 
 tmdb = TMDbAPIs(TMDB_KEY, language="en")
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import os
+# -*- coding: utf-8 -*-
+
 import platform
 import time
 from collections import Counter
@@ -8,7 +9,9 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from alive_progress import alive_bar
-from helpers import booler, get_all_from_library, get_plex, load_and_upgrade_env
+from config import Config
+from helpers import (get_all_from_library, get_ids, get_plex,
+                     get_target_libraries)
 from logs import plogger, setup_logger
 from tmdbapis import TMDbAPIs
 
@@ -21,6 +24,7 @@ JOB_ACTOR = "Actor"
 JOB_DIRECTOR = "Director"
 
 # DONE 0.1.0: refactoring, added version
+# DONE 0.2.0: config class
 
 start = timer()
 
@@ -32,63 +36,41 @@ ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
 
 setup_logger("activity_log", ACTIVITY_LOG)
 
-env_file_path = Path(".env")
-
 # current dateTime
 now = datetime.now()
-
-IS_WINDOWS = platform.system() == "Windows"
 
 # convert to string
 RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
+IS_WINDOWS = platform.system() == "Windows"
+
 plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-if load_and_upgrade_env(env_file_path) < 0:
-    exit()
+config = Config('../config.yaml')
 
-LIBRARY_NAME = os.getenv("LIBRARY_NAME")
-LIBRARY_NAMES = os.getenv("LIBRARY_NAMES")
+CAST_DEPTH = config.get_int("actor.cast_depth")
+TOP_COUNT = config.get_int("actor.top_count")
+TRACK_GENDER = config.get_bool("actor.track_gender")
 
-if LIBRARY_NAMES:
-    LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
-else:
-    LIB_ARRAY = [LIBRARY_NAME]
-
-TMDB_KEY = os.getenv("TMDB_KEY")
-TVDB_KEY = os.getenv("TVDB_KEY")
-CAST_DEPTH = int(os.getenv("CAST_DEPTH"))
-TOP_COUNT = int(os.getenv("TOP_COUNT"))
-KNOWN_FOR_ONLY = booler(os.getenv("KNOWN_FOR_ONLY"))
-TRACK_GENDER = booler(os.getenv("TRACK_GENDER"))
-JOB_TYPE = os.getenv("JOB_TYPE")
-
-GENERATE_KOMETA_YAML = booler(os.getenv("GENERATE_KOMETA_YAML"))
-NUM_COLLECTIONS = int(os.getenv("NUM_COLLECTIONS"))
-MIN_GENDER_NONE = int(os.getenv("MIN_GENDER_NONE"))
-MIN_GENDER_FEMALE = int(os.getenv("MIN_GENDER_FEMALE"))
-MIN_GENDER_MALE = int(os.getenv("MIN_GENDER_MALE"))
-MIN_GENDER_NB = int(os.getenv("MIN_GENDER_NB"))
+NUM_COLLECTIONS = config.get_int("general.num_collections")
+MIN_GENDER_NO_GENDER = config.get_int("general.min_gender_no_gender", 0)
+MIN_GENDER_FEMALE = config.get_int("general.min_gender_female", 0)
+MIN_GENDER_MALE = config.get_int("general.min_gender_male", 0)
+MIN_GENDER_NB = config.get_int("general.min_gender_nb", 0)
 
 if (
-    MIN_GENDER_NONE + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB
+    MIN_GENDER_NO_GENDER + MIN_GENDER_FEMALE + MIN_GENDER_MALE + MIN_GENDER_NB
 ) > NUM_COLLECTIONS:
     print("minimum gender requirements exceed number of collections")
     exit(1)
 
-DELAY = int(os.getenv("DELAY"))
+DELAY = config.get_int("general.delay", 0)
 
-if not DELAY:
-    DELAY = 0
-
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
+tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
 
 people = Counter()
 lists = Counter()
-gender_none = Counter()
+gender_no_gender = Counter()
 gender_female = Counter()
 gender_male = Counter()
 gender_nonbinary = Counter()
@@ -96,7 +78,7 @@ gender_nonbinary = Counter()
 
 def track_gender(the_key, gender):
     if gender == TMDB_GENDER_NOT_SET:
-        gender_none[the_key] += 1
+        gender_no_gender[the_key] += 1
 
     if gender == TMDB_GENDER_FEMALE:
         gender_female[the_key] += 1
@@ -136,30 +118,10 @@ def reverse_gender(gender_str):
         return TMDB_GENDER_NONBINARY
 
 
-def getTID(theList):
-    tmid = None
-    tvid = None
-    for guid in theList:
-        if tmdb_str in guid.id:
-            tmid = guid.id.replace(tmdb_str, "")
-        if tvdb_str in guid.id:
-            tvid = guid.id.replace(tvdb_str, "")
-    return tmid, tvid
-
-
 plex = get_plex()
 
-ALL_LIBS = plex.library.sections()
-ALL_LIB_NAMES = []
 
-plogger(f"{len(ALL_LIBS)} libraries found:", "info", "a")
-for lib in ALL_LIBS:
-    ALL_LIB_NAMES.append(f"{lib.title.strip()}")
-
-if LIBRARY_NAMES == "ALL_LIBRARIES":
-    LIB_ARRAY = []
-    for lib in ALL_LIBS:
-        LIB_ARRAY.append(lib.title.strip())
+LIB_ARRAY = get_target_libraries(plex)
 
 
 def ascii_histogram(data) -> None:
@@ -185,21 +147,25 @@ for lib in LIB_ARRAY:
     with alive_bar(item_total, dual_line=True, title=f"Actor Count: {lib}") as bar:
         for item in items:
             tmpDict = {}
-            tmdb_id, tvdb_id = getTID(item.guids)
+            imdbid, tmid, tvid = get_ids(item.guids)
             item_count = item_count + 1
             try:
                 list = ""
                 if item.TYPE == "show":
-                    media_item = tmdb.tv_show(tmdb_id)
+                    media_item = tmdb.tv_show(tmid) if tmid else None
                 else:
-                    media_item = tmdb.movie(tmdb_id)
-                if JOB_TYPE == JOB_DIRECTOR:
-                    list = media_item.crew
+                    media_item = tmdb.movie(tmid) if tmid else None
+                if config.get("actor.job_type") == JOB_DIRECTOR:
+                    person_data = media_item.crew if media_item else []
                 else:
-                    list = media_item.cast
+                    person_data = media_item.cast if media_item else []
+                if person_data is None:
+                    person_list = []
+                else:
+                    person_list = person_data if person_data else []
 
                 count = 0
-                list_size = len(list)
+                list_size = len(person_list) if person_list else 0
 
                 if list_size < 2:
                     print(f"small list - {item.title}: {list_size}")
@@ -213,35 +179,35 @@ for lib in LIB_ARRAY:
                     )
 
                 bar.text(
-                    f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
+                    f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_no_gender)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
                 )
-                for person in list:
+                person_list = person_list[:CAST_DEPTH] if CAST_DEPTH < list_size else person_list
+
+                for person in person_list:
                     # person points to person
 
-                    if count < CAST_DEPTH:
-                        count = count + 1
-                        list_count += 1
-                        the_key = f"{person.name} - {person.person_id} - {translate_gender(person.gender)}"
-                        count_them = False
-                        if KNOWN_FOR_ONLY:
-                            if person.known_for_department == "Acting":
-                                count_them = True
-                            else:
-                                skip_count += 1
-                                print(
-                                    f"Skipping {person.name}: {person.known_for_department}"
-                                )
-                        else:
+                    list_count += 1
+                    the_key = f"{person.name} - {person.person_id} - {translate_gender(person.gender)}"
+                    count_them = False
+                    if config.get_bool("actor.known_for_only"):
+                        if person.known_for_department == "Acting":
                             count_them = True
-
-                        if count_them:
-                            people[the_key] += 1
-                            if TRACK_GENDER:
-                                track_gender(the_key, person.gender)
-                            credit_count += 1
-                            bar.text(
-                                f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_none)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
+                        else:
+                            skip_count += 1
+                            print(
+                                f"Skipping {person.name}: {person.known_for_department}"
                             )
+                    else:
+                        count_them = True
+
+                    if count_them:
+                        people[the_key] += 1
+                        if TRACK_GENDER:
+                            track_gender(the_key, person.gender)
+                        credit_count += 1
+                        bar.text(
+                            f"Processing {CAST_DEPTH if CAST_DEPTH < list_size else list_size} of {list_size} from {item.title} - average list {average_list} counts: {len(people)} - N{len(gender_no_gender)} - F{len(gender_female)} - M{len(gender_male)} - NB{len(gender_nonbinary)}"
+                        )
             except Exception:
                 print(f"{item_count}, {item_total}, EX: {item.title}")
 
@@ -259,13 +225,13 @@ for lib in LIB_ARRAY:
     )
     print(f"Unique people: {len(people)}")
     if TRACK_GENDER:
-        print(f"'None' gender': {len(gender_none)}")
+        print(f"'None' gender': {len(gender_no_gender)}")
         print(f"'Female' gender': {len(gender_female)}")
         print(f"'Male' gender': {len(gender_male)}")
         print(f"'Nonbinary' gender': {len(gender_nonbinary)}")
     print(f"Unique list counts: {len(lists)}")
-    print(f"Longest list list: {highwater_list}")
-    print(f"Average list list: {average_list}")
+    print(f"Longest list count: {highwater_list}")
+    print(f"Average list count: {average_list}")
     print(f"Skipped {skip_count} non-primary")
     print(f"Total {credit_count} credits recorded")
     print(f"Top {TOP_COUNT} listed below")
@@ -282,13 +248,13 @@ for lib in LIB_ARRAY:
     ascii_histogram(lists)
     print("--------------------------------\n")
 
-    if GENERATE_KOMETA_YAML:
+    if config.get_bool("general.generate_kometa_yaml"):
         top_people = Counter()
 
         count = 0
-        if MIN_GENDER_NONE > 0:
-            for person in sorted(gender_none.items(), key=lambda x: x[1], reverse=True):
-                if count < MIN_GENDER_NONE:
+        if MIN_GENDER_NO_GENDER > 0:
+            for person in sorted(gender_no_gender.items(), key=lambda x: x[1], reverse=True):
+                if count < MIN_GENDER_NO_GENDER:
                     top_people[person[0]] = person[1]
                     count = count + 1
 
@@ -340,7 +306,7 @@ for lib in LIB_ARRAY:
         print(f"Minimum {MIN_GENDER_FEMALE} female people if possible")
         print(f"Minimum {MIN_GENDER_MALE} male people if possible")
         print(f"Minimum {MIN_GENDER_NB} non-binary people if possible")
-        print(f"Minimum {MIN_GENDER_NONE} no-gender-available people if possible")
+        print(f"Minimum {MIN_GENDER_NO_GENDER} no-gender-available people if possible")
 
         print("--- YAML FOR Kometa config.yml ----")
 

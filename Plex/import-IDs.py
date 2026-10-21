@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 import ast
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
-from dotenv import load_dotenv
+from config import Config
 from sqlalchemy.dialects.sqlite import insert
 
 # current dateTime
@@ -19,9 +18,6 @@ RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 SCRIPT_NAME = Path(__file__).stem
 
 VERSION = "0.1.0"
-
-
-env_file_path = Path(".env")
 
 logging.basicConfig(
     filename=f"{SCRIPT_NAME}.log",
@@ -175,12 +171,8 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-if os.path.exists(".env"):
-    load_dotenv()
-else:
-    logging.info("No environment [.env] file.  Exiting.")
-    print("No environment [.env] file.  Exiting.")
-    exit()
+
+config = Config('../config.yaml')
 
 change_records = None
 
