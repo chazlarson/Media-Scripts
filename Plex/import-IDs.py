@@ -6,32 +6,11 @@ from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
-from config import Config
 from sqlalchemy.dialects.sqlite import insert
 
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.1.0"
-
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
-
-CHANGE_FILE_NAME = "changes.txt"
-change_file = Path(CHANGE_FILE_NAME)
-
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
 
 def get_connection():
     engine = db.create_engine("sqlite:///ids.sqlite")
@@ -151,70 +130,105 @@ def get_diffs(payload):
             diffs["changes"]["imdb"] = payload["imdb"]
         if ResultSet[0]["tmdb"] != payload["tmdb"]:
             diffs["changes"]["tmdb"] = payload["tmdb"]
-        if ResultSet[0]["tmdb"] != payload["tmdb"]:
-            diffs["changes"]["tmdb"] = payload["tmdb"]
+        if ResultSet[0]["tvdb"] != payload["tvdb"]:
+            diffs["changes"]["tvdb"] = payload["tvdb"]
+        if ResultSet[0]["title"] != payload["title"]:
+            diffs["changes"]["title"] = payload["title"]
+        if ResultSet[0]["year"] != payload["year"]:
+            diffs["changes"]["year"] = payload["year"]
         diffs["updated"] = len(diffs["changes"]) > 0
     else:
         diffs["new"] = True
         diffs["changes"]["imdb"] = payload["imdb"]
         diffs["changes"]["tmdb"] = payload["tmdb"]
-        diffs["changes"]["tmdb"] = payload["tmdb"]
+        diffs["changes"]["tvdb"] = payload["tvdb"]
+        diffs["changes"]["title"] = payload["title"]
         diffs["changes"]["year"] = payload["year"]
 
     return diffs
 
 
-logging.basicConfig(
-    filename="grab-all-IDs.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+def main():
+    global RUNTIME_STR, VERSION, config, change_records
+
+    now = datetime.now()
+
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    SCRIPT_NAME = Path(__file__).stem
+
+    VERSION = "0.1.0"
+
+    logging.basicConfig(
+        filename=f"{SCRIPT_NAME}.log",
+        filemode="w",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+
+    logging.info(f"Starting {SCRIPT_NAME}")
+    print(f"Starting {SCRIPT_NAME}")
+
+    CHANGE_FILE_NAME = "changes.txt"
+    change_file = Path(CHANGE_FILE_NAME)
 
 
-config = Config('../config.yaml')
+    logging.basicConfig(
+        filename="grab-all-IDs.log",
+        filemode="w",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
 
-change_records = None
 
-COMPLETE_ARRAY = []
+    config = Config('../config.yaml')
 
-completed_things = get_completed()
+    change_records = None
 
-for thing in completed_things:
-    COMPLETE_ARRAY.append(thing["guid"])
+    COMPLETE_ARRAY = []
 
-with open(change_file, "r", encoding="utf-8") as cf:
-    data = cf.read()
-    items = data.split("\n")
+    completed_things = get_completed()
 
-item_total = len(items)
+    for thing in completed_things:
+        COMPLETE_ARRAY.append(thing["guid"])
 
-with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
-    for item in items:
-        parts = item.strip().split(" - ")
+    with open(change_file, "r", encoding="utf-8") as cf:
+        data = cf.read()
+        items = data.split("\n")
 
-        if len(parts) == 2:
-            action = parts[0]
-            values = ast.literal_eval(parts[1])
-            logging.info("================================")
-            logging.info(f"Importing {action} {values['guid']}")
-            bar.text = f"Importing {action} {values['guid']}"
-            payload = {}
+    item_total = len(items)
 
-            for key in values.keys():
-                payload[key] = values[key]
+    with alive_bar(item_total, dual_line=True, title="Import changes") as bar:
+        for item in items:
+            parts = item.strip().split(" - ")
 
-            is_complete = (
-                payload["imdb"] is not None
-                and payload["tmdb"] is not None
-                and payload["tvdb"] is not None
-                and payload["year"] is not None
-            )
+            if len(parts) == 2:
+                action = parts[0]
+                values = ast.literal_eval(parts[1])
+                logging.info("================================")
+                logging.info(f"Importing {action} {values['guid']}")
+                bar.text = f"Importing {action} {values['guid']}"
+                payload = {}
 
-            payload["complete"] = is_complete
+                for key in values.keys():
+                    payload[key] = values[key]
 
-            logging.info(f"{payload}")
+                is_complete = (
+                    payload["imdb"] is not None
+                    and payload["tmdb"] is not None
+                    and payload["tvdb"] is not None
+                    and payload["year"] is not None
+                )
 
-            insert_record(payload)
+                payload["complete"] = is_complete
 
-        bar()
+                logging.info(f"{payload}")
+
+                insert_record(payload)
+
+            bar()
+
+
+if __name__ == "__main__":
+    main()

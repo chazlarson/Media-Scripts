@@ -8,42 +8,11 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_plex, get_xml_libraries, get_xml_watched)
-from logs import plogger, setup_logger
 
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.2.0"
-
-# DONE 0.1.1: guard against empty library map
-# DONE 0.2.0: config class
-
-ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger("activity_log", ACTIVITY_LOG)
-
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
-
-config = Config('../config.yaml')
-
-PLEX_URL = config.get('plex_api.auth_server.base_url')
-PLEX_TOKEN = config.get('plex_api.auth_server.token')
-
-try:
-    lib_map = json.loads(config.get("status.library_map", "{}"))
-except:
-    plogger(
-        "LIBRARY_MAP in the config.yaml appears to be broken.  Defaulting to an empty list.",
-        "info",
-        "a",
-    )
-    lib_map = json.loads("{}")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import plogger, setup_logger  # noqa: E402
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_plex, get_xml_libraries, get_xml_watched)  # noqa: E402
 
 
 def progress(count, total, status=""):
@@ -98,79 +67,123 @@ def process_section(username, section):
                 bar()
     return file_string
 
+def main():
+    global now, RUNTIME_STR, SCRIPT_NAME, VERSION, ACTIVITY_LOG, config, PLEX_URL
+    global PLEX_TOKEN, lib_map, padwidth, count, connected_plex_user
+    global connected_plex_library, plex, PMI, account, all_users, item, file_string
+    global DO_NOTHING, plex_sections, plex_section, status_text, file_line, user_ct
+    global user_idx, plex_user, user_acct, myfile
 
-padwidth = 95
-count = 0
-connected_plex_user = config.get("status.plex_owner")
-connected_plex_library = ""
+    # current dateTime
+    now = datetime.now()
 
-plex = get_plex()
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-PMI = plex.machineIdentifier
+    SCRIPT_NAME = Path(__file__).stem
 
-account = plex.myPlexAccount()
-all_users = account.users()
-item = None
-file_string = ""
-DO_NOTHING = False
+    VERSION = "0.2.0"
 
+    # DONE 0.1.1: guard against empty library map
+    # DONE 0.2.0: config class
 
-print(f"------------ {account.username} ------------")
-try:
-    # plex_sections = plex.library.sections()
-    print("------------ getting libraries -------------")
-    plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+    ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+    setup_logger("activity_log", ACTIVITY_LOG)
 
-    if plex_sections is not None:
-        for plex_section in plex_sections["MediaContainer"]["Directory"]:
-            if not DO_NOTHING:
-                if plex_section["type"] != "artist":
-                    print(
-                        f"- processing {plex_section['type']} library: {plex_section['title']}"
-                    )
-                    status_text = process_section(account.username, plex_section)
-                    file_string = f"{file_string}{status_text}{os.linesep}"
-                else:
-                    file_line = f"Skipping {plex_section['title']}"
-                    print(file_line)
-                    file_string = file_string + f"{file_line}{os.linesep}"
-    else:
-        print(f"Could not retrieve libraries for {account.username}")
+    plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
 
-except Exception as ex:
-    file_line = f"Exception processing {account.username} - {ex}"
-    print(file_line)
-    file_string = file_string + f"{file_line}{os.linesep}"
+    config = Config('../config.yaml')
 
-user_ct = len(all_users)
-user_idx = 0
-for plex_user in all_users:
-    user_acct = account.user(plex_user.title)
-    user_idx += 1
-    print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
+    PLEX_URL = config.get('plex_api.auth_server.base_url')
+    PLEX_TOKEN = config.get('plex_api.auth_server.token')
+
     try:
-        PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
+        lib_map = json.loads(config.get("status.library_map", "{}"))
+    except Exception:
+        plogger(
+            "LIBRARY_MAP in the config.yaml appears to be broken.  Defaulting to an empty list.",
+            "info",
+            "a",
+        )
+        lib_map = json.loads("{}")
+
+
+    padwidth = 95
+    count = 0
+    connected_plex_user = config.get("status.plex_owner")
+    connected_plex_library = ""
+
+    plex = get_plex()
+
+    PMI = plex.machineIdentifier
+
+    account = plex.myPlexAccount()
+    all_users = account.users()
+    item = None
+    file_string = ""
+    DO_NOTHING = False
+
+
+    print(f"------------ {account.username} ------------")
+    try:
+        # plex_sections = plex.library.sections()
         print("------------ getting libraries -------------")
         plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+
         if plex_sections is not None:
             for plex_section in plex_sections["MediaContainer"]["Directory"]:
                 if not DO_NOTHING:
                     if plex_section["type"] != "artist":
-                        status_text = process_section(plex_user.title, plex_section)
+                        print(
+                            f"- processing {plex_section['type']} library: {plex_section['title']}"
+                        )
+                        status_text = process_section(account.username, plex_section)
                         file_string = f"{file_string}{status_text}{os.linesep}"
                     else:
                         file_line = f"Skipping {plex_section['title']}"
-                        file_string = file_string + f"{file_line}{os.linesep}"
                         print(file_line)
+                        file_string = file_string + f"{file_line}{os.linesep}"
         else:
-            print(f"Could not retrieve libraries for {plex_user.title}")
+            print(f"Could not retrieve libraries for {account.username}")
 
     except Exception as ex:
-        file_line = f"Exception processing {plex_user.title} - {ex}"
-        file_string = file_string + f"{file_line}{os.linesep}"
+        file_line = f"Exception processing {account.username} - {ex}"
         print(file_line)
+        file_string = file_string + f"{file_line}{os.linesep}"
 
-print(f"{os.linesep}")
-if len(file_string) > 0:
-    with open("status.txt", "w", encoding="utf-8") as myfile:
-        myfile.write(f"{file_string}{os.linesep}")
+    user_ct = len(all_users)
+    user_idx = 0
+    for plex_user in all_users:
+        user_acct = account.user(plex_user.title)
+        user_idx += 1
+        print(f"------------ {plex_user.title} {user_idx}/{user_ct} ------------")
+        try:
+            PLEX_TOKEN = user_acct.get_token(plex.machineIdentifier)
+            print("------------ getting libraries -------------")
+            plex_sections = get_xml_libraries(PLEX_URL, PLEX_TOKEN)
+            if plex_sections is not None:
+                for plex_section in plex_sections["MediaContainer"]["Directory"]:
+                    if not DO_NOTHING:
+                        if plex_section["type"] != "artist":
+                            status_text = process_section(plex_user.title, plex_section)
+                            file_string = f"{file_string}{status_text}{os.linesep}"
+                        else:
+                            file_line = f"Skipping {plex_section['title']}"
+                            file_string = file_string + f"{file_line}{os.linesep}"
+                            print(file_line)
+            else:
+                print(f"Could not retrieve libraries for {plex_user.title}")
+
+        except Exception as ex:
+            file_line = f"Exception processing {plex_user.title} - {ex}"
+            file_string = file_string + f"{file_line}{os.linesep}"
+            print(file_line)
+
+    print(f"{os.linesep}")
+    if len(file_string) > 0:
+        with open("status.txt", "w", encoding="utf-8") as myfile:
+            myfile.write(f"{file_string}{os.linesep}")
+
+
+if __name__ == "__main__":
+    main()

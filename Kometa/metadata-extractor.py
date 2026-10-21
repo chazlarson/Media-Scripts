@@ -10,79 +10,13 @@ from timeit import default_timer as timer
 
 import yaml
 from alive_progress import alive_bar
-from config import Config
-from helpers import get_ids, get_plex, get_target_libraries
-from logs import blogger, plogger
 from plexapi.utils import download
 from tmdbapis import TMDbAPIs
 
-# import tvdb_v4_official
-
-start = timer()
-
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-# // TODO: improved error handling
-# // TODO: TV Theme tunes
-# // TODO: Process Music libraries
-# // TODO: Process Photo libraries
-# // TODO: Deal correctly with multi-line summaries
-
-# DONE 0.2.0: complete implementation
-# DONE 0.2.1: Use alivebar, support multiple libraries
-# DONE 0.2.2: Actually fill in the show match attribute
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.2.2"
-
-ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-
-# setup_logger("activity_log", ACTIVITY_LOG)
-
-# logging.basicConfig(
-#     filename=f"{SCRIPT_NAME}.log",
-#     filemode="w",
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-#     level=logging.INFO,
-# )
-
-# logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
-
-config = Config('../config.yaml')
-
-plex = get_plex()
-
-LIB_ARRAY = get_target_libraries(plex)
-
-CURRENT_LIBRARY = ""
-
-REMOVE_LABELS = config.get_bool('reset_posters.remove_labels', False)
-if REMOVE_LABELS:
-    lbl_array = REMOVE_LABELS.split(",")
-
-PLEXAPI_AUTH_SERVER_TOKEN = config.get("plex_api.auth_server.token")
-
-INCLUDE_FILES = config.get_bool("metadata.include_files", False)
-ONLY_ONE_GENRE = config.get_bool("metadata.only_first_genre", False)
-
-tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
-
-local_dir = f"{os.getcwd()}/posters"
-
-os.makedirs(local_dir, exist_ok=True)
-
-show_dir = f"{local_dir}/shows"
-movie_dir = f"{local_dir}/movies"
-
-
-os.makedirs(show_dir, exist_ok=True)
-os.makedirs(movie_dir, exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, plogger  # noqa: E402
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import get_ids, get_plex, get_target_libraries  # noqa: E402
 
 
 def progress(count, total, status=""):
@@ -95,12 +29,6 @@ def progress(count, total, status=""):
 
     sys.stdout.write("[%s] %s%s ... %s\r" % (bar, percents, "%", stat_str.ljust(30)))
     sys.stdout.flush()
-
-
-print("tmdb config...")
-
-base_url = tmdb.configuration().secure_base_image_url
-size_str = "original"
 
 
 def get_movie_match(item):
@@ -212,7 +140,7 @@ def getPoster(item):
 
     try:
         imgPath = doDownload(item.posterUrl, "poster.jpg", img_path)
-    except:
+    except Exception:
         print(f"something happened while downloading {img_path + '/poster.jpg'}")
         file = Path(f"{img_path}/poster.jpg")
         print(f"{file} exists: {file.exists()}")
@@ -241,7 +169,7 @@ def getBackground(item):
 
     try:
         imgPath = doDownload(item.artUrl, "background.jpg", img_path)
-    except:
+    except Exception:
         print(f"something happened while downloading {img_path + '/background.jpg'}")
         file = Path(f"{img_path}/background.jpg")
         print(f"{file} exists: {file.exists()}")
@@ -268,7 +196,7 @@ def getSquare(item):
 
     try:
         imgPath = doDownload(item.squareArtUrl, "square.jpg", img_path)
-    except:
+    except Exception:
         print(f"something happened while downloading {img_path + '/square.jpg'}")
         file = Path(f"{img_path}/square.jpg")
         print(f"{file} exists: {file.exists()}")
@@ -528,80 +456,168 @@ def get_episode_info(episode):
 
     return tmpDict
 
+def main():
+    global start, now, RUNTIME_STR, SCRIPT_NAME, VERSION, ACTIVITY_LOG, config, plex
+    global LIB_ARRAY, CURRENT_LIBRARY, REMOVE_LABELS, lbl_array
+    global PLEXAPI_AUTH_SERVER_TOKEN, INCLUDE_FILES, ONLY_ONE_GENRE, tmdb, local_dir
+    global show_dir, movie_dir, base_url, size_str, item_count, lib, items, item_total
+    global metadataDict, bar, item, itemKey, itemDict, all_seasons_dict, show_seasons
+    global season, seasonNumber, this_season_dict, season_episodes, all_episodes_dict
+    global episode, episodeNumber, this_episode_dict, yaml_file, progress_str, end
+    global elapsed
 
-item_count = 1
+    # import tvdb_v4_official
 
-for lib in LIB_ARRAY:
-    CURRENT_LIBRARY = lib
-    try:
-        print(f"getting items from [{lib}]...")
-        items = plex.library.section(lib).all()
-        item_total = len(items)
-        print(f"looping over {item_total} items...")
-        metadataDict = {"metadata": {}}
-        with alive_bar(
-            item_total, dual_line=True, title=f"Extracting metadata from {lib}"
-        ) as bar:
-            for item in items:
-                item_count = item_count + 1
-                try:
-                    itemKey = f"{item.title} ({item.year})"
-                    blogger(f"Starting {itemKey}", "info", "a", bar)
-                    itemDict = get_common_video_info(item)
+    start = timer()
 
-                    itemDict = None
-                    if item.TYPE == "show":
+    # current dateTime
+    now = datetime.now()
+
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    # // TODO: improved error handling
+    # // TODO: TV Theme tunes
+    # // TODO: Process Music libraries
+    # // TODO: Process Photo libraries
+    # // TODO: Deal correctly with multi-line summaries
+
+    # DONE 0.2.0: complete implementation
+    # DONE 0.2.1: Use alivebar, support multiple libraries
+    # DONE 0.2.2: Actually fill in the show match attribute
+
+    SCRIPT_NAME = Path(__file__).stem
+
+    VERSION = "0.2.2"
+
+    ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+
+    # setup_logger("activity_log", ACTIVITY_LOG)
+
+    # logging.basicConfig(
+    #     filename=f"{SCRIPT_NAME}.log",
+    #     filemode="w",
+    #     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    #     level=logging.INFO,
+    # )
+
+    # logging.info(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+    print(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}")
+
+    config = Config('../config.yaml')
+
+    plex = get_plex()
+
+    LIB_ARRAY = get_target_libraries(plex)
+
+    CURRENT_LIBRARY = ""
+
+    REMOVE_LABELS = config.get_bool('reset_posters.remove_labels', False)
+    if REMOVE_LABELS:
+        lbl_array = REMOVE_LABELS.split(",")
+
+    PLEXAPI_AUTH_SERVER_TOKEN = config.get("plex_api.auth_server.token")
+
+    INCLUDE_FILES = config.get_bool("metadata.include_files", False)
+    ONLY_ONE_GENRE = config.get_bool("metadata.only_first_genre", False)
+
+    tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
+
+    local_dir = f"{os.getcwd()}/posters"
+
+    os.makedirs(local_dir, exist_ok=True)
+
+    show_dir = f"{local_dir}/shows"
+    movie_dir = f"{local_dir}/movies"
+
+
+    os.makedirs(show_dir, exist_ok=True)
+    os.makedirs(movie_dir, exist_ok=True)
+
+
+    print("tmdb config...")
+
+    base_url = tmdb.configuration().secure_base_image_url
+    size_str = "original"
+
+
+    item_count = 1
+
+    for lib in LIB_ARRAY:
+        CURRENT_LIBRARY = lib
+        try:
+            print(f"getting items from [{lib}]...")
+            items = plex.library.section(lib).all()
+            item_total = len(items)
+            print(f"looping over {item_total} items...")
+            metadataDict = {"metadata": {}}
+            with alive_bar(
+                item_total, dual_line=True, title=f"Extracting metadata from {lib}"
+            ) as bar:
+                for item in items:
+                    item_count = item_count + 1
+                    try:
+                        itemKey = f"{item.title} ({item.year})"
+                        blogger(f"Starting {itemKey}", "info", "a", bar)
                         itemDict = get_common_video_info(item)
-                        # loop through seasons and then episodes
-                        all_seasons_dict = {}
-                        show_seasons = item.seasons()
 
-                        for season in show_seasons:
-                            seasonNumber = season.seasonNumber
+                        itemDict = None
+                        if item.TYPE == "show":
+                            itemDict = get_common_video_info(item)
+                            # loop through seasons and then episodes
+                            all_seasons_dict = {}
+                            show_seasons = item.seasons()
 
-                            this_season_dict = get_season_info(season)
+                            for season in show_seasons:
+                                seasonNumber = season.seasonNumber
 
-                            season_episodes = season.episodes()
+                                this_season_dict = get_season_info(season)
 
-                            all_episodes_dict = {}
+                                season_episodes = season.episodes()
 
-                            for episode in season_episodes:
-                                episodeNumber = episode.episodeNumber
+                                all_episodes_dict = {}
 
-                                this_episode_dict = get_episode_info(episode)
+                                for episode in season_episodes:
+                                    episodeNumber = episode.episodeNumber
 
-                                all_episodes_dict[episodeNumber] = this_episode_dict
+                                    this_episode_dict = get_episode_info(episode)
 
-                            this_season_dict["episodes"] = all_episodes_dict
+                                    all_episodes_dict[episodeNumber] = this_episode_dict
 
-                            all_seasons_dict[seasonNumber] = this_season_dict
+                                this_season_dict["episodes"] = all_episodes_dict
 
-                        itemDict["seasons"] = all_seasons_dict
-                    else:
-                        itemDict = get_common_video_info(item)
+                                all_seasons_dict[seasonNumber] = this_season_dict
 
-                    # get image data
+                            itemDict["seasons"] = all_seasons_dict
+                        else:
+                            itemDict = get_common_video_info(item)
 
-                    if itemDict is not None:
-                        metadataDict["metadata"][itemKey] = itemDict
+                        # get image data
 
-                except Exception as ex:
-                    print(ex)
+                        if itemDict is not None:
+                            metadataDict["metadata"][itemKey] = itemDict
 
-                bar()
+                    except Exception as ex:
+                        print(ex)
 
-        with open(f"metadata-{lib}.yml", "w") as yaml_file:
-            yaml.dump(
-                metadataDict,
-                yaml_file,
-                default_flow_style=False,
-                width=float("inf"),
-            )
+                    bar()
 
-    except Exception as ex:
-        progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, "info", "a")
+            with open(f"metadata-{lib}.yml", "w") as yaml_file:
+                yaml.dump(
+                    metadataDict,
+                    yaml_file,
+                    default_flow_style=False,
+                    width=float("inf"),
+                )
 
-end = timer()
-elapsed = "{:.2f}".format(end - start)
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+        except Exception as ex:
+            progress_str = f"Problem processing {lib}; {ex}"
+            plogger(progress_str, "info", "a")
+
+    end = timer()
+    elapsed = "{:.2f}".format(end - start)
+    print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+
+
+if __name__ == "__main__":
+    main()

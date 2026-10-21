@@ -1,30 +1,88 @@
+import getpass
+import hashlib
 import itertools
+import json
 import os
+import shutil
 from pathlib import Path
 
 import plexapi
 import requests
-from config import Config
+from mediascripts.config import Config
 from pathvalidate import is_valid_filename, sanitize_filename
 from PIL import Image
 from plexapi.exceptions import Unauthorized
+from plexapi.myplex import MyPlexAccount
 from plexapi.server import PlexServer
 
+# Your fixed client identifier
+CLIENT_IDENTIFIER = 'MediaScripts-chazlarson'
+# File to store token + server URL
+AUTH_FILE = '.plex_auth.json'
+# Default network timeout (seconds)
+DEFAULT_TIMEOUT = 360
+
+stock_md5 = {
+    "plexapi.config.ini": '6209bb0c2ab877e6b74f757a004c84c9',
+}
+
+def file_has_changed(filepath):
+    """
+    Calculates the MD5 checksum of a file.
+
+    Args:
+        filepath: The path to the file.
+
+    Returns:
+        The MD5 checksum as a hexadecimal string.
+    """
+    if filepath.name not in stock_md5:
+        print(f"File {filepath.name} not in stock_md5, returning True")
+        return True
+    old_hash = stock_md5.get(filepath.name)
+    md5_hash = hashlib.md5()
+    with open(filepath, "rb") as file:
+        # Read the file in chunks to handle large files efficiently
+        for chunk in iter(lambda: file.read(4096), b""):
+            md5_hash.update(chunk)
+    new_hash = md5_hash.hexdigest()
+    return new_hash != old_hash
+
+
+def copy_file(source_path, destination_path):
+    """Copies a file from source to destination using pathlib.
+
+    Args:
+        source_path (str or Path): Path to the source file.
+        destination_path (str or Path): Path to the destination file.
+    """
+    source_path = Path(source_path)
+    destination_path = Path(destination_path)
+
+    if source_path.is_file():
+        shutil.copy(source_path, destination_path)
+        print(f"File copied from {source_path} to {destination_path}")
+    else:
+        print(f"Source path {source_path} is not a file.")
 
 def has_overlay(image_path):
+    kometa_overlay = False
+    tcm_overlay = False
+
     with Image.open(image_path) as image:
         exif_tags = image.getexif()
-    return 0x04BC in exif_tags and exif_tags[0x04BC] == "overlay"
+        kometa_overlay = (
+            exif_tags is not None
+            and 0x04BC in exif_tags
+            and exif_tags[0x04BC] == "overlay"
+        )
+        tcm_overlay = (
+            exif_tags is not None
+            and 0x4242 in exif_tags
+            and exif_tags[0x4242] == "titlecard"
+        )
 
-
-def booler(thing):
-    if type(thing) is str:
-        thing = eval(thing)
-    return bool(thing)
-
-
-def redact(thing, badthing):
-    return thing.replace(badthing, "(REDACTED)")
+    return kometa_overlay, tcm_overlay
 
 
 def redact(the_url, str_list):
@@ -34,35 +92,186 @@ def redact(the_url, str_list):
     return ret_val
 
 
-def get_plex(user_token=None):
-    config = Config("../config.yaml")
-    base_url = config.get("plex_api.auth_server.base_url")
-    token = config.get("plex_api.auth_server.token")
-    os.environ["PLEXAPI_AUTH_SERVER_BASEURL"] = f"{base_url}"
-    os.environ["PLEXAPI_AUTH_SERVER_TOKEN"] = f"{token}"
-    print(f"connecting to {base_url}...")
-    plex = None
+def load_auth():
+    """Return saved auth dict or None."""
     try:
-        if user_token is not None:
+        with open(AUTH_FILE, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def save_auth(data):
+    """Save auth dict and lock down file permissions."""
+    if "baseurl" in data and "url" not in data:
+        # Keep a legacy-compatible alias because older reconnect code and
+        # existing auth files may use either field name.
+        data["url"] = data["baseurl"]
+    with open(AUTH_FILE, 'w') as f:
+        json.dump(data, f)
+    try:
+        os.chmod(AUTH_FILE, 0o600)
+    except Exception:
+        pass
+
+def choose_server(servers):
+    """Prompt the user to choose one of the available Plex Media Server resources."""
+    print("\nAvailable Plex Media Servers:")
+    for idx, res in enumerate(servers, start=1):
+        print(f"  [{idx}] {res.name} ({res.clientIdentifier})")
+    while True:
+        choice = input(f"Select server [1–{len(servers)}]: ").strip()
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(servers):
+                return servers[idx-1]
+        print("❌ Invalid selection; please enter a number from the list.")
+
+def get_timeout():
+    """Prompt user for network timeout value, with a safe default."""
+    val = input(f"Network timeout in seconds [default {DEFAULT_TIMEOUT}]: ").strip()
+    if not val:
+        return DEFAULT_TIMEOUT
+    try:
+        t = float(val)
+        if t <= 0:
+            raise ValueError()
+        return t
+    except ValueError:
+        print(f"⚠️  Invalid timeout '{val}', using default {DEFAULT_TIMEOUT}.")
+        return DEFAULT_TIMEOUT
+
+def get_skip_ssl():
+    """Prompt user whether to skip SSL certificate verification."""
+    val = input("Skip SSL certificate verification? [y/N]: ").strip().lower()
+    return val in ('y', 'yes')
+
+def make_session(skip_ssl):
+    """Return a requests.Session configured for SSL verification or not."""
+    if skip_ssl:
+        sess = requests.Session()
+        sess.verify = False
+        return sess
+    return None
+
+def do_login(timeout, session):
+    """Prompt for user/pass, let user pick server, connect & return PlexServer."""
+    username = input('Plex Username: ')
+    password = getpass.getpass('Plex Password: ')
+    account = MyPlexAccount(username, password)
+    print(f"✔ Logged in as {account.username}")
+
+    servers = [r for r in account.resources() if r.product == 'Plex Media Server']
+    if not servers:
+        raise RuntimeError("No Plex Media Server found on your account.")
+
+    resource = choose_server(servers)
+    print(f"→ Connecting to server: {resource.name} (timeout={timeout}s)")
+
+    # resource.connect accepts a `session` and `timeout` argument
+    plex = resource.connect(timeout=timeout, session=session)
+    print(f"✔ Connected to Plex server: {plex.friendlyName}")
+
+    token = getattr(account, 'authenticationToken', None) or getattr(account, '_token')
+    baseurl = getattr(plex, 'baseurl', None) or getattr(plex, '_baseurl')
+    save_auth({'token': token, 'baseurl': baseurl})
+    print(f"⚑ Saved auth to {AUTH_FILE}")
+    return plex
+
+
+def get_plex(user_token=None):
+    """Connect to the configured Plex server.
+
+    user_token connects as that managed user. The owner path is unchanged:
+    plexapi config, then a saved login, then an interactive login.
+    """
+    plex = None
+    config = Config('../config.yaml')
+    os.environ['PLEXAPI_HEADER_IDENTIFIER'] = f"{config.get('plex_api.header_identifier')}"
+    os.environ['PLEXAPI_PLEXAPI_TIMEOUT'] = f"{config.get('plex_api.timeout')}"
+    os.environ['PLEXAPI_AUTH_SERVER_BASEURL'] = f"{config.get('plex_api.auth_server.base_url')}"
+    os.environ['PLEXAPI_AUTH_SERVER_TOKEN'] = f"{config.get('plex_api.auth_server.token')}"
+    os.environ['PLEXAPI_LOG_BACKUP_COUNT'] = f"{config.get('plex_api.log.backup_count')}"
+    os.environ['PLEXAPI_LOG_FORMAT'] = f"{config.get('plex_api.log.format')}"
+    os.environ['PLEXAPI_LOG_LEVEL'] = f"{config.get('plex_api.log.level')}"
+    os.environ['PLEXAPI_LOG_PATH'] = f"{config.get('plex_api.log.path')}"
+    os.environ['PLEXAPI_LOG_ROTATE_BYTES'] = f"{config.get('plex_api.log.rotate_bytes')}"
+    os.environ['PLEXAPI_LOG_SHOW_SECRETS'] = f"{config.get('plex_api.log.show_secrets')}"
+    os.environ['PLEXAPI_SKIP_VERIFYSSL'] = f"{config.get('plex_api.skip_verify_ssl')}"                     # ignore self signed certificate errors
+
+    if user_token is not None:
+        print("creating plex with user token")
+        try:
             plex = PlexServer(token=user_token)
-        else:
-            plex = PlexServer()
-    except Unauthorized:
-        print("Plex Error: Plex token is invalid")
-        raise Unauthorized
+            print(f"connected to {plex.friendlyName}")
+        except Unauthorized:
+            print("Plex Error: Plex token is invalid")
+            raise
+        except Exception as ex:
+            print(f"Plex Error: {ex}")
+            raise
+        return plex
+
+    try:
+        print("creating plex with plexapi config")
+        plex = PlexServer()
+        print(f"connected to {plex.friendlyName}")
     except Exception as ex:
-        print(f"Plex Error: {ex.args}")
-        raise ex
+        print(f"plexapi config failed: {ex}")
+        auth = load_auth()
+        if auth:
+            try:
+                print("creating plex with saved auth")
+                saved_url = auth.get('baseurl') or auth.get('url')
+                if not saved_url:
+                    raise KeyError("Saved auth is missing both 'baseurl' and 'url'")
+                plex = PlexServer(saved_url, token=auth['token'])
+                print(f"connected to {plex.friendlyName}")
+            except Unauthorized:
+                print("Saved auth is invalid. Please re-authenticate.")
+                auth = None
+        else:
+            print("No saved auth found. Please authenticate.")
+            timeout = get_timeout()
+            skip_ssl = get_skip_ssl()
+            session = make_session(skip_ssl)
+            plex = do_login(timeout, session)
 
     return plex
 
+def get_target_libraries(plex):
+    if plex:
+        ALL_LIBS = plex.library.sections()
+    else:
+        print("Plex connection failed")
+        return None
+
+    print(f"{len(ALL_LIBS)} libraries found")
+
+    config = Config()
+
+    LIBRARY_NAMES = config.get("general.library_names")
+
+    if LIBRARY_NAMES and len(LIBRARY_NAMES) > 0:
+        LIB_ARRAY = [s.strip() for s in LIBRARY_NAMES.split(",")]
+    else:
+        LIB_ARRAY = None
+        print("No libraries specified in config")
+        print(f"Processing all {len(ALL_LIBS)} libraries")
+
+    if LIB_ARRAY is None:
+        LIB_ARRAY = []
+        for lib in ALL_LIBS:
+            LIB_ARRAY.append(f"{lib.title.strip()}")
+
+    return LIB_ARRAY
 
 imdb_str = "imdb://"
 tmdb_str = "tmdb://"
 tvdb_str = "tvdb://"
 
 
-def get_ids(theList, TMDB_KEY):
+def get_ids(theList):
     imdbid = None
     tmid = None
     tvid = None
@@ -75,12 +284,6 @@ def get_ids(theList, TMDB_KEY):
             tvid = guid.id.replace(tvdb_str, "")
 
     return imdbid, tmid, tvid
-
-
-# def imdb_from_tmdb(tmdb_id, TMDB_KEY):
-#     tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
-
-# https://api.themoviedb.org/3/movie/{movie_id}/external_ids?api_key=<<api_key>>
 
 
 def validate_filename(filename):
@@ -225,32 +428,25 @@ def get_type(type):
 
 
 def get_size(the_lib, tgt_class=None, filter=None):
-    lib_size = the_lib.totalViewSize()
-    item_class = the_lib.type
-
-    if tgt_class is not None:
-        item_class = tgt_class
+    lib_size = 0
+    foo = []
 
     if filter is not None:
-        foo = the_lib.search(libtype=item_class, filters=filter)
-        lib_size = len(foo)
+        foo = the_lib.search(libtype=tgt_class, filters=filter)
     else:
-        foo = the_lib.search(libtype=item_class)
-        lib_size = len(foo)
+        foo = the_lib.search(libtype=tgt_class)
+
+    lib_size = len(foo)
 
     return lib_size
 
 
-def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
-    lib_size = the_lib.totalViewSize()
-    # lib_type = get_type(the_lib.type)
-    item_class = the_lib.type
+def get_all_from_library(the_lib, tgt_class=None, filter=None):
+    if tgt_class is None:
+        tgt_class = the_lib.type
 
-    if tgt_class is not None:
-        item_class = tgt_class
-        lib_size = the_lib.totalViewSize(libtype=tgt_class)
+    lib_size = get_size(the_lib, tgt_class, filter)
 
-    # key = f"/library/sections/{the_lib.key}/all?includeGuids=1&type={utils.searchType(the_lib.type)}"
     c_start = 0
     c_size = 500
     results = []
@@ -258,7 +454,7 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
         if filter is not None:
             results.extend(
                 the_lib.search(
-                    libtype=item_class,
+                    libtype=tgt_class,
                     maxresults=c_size,
                     container_start=c_start,
                     container_size=lib_size,
@@ -268,7 +464,7 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
         else:
             results.extend(
                 the_lib.search(
-                    libtype=item_class,
+                    libtype=tgt_class,
                     maxresults=c_size,
                     container_start=c_start,
                     container_size=lib_size,
@@ -279,10 +475,10 @@ def get_all_from_library(plex, the_lib, tgt_class=None, filter=None):
         c_start += c_size
         if len(results) < c_start:
             c_start = lib_size + 1
-    return results
+    return lib_size, results
 
 
-def get_overlay_status(plex, the_lib):
+def get_overlay_status(the_lib):
     overlay_items = the_lib.search(label="Overlay")
 
     ret_val = len(overlay_items) > 0
@@ -374,7 +570,6 @@ def get_media_details(plex_url, plex_token, rating_key):
 
 
 def get_all_watched(plex, the_lib):
-    # lib_size = the_lib.totalViewSize()
     results = the_lib.search(unwatched=False)
     return results
 
@@ -422,3 +617,37 @@ def get_letter_dir(thing):
             ret_val = first_char
 
     return ret_val
+
+
+def check_for_images(file_path):
+    jpg_path = file_path.replace(".dat", ".jpg")
+    png_path = file_path.replace(".dat", ".png")
+
+    dat_file = Path(file_path)
+    jpg_file = Path(jpg_path)
+    png_file = Path(png_path)
+
+    dat_here = dat_file.is_file()
+    jpg_here = jpg_file.is_file()
+    png_here = png_file.is_file()
+
+    if dat_here:
+        os.remove(file_path)
+
+    if jpg_here and png_here:
+        os.remove(jpg_path)
+
+        os.remove(png_path)
+
+    if jpg_here or png_here:
+        return True
+
+    return False
+
+def get_redaction_list():
+    config = Config()
+    redaction_list = []
+    redaction_list.append(config.get("plex_api.auth_server.base_url"))
+    redaction_list.append(config.get("plex_api.auth_server.token"))
+
+    return redaction_list

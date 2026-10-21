@@ -5,52 +5,14 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from config import Config
 from database import (get_completed, get_count, get_diffs, insert_record,
                       update_record)
-from helpers import (get_all_from_library, get_ids, get_plex,
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_ids, get_plex,  # noqa: E402
                      get_target_libraries)
-
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.3.0"
-
-# 0.1.1 refactoring changes
-# 0.2.0 get rid of sqlalchemy, use the same database module as the others
-# 0.3.0 use config module for configuration
-
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
-
-config = Config('../config.yaml')
-
-NEW = []
-UPDATED = []
-
-CHANGE_FILE_NAME = "changes.txt"
-change_file = Path(CHANGE_FILE_NAME)
-# Delete any existing change file
-if change_file.is_file():
-    change_file.unlink()
-
-plex = get_plex()
-
-LIB_ARRAY = get_target_libraries(plex)
-
-logging.info("connection success")
 
 
 def get_IDs(type, item):
@@ -110,56 +72,107 @@ def get_IDs(type, item):
         except Exception:
             logging.info(f"No guid: {bits}")
 
+def main():
+    global now, RUNTIME_STR, SCRIPT_NAME, VERSION, config, NEW, UPDATED
+    global CHANGE_FILE_NAME, change_file, plex, LIB_ARRAY, COMPLETE_ARRAY, cf, lib
+    global completed_things, thing, the_lib, count, item_total, items, item_count
+    global plex_links, external_links, bar, item, progress_str
 
-COMPLETE_ARRAY = []
+    # current dateTime
+    now = datetime.now()
 
-with open(change_file, "a", encoding="utf-8") as cf:
-    cf.write(f"start: {get_count()} records{os.linesep}")
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-for lib in LIB_ARRAY:
-    completed_things = get_completed()
+    SCRIPT_NAME = Path(__file__).stem
 
-    for thing in completed_things:
-        COMPLETE_ARRAY.append(thing[0])
+    VERSION = "0.3.0"
 
-    try:
-        the_lib = plex.library.section(lib)
+    # 0.1.1 refactoring changes
+    # 0.2.0 get rid of sqlalchemy, use the same database module as the others
+    # 0.3.0 use config module for configuration
 
-        count = plex.library.section(lib).totalSize
-        print(f"getting {count} {the_lib.type}s from [{lib}]...")
-        logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        item_total, items = get_all_from_library(the_lib, the_lib.type)
-        logging.info(f"looping over {item_total} items...")
-        item_count = 1
+    logging.basicConfig(
+        filename=f"{SCRIPT_NAME}.log",
+        filemode="w",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
 
-        plex_links = []
-        external_links = []
+    logging.info(f"Starting {SCRIPT_NAME}")
+    print(f"Starting {SCRIPT_NAME}")
 
-        with alive_bar(item_total, dual_line=True, title="Grab all IDs") as bar:
-            for item in items:
-                logging.info("================================")
-                logging.info(f"Starting {item.title}")
+    config = Config('../config.yaml')
 
-                get_IDs(the_lib.type, item)
+    NEW = []
+    UPDATED = []
 
-                bar()
+    CHANGE_FILE_NAME = "changes.txt"
+    change_file = Path(CHANGE_FILE_NAME)
+    # Delete any existing change file
+    if change_file.is_file():
+        change_file.unlink()
 
-        progress_str = "COMPLETE"
-        logging.info(progress_str)
+    plex = get_plex()
 
-        bar.text = progress_str
+    LIB_ARRAY = get_target_libraries(plex)
 
-        print(os.linesep)
+    logging.info("connection success")
 
-    except Exception as ex:
-        progress_str = f"Problem processing {lib}; {ex}"
-        logging.info(progress_str)
 
-        print(progress_str)
+    COMPLETE_ARRAY = []
 
-logging.info("================================")
-logging.info(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
-print(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+    with open(change_file, "a", encoding="utf-8") as cf:
+        cf.write(f"start: {get_count()} records{os.linesep}")
 
-with open(change_file, "a", encoding="utf-8") as cf:
-    cf.write(f"end: {get_count()} records{os.linesep}")
+    for lib in LIB_ARRAY:
+        completed_things = get_completed()
+
+        for thing in completed_things:
+            COMPLETE_ARRAY.append(thing[0])
+
+        try:
+            the_lib = plex.library.section(lib)
+
+            count = plex.library.section(lib).totalSize
+            print(f"getting {count} {the_lib.type}s from [{lib}]...")
+            logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
+            item_total, items = get_all_from_library(the_lib, the_lib.type)
+            logging.info(f"looping over {item_total} items...")
+            item_count = 1
+
+            plex_links = []
+            external_links = []
+
+            with alive_bar(item_total, dual_line=True, title="Grab all IDs") as bar:
+                for item in items:
+                    logging.info("================================")
+                    logging.info(f"Starting {item.title}")
+
+                    get_IDs(the_lib.type, item)
+
+                    bar()
+
+            progress_str = "COMPLETE"
+            logging.info(progress_str)
+
+            bar.text = progress_str
+
+            print(os.linesep)
+
+        except Exception as ex:
+            progress_str = f"Problem processing {lib}; {ex}"
+            logging.info(progress_str)
+
+            print(progress_str)
+
+    logging.info("================================")
+    logging.info(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+    print(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+
+    with open(change_file, "a", encoding="utf-8") as cf:
+        cf.write(f"end: {get_count()} records{os.linesep}")
+
+
+if __name__ == "__main__":
+    main()

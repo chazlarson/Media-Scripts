@@ -27,61 +27,67 @@ import webbrowser
 
 import requests
 
-urls = {
-    "oauth_token": "https://myanimelist.net/v1/oauth2/token",
-    "oauth_authorize": "https://myanimelist.net/v1/oauth2/authorize",
-}
 
-print("Let's authenticate against MyAnimeList!{os.linesep}{os.linesep}")
-session = requests.Session()
+def main():
+    urls = {
+        "oauth_token": "https://myanimelist.net/v1/oauth2/token",
+        "oauth_authorize": "https://myanimelist.net/v1/oauth2/authorize",
+    }
 
-client_id = input("MyAnimeList Client ID: ").strip()
-client_secret = input("MyAnimeList Client Secret: ").strip()
+    print("Let's authenticate against MyAnimeList!{os.linesep}{os.linesep}")
+    session = requests.Session()
 
-code_verifier = secrets.token_urlsafe(100)[:128]
-url = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_challenge={code_verifier}"
+    client_id = input("MyAnimeList Client ID: ").strip()
+    client_secret = input("MyAnimeList Client Secret: ").strip()
 
-print(f"We're going to open {url}{os.linesep}{os.linesep}")
-print(f"Log in and click the Allow option.{os.linesep}")
-print(
-    f"You will be redirected to a localhost url that probably won't load.{os.linesep}"
-)
-print(f"That's fine.  Copy that localhost URL and paste it below.{os.linesep}")
-tmpVar = input("Hit enter when ready: ").strip()
+    code_verifier = secrets.token_urlsafe(100)[:128]
+    url = f"{urls['oauth_authorize']}?response_type=code&client_id={client_id}&code_challenge={code_verifier}"
 
-webbrowser.open(url, new=2)
+    print(f"We're going to open {url}{os.linesep}{os.linesep}")
+    print(f"Log in and click the Allow option.{os.linesep}")
+    print(
+        f"You will be redirected to a localhost url that probably won't load.{os.linesep}"
+    )
+    print(f"That's fine.  Copy that localhost URL and paste it below.{os.linesep}")
+    input("Hit enter when ready: ")
 
-url = input("URL: ").strip()
+    webbrowser.open(url, new=2)
 
-match = re.search("code=([^&]+)", str(url))
-if not match:
-    print(f"Couldn't find the required code in that URL.{os.linesep}")
-    exit()
+    url = input("URL: ").strip()
 
-code = match.group(1)
+    match = re.search("code=([^&]+)", str(url))
+    if not match:
+        print(f"Couldn't find the required code in that URL.{os.linesep}")
+        exit()
 
-data = {
-    "client_id": client_id,
-    "client_secret": client_secret,
-    "code": code,
-    "code_verifier": code_verifier,
-    "grant_type": "authorization_code",
-}
+    code = match.group(1)
 
-new_authorization = session.post(urls["oauth_token"], data=data).json()
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "code_verifier": code_verifier,
+        "grant_type": "authorization_code",
+    }
 
-if "error" in new_authorization:
-    print(f"ERROR: invalid code.{os.linesep}")
-    exit()
+    new_authorization = session.post(urls["oauth_token"], data=data).json()
 
-print(f"{os.linesep}{os.linesep}Copy the following into your Kometa config.yml:")
-print("############################################")
-print("mal:")
-print(f"  client_id: {client_id}")
-print(f"  client_secret: {client_secret}")
-print("  authorization:")
-print(f"    access_token: {new_authorization['access_token']}")
-print(f"    token_type: {new_authorization['token_type']}")
-print(f"    expires_in: {new_authorization['expires_in']}")
-print(f"    refresh_token: {new_authorization['refresh_token']}")
-print("############################################")
+    if "error" in new_authorization:
+        print(f"ERROR: invalid code.{os.linesep}")
+        exit()
+
+    print(f"{os.linesep}{os.linesep}Copy the following into your Kometa config.yml:")
+    print("############################################")
+    print("mal:")
+    print(f"  client_id: {client_id}")
+    print(f"  client_secret: {client_secret}")
+    print("  authorization:")
+    print(f"    access_token: {new_authorization['access_token']}")
+    print(f"    token_type: {new_authorization['token_type']}")
+    print(f"    expires_in: {new_authorization['expires_in']}")
+    print(f"    refresh_token: {new_authorization['refresh_token']}")
+    print("############################################")
+
+
+if __name__ == "__main__":
+    main()

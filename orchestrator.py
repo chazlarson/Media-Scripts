@@ -28,8 +28,6 @@ SKIP_NAMES = {
     "config.py",
     "database.py",
     "helpers.py",
-    "kometa-helpers.py",
-    "logs.py",
 }
 
 # These scripts prompt for their own credentials and do not read config.yaml.
@@ -160,9 +158,14 @@ def run_script(path, args):
     if problem:
         print(problem, file=sys.stderr)
         return 2
+    env = os.environ.copy()
+    root = str(ROOT)
+    previous = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = root if not previous else root + os.pathsep + previous
     completed = subprocess.run(
         [sys.executable, str(path), *args],
         cwd=script_cwd(path),
+        env=env,
         check=False,
     )
     return completed.returncode

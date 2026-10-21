@@ -6,8 +6,11 @@ from itertools import islice
 from pathlib import Path
 import argparse
 
-from helpers import get_plex, get_target_libraries
-from logs import plogger, setup_logger
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import plogger, setup_logger  # noqa: E402
+from mediascripts.helpers import get_plex, get_target_libraries  # noqa: E402
 
 SCRIPT_NAME = Path(__file__).stem
 VERSION = "0.1.0"

@@ -11,282 +11,24 @@ from pathlib import Path
 
 import filetype
 from alive_progress import alive_bar
-from config import Config
 from database import (add_key, add_last_run, add_url, check_key, check_url,
                       get_last_run)
-from helpers import (check_for_images, get_all_from_library, get_ids,
-                     get_letter_dir, get_plex, get_redaction_list,
-                     get_target_libraries, has_overlay, redact,
-                     validate_filename)
-from logs import blogger, logger, plogger, setup_logger
 from pathvalidate import sanitize_filename
 from plexapi.utils import download
 import plexapi
 
-# TODO: lib_stats[lib_key] = item_count in sqlite
-# TODO: Track Collection status in sqlite with guid
-# ~~I can't recall what that ^ means~~ OH Track collection completion like other things using the collection's GUID
-# TODO: resumable queue
-# TODO: only shows, seasons, episodes
-# TODO: download to random number filename, rename at completion
-# possible bruteforce to avoid:
-# on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
-# TODO: go dig around in the overlay backup folder to find the non-overlaid art
-
-# DONE 0.5.7: allowing skipping a library
-# 0.5.8: QOL, bugfixes
-# DONE 0.6.0: only grab new things based on a stored "last run" date
-# DONE 0.6.0: store completion status at show/season/episode level
-# DONE 0.7.0: store status information in sqlite tables
-# DONE 0.7.1: superchatty logging for underskore
-# NEW  0.7.1: Threading can be toggled
-# FIX? 0.7.1: POSSIBLE FIX for Underskore's thing
-#             https://discord.com/channels/822460010649878528/822460010649878531/1104506813111603322
-#             current_posters/TV Show(s)/Adam Savage's Tested-None/Doctor Who (2005) -001-current-local.jpg
-#      0.7.1 removed some code that would have attempted multiple downloads for seasons and episodes
-#      0.7.1 EXIF source comment disabled
-#      0.7.1 Check URL before queueing the potential download
-#      0.7.1 Delete leftover completion and URL files
-#      0.7.1 Move "IF TRACK COMPLETION" into get/set methods
-#      0.7.1 Only report queue size if there is a queue
-# FIX  0.7.2 If fallback date is < 1/1/1970 and we're on Windows, set it to None
-#            Patch for windows crash on old dates
-# NEW  0.7.3 EVEN MORE SUPERCHAT to track down a Windows issue
-# FIX  0.7.4 Orderly failure if a Plex item has no "locations"
-#            observed by wogsurfer 🇲🇹 on Kometa Discord [running Windows, movies library doesn't show the problem]
-#      0.7.5 report libraries found on the server on connect and in "can't find the library" message
-#      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
-#      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
-# FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
-# FIX  0.7.8 missed a couple logging.info calls
-#      0.7.9 Check for and optionally delete Kometa-overlaid images
-#      0.8.0 Use asset naming if only current OR depth = 1
-#      0.8.1 or not OR
-#      0.8.2 look for and handle TCM-overlaid images
-#      0.8.2a add a 'global SCRIPT_STRING' to try to get rid of a "local variable 'SCRIPT_STRING' referenced before assignment A Knife and No Coin"
-#      0.8.3 refactor and remove totalViewSize()
-#      0.8.4 simplify logic around fallback_date
-#      0.8.5 fix None fallback_date on Windows
-#      0.8.6 strip trailing slash on Plex URL
-#      0.8.7 suboptimal solution to names containing slashes
-#      0.8.8 more logging about why we're skipping collections
-#      0.8.9 fix logic error on string replace
-#      0.8.9a don't report a spurious error due to missing collection
-#      0.8.9b change one blogger to plogger since there's no bar in that context
-#      0.8.9c use sanitize_filename on illegal names and actually use that name
-#      0.8.9d add JUNK reason to filename for visibility outside superchat
-#      0.9.0  change to config class instead of env
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.9.0"
-MIN_PLEXAPI_VERSION = "4.16.1"
-
-config = Config('../config.yaml')
-
-# current dateTime
-now = datetime.now()
-
-IS_WINDOWS = platform.system() == "Windows"
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
-SUPERCHAT = False
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, logger, plogger, setup_logger  # noqa: E402
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (check_for_images, get_all_from_library, get_ids,  # noqa: E402
+                     get_letter_dir, get_plex, get_redaction_list,
+                     get_target_libraries, has_overlay, redact,
+                     validate_filename)
 
 
 def superchat(msg, level, logfile):
     if SUPERCHAT:
         logger(msg, level, logfile)
-
-
-setup_logger("activity_log", ACTIVITY_LOG)
-setup_logger("download_log", DOWNLOAD_LOG)
-
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
-
-if plexapi.__version__ < MIN_PLEXAPI_VERSION:
-    plogger(f"This script requires PlexAPI {MIN_PLEXAPI_VERSION} or later.  You have {plexapi.__version__}.", "error", "a")
-    plogger("Please update the requirements. Exiting...", "error", "a")
-    exit()
-else:
-    plogger(f"Running under PlexAPI {plexapi.__version__}.", "info", "a")
-
-# PlexAPI's rotating file logger can break under the alive-progress/Python 3.14
-# combination used by this script. We already maintain script-local logs, so
-# silence PlexAPI's internal logger here to keep downloads working.
-logging.getLogger("plexapi").disabled = True
-
-
-ID_FILES = True
-
-URL_ARRAY = []
-# no one using this yet
-# QUEUED_DOWNLOADS = {}
-
-STOP_FILE_NAME = "stop.dat"
-SKIP_FILE_NAME = "skip.dat"
-
-DEFAULT_YEARS_BACK = abs(config.get_int('image_download.general.default_years_back', 1))
-
-WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
-
-fallback_date = None
-
-if DEFAULT_YEARS_BACK > 0:
-    fallback_date = now - timedelta(weeks=WEEKS_BACK)
-
-epoch = datetime(1970, 1, 1)
-if IS_WINDOWS and fallback_date is not None and fallback_date < epoch:
-    fallback_date = None
-
-
-POSTER_DIR = config.get('image_download.general.poster_dir')
-
-SUPERCHAT = config.get('general.superchat')
-
-if POSTER_DIR is None:
-    POSTER_DIR = "extracted_posters"
-
-POSTER_DEPTH = config.get_int('image_download.general.poster_depth', 0)
-
-POSTER_DOWNLOAD = config.get_bool('image_download.general.poster_download', True)
-if not POSTER_DOWNLOAD:
-    print("================== ATTENTION ==================")
-    print("Downloading disabled; file identification not possible")
-    print("Script will default to .jpg extension on all images")
-    print("================== ATTENTION ==================")
-    ID_FILES = False
-
-POSTER_CONSOLIDATE = config.get_bool('image_download.general.poster_consolidate', False)
-INCLUDE_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.include_collection_artwork', False)
-ONLY_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.only_collection_artwork', False)
-
-DELAY = config.get_int('general.delay', 1)
-
-GRAB_POSTERS = config.get_bool('image_download.what_to_grab.artwork', True)
-# GRAB_BACKGROUNDS = config.get_bool('image_download.what_to_grab.backgrounds', True)
-GRAB_SEASONS = config.get_bool('image_download.what_to_grab.seasons', True)
-GRAB_EPISODES = config.get_bool('image_download.what_to_grab.episodes', True)
-GRAB_LOGOS = config.get_bool('image_download.what_to_grab.logos', True)
-GRAB_SQUARE_ART = config.get_bool('image_download.what_to_grab.square_art', False)
-
-ONLY_CURRENT = config.get_bool('image_download.what_to_grab.only_current', False)
-
-if ONLY_CURRENT:
-    POSTER_DIR = config.get('image_download.where_to_put_it.current_poster_dir', 'current_posters')
-
-TRACK_URLS = config.get_bool('image_download.tracking.track_urls', True)
-TRACK_COMPLETION = config.get_bool('image_download.tracking.track_completion', False)
-TRACK_IMAGE_SOURCES = config.get_bool('image_download.tracking.track_image_sources', False)
-
-ASSET_DIR = config.get('image_download.where_to_put_it.asset_dir', 'assets')
-
-ASSET_PATH = Path(ASSET_DIR)
-
-USE_ASSET_NAMING = config.get_bool('image_download.where_to_put_it.use_asset_naming', False)
-USE_ASSET_FOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_folders', False)
-ASSETS_BY_LIBRARIES = config.get_bool('image_download.where_to_put_it.assets_by_libraries', False)
-NO_FS_WARNING = config.get_bool('image_download.where_to_put_it.no_fs_warning', False)
-ADD_SOURCE_EXIF_COMMENT = config.get_bool('image_download.general.add_source_exif_comment', False)
-SRC_ARRAY = []
-IGNORE_SHRINKING_LIBRARIES = config.get_bool('image_download.general.ignore_shrinking_libraries', False)
-RETAIN_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_overlaid_images', False)
-FIND_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.find_overlaid_images', False)
-RETAIN_KOMETA_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_kometa_overlaid_images', False)
-RETAIN_TCM_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_tcm_overlaid_images', False)
-
-if RETAIN_OVERLAID_IMAGES:
-    RETAIN_KOMETA_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
-    RETAIN_TCM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
-
-
-if not USE_ASSET_NAMING:
-    USE_ASSET_FOLDERS = False
-    ASSETS_BY_LIBRARIES = False
-    USE_ASSET_SUBFOLDERS = False
-    FOLDERS_ONLY = False
-else:
-    USE_ASSET_SUBFOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_subfolders', False)
-    FOLDERS_ONLY = config.get_bool('image_download.general.folders_only', False)
-    if FOLDERS_ONLY:
-        ONLY_CURRENT = FOLDERS_ONLY
-    if ASSET_DIR is None:
-        ASSET_DIR = "assets"
-    if not NO_FS_WARNING:
-        print("================== ATTENTION ==================")
-        print("You have requested asset naming.")
-        print("This requires and assumes that your media is stored")
-        print("in a hierarchy like this:")
-        print("└── TV Shows")
-        print("  └── 9-1-1 Lone Star")
-        print("      └── Season 01")
-        print("          ├── S01E01.mkv")
-        print("          ├── S01E02.mkv")
-        print("          └── S01E03.mkv")
-        print("Asset directory naming is built around an 'ASSET NAME'")
-        print("which is '9-1-1 Lone Star' in the above hierarchy.")
-        print("Other file hierarchies are incompatible with the")
-        print("KOMETA asset naming setup at this time.")
-        print("================== ATTENTION ==================")
-        print("To skip this in future runs, add this setting to config.yml:")
-        print("")
-        print("image_download:")
-        print("  where_to_put_it:")
-        print("    no_fs_warning: 1")
-        print("")
-        print("pausing for 15 seconds...")
-        time.sleep(15)
-
-if not DELAY:
-    DELAY = 0
-
-KEEP_JUNK = config.get_bool('image_download.what_to_grab.keep_junk', False)
-
-SCRIPT_FILE = "get_images.sh"
-SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
-
-if IS_WINDOWS:
-    SCRIPT_FILE = "get_images.bat"
-    SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
-
-SCRIPT_STRING = ""
-
-if POSTER_DOWNLOAD:
-    SCRIPT_STRING = SCRIPT_SEED
-
-RESET_LIBRARIES = config.get('image_download.general.reset_libraries', False)
-
-if RESET_LIBRARIES:
-    RESET_ARRAY = [s.strip() for s in RESET_LIBRARIES.split(",")]
-else:
-    RESET_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
-
-RESET_COLLECTIONS = config.get('image_download.general.reset_collections', False)
-
-if RESET_COLLECTIONS:
-    RESET_COLL_ARRAY = [s.strip() for s in RESET_COLLECTIONS.split(",")]
-else:
-    RESET_COLL_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
-
-
-ONLY_THESE_COLLECTIONS = config.get('image_download.what_to_grab.only_these_collections', '')
-
-if ONLY_THESE_COLLECTIONS:
-    COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
-else:
-    COLLECTION_ARRAY = []
-
-THREADED_DOWNLOADS = config.get_bool('image_download.general.threaded_downloads', False)
-plogger(f"Threaded downloads: {THREADED_DOWNLOADS}", "info", "a")
-
-redaction_list = get_redaction_list()
-
-plex = get_plex()
-
-LIB_ARRAY = get_target_libraries(plex)
 
 def lib_type_supported(lib):
     return lib.type == "movie" or lib.type == "show"
@@ -403,10 +145,6 @@ def get_SE_str(item):
 
     superchat(f"returning {ret_val}", "info", "a")
     return ret_val
-
-
-TOPLEVEL_TMID = ""
-TOPLEVEL_TVID = ""
 
 
 def get_lib_setting(the_lib, the_setting):
@@ -551,10 +289,6 @@ def get_image_name(params, tgt_ext, background=False, logo=False, square=False):
 
     ret_val = ret_val.replace("--", "-")
     return ret_val
-
-
-executor = ThreadPoolExecutor()
-my_futures = []
 
 
 def process_the_thing(params):
@@ -805,12 +539,12 @@ def get_logo(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         try:
                             art_params["seasonNumber"] = item.seasonNumber
-                        except:
+                        except Exception:
                             art_params["seasonNumber"] = None
 
                         try:
                             art_params["episodeNumber"] = item.episodeNumber
-                        except:
+                        except Exception:
                             art_params["episodeNumber"] = None
 
                         art_params["se_str"] = get_SE_str(item)
@@ -968,12 +702,12 @@ def get_art(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         try:
                             art_params["seasonNumber"] = item.seasonNumber
-                        except:
+                        except Exception:
                             art_params["seasonNumber"] = None
 
                         try:
                             art_params["episodeNumber"] = item.episodeNumber
-                        except:
+                        except Exception:
                             art_params["episodeNumber"] = None
 
                         art_params["se_str"] = get_SE_str(item)
@@ -1141,12 +875,12 @@ def get_square(item, artwork_path, tmid, tvid, uuid, lib_title):
 
                         try:
                             art_params["seasonNumber"] = item.seasonNumber
-                        except:
+                        except Exception:
                             art_params["seasonNumber"] = None
 
                         try:
                             art_params["episodeNumber"] = item.episodeNumber
-                        except:
+                        except Exception:
                             art_params["episodeNumber"] = None
 
                         art_params["se_str"] = get_SE_str(item)
@@ -1408,12 +1142,12 @@ def get_posters(lib, item, uuid, title):
 
                             try:
                                 art_params["seasonNumber"] = item.seasonNumber
-                            except:
+                            except Exception:
                                 art_params["seasonNumber"] = None
 
                             try:
                                 art_params["episodeNumber"] = item.episodeNumber
-                            except:
+                            except Exception:
                                 art_params["episodeNumber"] = None
 
                             art_params["se_str"] = get_SE_str(item)
@@ -1543,284 +1277,403 @@ def add_script_line(artwork_path, poster_file_path, src_URL_with_token):
         script_line = f'{os.linesep}mkdir -p "{artwork_path}" && curl -C - -fLo "{Path(artwork_path, poster_file_path)}" {src_URL_with_token}'
     return f"{script_line}{os.linesep}"
 
+def main():
+    global SCRIPT_NAME, VERSION, MIN_PLEXAPI_VERSION, config, now, IS_WINDOWS
+    global RUNTIME_STR, ACTIVITY_LOG, DOWNLOAD_LOG, SUPERCHAT, ID_FILES, URL_ARRAY
+    global STOP_FILE_NAME, SKIP_FILE_NAME, DEFAULT_YEARS_BACK, WEEKS_BACK, fallback_date
+    global epoch, POSTER_DIR, POSTER_DEPTH, POSTER_DOWNLOAD, POSTER_CONSOLIDATE
+    global INCLUDE_COLLECTION_ARTWORK, ONLY_COLLECTION_ARTWORK, DELAY, GRAB_POSTERS
+    global GRAB_SEASONS, GRAB_EPISODES, GRAB_LOGOS, GRAB_SQUARE_ART, ONLY_CURRENT
+    global TRACK_URLS, TRACK_COMPLETION, TRACK_IMAGE_SOURCES, ASSET_DIR, ASSET_PATH
+    global USE_ASSET_NAMING, USE_ASSET_FOLDERS, ASSETS_BY_LIBRARIES, NO_FS_WARNING
+    global ADD_SOURCE_EXIF_COMMENT, SRC_ARRAY, IGNORE_SHRINKING_LIBRARIES
+    global RETAIN_OVERLAID_IMAGES, FIND_OVERLAID_IMAGES, RETAIN_KOMETA_OVERLAID_IMAGES
+    global RETAIN_TCM_OVERLAID_IMAGES, USE_ASSET_SUBFOLDERS, FOLDERS_ONLY, KEEP_JUNK
+    global SCRIPT_FILE, SCRIPT_SEED, SCRIPT_STRING, RESET_LIBRARIES, RESET_ARRAY, s
+    global RESET_COLLECTIONS, RESET_COLL_ARRAY, ONLY_THESE_COLLECTIONS, COLLECTION_ARRAY
+    global THREADED_DOWNLOADS, redaction_list, plex, LIB_ARRAY, TOPLEVEL_TMID
+    global TOPLEVEL_TVID, executor, my_futures, lib, highwater, start_queue_length
+    global the_lib, the_uuid, last_run_lib, ID_ARRAY, the_title, title, msg
+    global status_file_name, status_file, fp, idx, line, URL_FILE_NAME, url_file
+    global SOURCE_FILE_NAME, items, item_total, tgt_ext, bar, item, coll, lib_key
+    global item_count, last_run_season, season_count, seasons, last_run_episode
+    global episode_count, episodes, plex_links, external_links, stop_file, skip_file
+    global progress_str, end_queue_length, myfile, max, future, result
 
-for lib in LIB_ARRAY:
+    # TODO: lib_stats[lib_key] = item_count in sqlite
+    # TODO: Track Collection status in sqlite with guid
+    # ~~I can't recall what that ^ means~~ OH Track collection completion like other things using the collection's GUID
+    # TODO: resumable queue
+    # TODO: only shows, seasons, episodes
+    # TODO: download to random number filename, rename at completion
+    # possible bruteforce to avoid:
+    # on 13983: Can't find assets/TV Shows/RuPaul's Drag Race (2009) {tvdb-85002}/S04E03-006-gracenote-remote.dat even though it was here a moment ago
+    # TODO: go dig around in the overlay backup folder to find the non-overlaid art
 
-    try:
-        highwater = 0
-        start_queue_length = len(my_futures)
+    # DONE 0.5.7: allowing skipping a library
+    # 0.5.8: QOL, bugfixes
+    # DONE 0.6.0: only grab new things based on a stored "last run" date
+    # DONE 0.6.0: store completion status at show/season/episode level
+    # DONE 0.7.0: store status information in sqlite tables
+    # DONE 0.7.1: superchatty logging for underskore
+    # NEW  0.7.1: Threading can be toggled
+    # FIX? 0.7.1: POSSIBLE FIX for Underskore's thing
+    #             https://discord.com/channels/822460010649878528/822460010649878531/1104506813111603322
+    #             current_posters/TV Show(s)/Adam Savage's Tested-None/Doctor Who (2005) -001-current-local.jpg
+    #      0.7.1 removed some code that would have attempted multiple downloads for seasons and episodes
+    #      0.7.1 EXIF source comment disabled
+    #      0.7.1 Check URL before queueing the potential download
+    #      0.7.1 Delete leftover completion and URL files
+    #      0.7.1 Move "IF TRACK COMPLETION" into get/set methods
+    #      0.7.1 Only report queue size if there is a queue
+    # FIX  0.7.2 If fallback date is < 1/1/1970 and we're on Windows, set it to None
+    #            Patch for windows crash on old dates
+    # NEW  0.7.3 EVEN MORE SUPERCHAT to track down a Windows issue
+    # FIX  0.7.4 Orderly failure if a Plex item has no "locations"
+    #            observed by wogsurfer 🇲🇹 on Kometa Discord [running Windows, movies library doesn't show the problem]
+    #      0.7.5 report libraries found on the server on connect and in "can't find the library" message
+    #      0.7.6 DEFAULT_YEARS_BACK=0 means "no fallback date, grab everything"
+    #      0.7.6 support RESET_LIBRARIES=ALL_LIBRARIES
+    # FIX  0.7.7 allow empty or missing  RESET_LIBRARIES setting
+    # FIX  0.7.8 missed a couple logging.info calls
+    #      0.7.9 Check for and optionally delete Kometa-overlaid images
+    #      0.8.0 Use asset naming if only current OR depth = 1
+    #      0.8.1 or not OR
+    #      0.8.2 look for and handle TCM-overlaid images
+    #      0.8.2a add a 'global SCRIPT_STRING' to try to get rid of a "local variable 'SCRIPT_STRING' referenced before assignment A Knife and No Coin"
+    #      0.8.3 refactor and remove totalViewSize()
+    #      0.8.4 simplify logic around fallback_date
+    #      0.8.5 fix None fallback_date on Windows
+    #      0.8.6 strip trailing slash on Plex URL
+    #      0.8.7 suboptimal solution to names containing slashes
+    #      0.8.8 more logging about why we're skipping collections
+    #      0.8.9 fix logic error on string replace
+    #      0.8.9a don't report a spurious error due to missing collection
+    #      0.8.9b change one blogger to plogger since there's no bar in that context
+    #      0.8.9c use sanitize_filename on illegal names and actually use that name
+    #      0.8.9d add JUNK reason to filename for visibility outside superchat
+    #      0.9.0  change to config class instead of env
 
-        if len(my_futures) > 0:
-            plogger(f"queue length: {len(my_futures)}", "info", "a")
+    SCRIPT_NAME = Path(__file__).stem
 
-        plogger(f"Loading {lib} ...", "info", "a")
-        the_lib = plex.library.section(lib)
-        if lib_type_supported(the_lib):
-            the_uuid = the_lib.uuid
-            superchat(f"{the_lib.title} uuid {the_uuid}", "info", "a")
+    VERSION = "0.9.0"
+    MIN_PLEXAPI_VERSION = "4.16.1"
 
-            if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == "ALL_LIBRARIES":
-                plogger(
-                    f"Resetting rundate for {the_lib.title} to {fallback_date}...",
-                    "info",
-                    "a",
-                )
-                last_run_lib = fallback_date
-            else:
-                last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
+    config = Config('../config.yaml')
 
-                if last_run_lib is None:
+    # current dateTime
+    now = datetime.now()
+
+    IS_WINDOWS = platform.system() == "Windows"
+
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+    DOWNLOAD_LOG = f"{SCRIPT_NAME}-dl.log"
+    SUPERCHAT = False
+
+
+    setup_logger("activity_log", ACTIVITY_LOG)
+    setup_logger("download_log", DOWNLOAD_LOG)
+
+    plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
+
+    if plexapi.__version__ < MIN_PLEXAPI_VERSION:
+        plogger(f"This script requires PlexAPI {MIN_PLEXAPI_VERSION} or later.  You have {plexapi.__version__}.", "error", "a")
+        plogger("Please update the requirements. Exiting...", "error", "a")
+        exit()
+    else:
+        plogger(f"Running under PlexAPI {plexapi.__version__}.", "info", "a")
+
+    # PlexAPI's rotating file logger can break under the alive-progress/Python 3.14
+    # combination used by this script. We already maintain script-local logs, so
+    # silence PlexAPI's internal logger here to keep downloads working.
+    logging.getLogger("plexapi").disabled = True
+
+
+    ID_FILES = True
+
+    URL_ARRAY = []
+    # no one using this yet
+    # QUEUED_DOWNLOADS = {}
+
+    STOP_FILE_NAME = "stop.dat"
+    SKIP_FILE_NAME = "skip.dat"
+
+    DEFAULT_YEARS_BACK = abs(config.get_int('image_download.general.default_years_back', 1))
+
+    WEEKS_BACK = 52 * DEFAULT_YEARS_BACK
+
+    fallback_date = None
+
+    if DEFAULT_YEARS_BACK > 0:
+        fallback_date = now - timedelta(weeks=WEEKS_BACK)
+
+    epoch = datetime(1970, 1, 1)
+    if IS_WINDOWS and fallback_date is not None and fallback_date < epoch:
+        fallback_date = None
+
+
+    POSTER_DIR = config.get('image_download.general.poster_dir')
+
+    SUPERCHAT = config.get('general.superchat')
+
+    if POSTER_DIR is None:
+        POSTER_DIR = "extracted_posters"
+
+    POSTER_DEPTH = config.get_int('image_download.general.poster_depth', 0)
+
+    POSTER_DOWNLOAD = config.get_bool('image_download.general.poster_download', True)
+    if not POSTER_DOWNLOAD:
+        print("================== ATTENTION ==================")
+        print("Downloading disabled; file identification not possible")
+        print("Script will default to .jpg extension on all images")
+        print("================== ATTENTION ==================")
+        ID_FILES = False
+
+    POSTER_CONSOLIDATE = config.get_bool('image_download.general.poster_consolidate', False)
+    INCLUDE_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.include_collection_artwork', False)
+    ONLY_COLLECTION_ARTWORK = config.get_bool('image_download.what_to_grab.only_collection_artwork', False)
+
+    DELAY = config.get_int('general.delay', 1)
+
+    GRAB_POSTERS = config.get_bool('image_download.what_to_grab.artwork', True)
+    # GRAB_BACKGROUNDS = config.get_bool('image_download.what_to_grab.backgrounds', True)
+    GRAB_SEASONS = config.get_bool('image_download.what_to_grab.seasons', True)
+    GRAB_EPISODES = config.get_bool('image_download.what_to_grab.episodes', True)
+    GRAB_LOGOS = config.get_bool('image_download.what_to_grab.logos', True)
+    GRAB_SQUARE_ART = config.get_bool('image_download.what_to_grab.square_art', False)
+
+    ONLY_CURRENT = config.get_bool('image_download.what_to_grab.only_current', False)
+
+    if ONLY_CURRENT:
+        POSTER_DIR = config.get('image_download.where_to_put_it.current_poster_dir', 'current_posters')
+
+    TRACK_URLS = config.get_bool('image_download.tracking.track_urls', True)
+    TRACK_COMPLETION = config.get_bool('image_download.tracking.track_completion', False)
+    TRACK_IMAGE_SOURCES = config.get_bool('image_download.tracking.track_image_sources', False)
+
+    ASSET_DIR = config.get('image_download.where_to_put_it.asset_dir', 'assets')
+
+    ASSET_PATH = Path(ASSET_DIR)
+
+    USE_ASSET_NAMING = config.get_bool('image_download.where_to_put_it.use_asset_naming', False)
+    USE_ASSET_FOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_folders', False)
+    ASSETS_BY_LIBRARIES = config.get_bool('image_download.where_to_put_it.assets_by_libraries', False)
+    NO_FS_WARNING = config.get_bool('image_download.where_to_put_it.no_fs_warning', False)
+    ADD_SOURCE_EXIF_COMMENT = config.get_bool('image_download.general.add_source_exif_comment', False)
+    SRC_ARRAY = []
+    IGNORE_SHRINKING_LIBRARIES = config.get_bool('image_download.general.ignore_shrinking_libraries', False)
+    RETAIN_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_overlaid_images', False)
+    FIND_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.find_overlaid_images', False)
+    RETAIN_KOMETA_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_kometa_overlaid_images', False)
+    RETAIN_TCM_OVERLAID_IMAGES = config.get_bool('image_download.what_to_grab.retain_tcm_overlaid_images', False)
+
+    if RETAIN_OVERLAID_IMAGES:
+        RETAIN_KOMETA_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
+        RETAIN_TCM_OVERLAID_IMAGES = RETAIN_OVERLAID_IMAGES
+
+
+    if not USE_ASSET_NAMING:
+        USE_ASSET_FOLDERS = False
+        ASSETS_BY_LIBRARIES = False
+        USE_ASSET_SUBFOLDERS = False
+        FOLDERS_ONLY = False
+    else:
+        USE_ASSET_SUBFOLDERS = config.get_bool('image_download.where_to_put_it.use_asset_subfolders', False)
+        FOLDERS_ONLY = config.get_bool('image_download.general.folders_only', False)
+        if FOLDERS_ONLY:
+            ONLY_CURRENT = FOLDERS_ONLY
+        if ASSET_DIR is None:
+            ASSET_DIR = "assets"
+        if not NO_FS_WARNING:
+            print("================== ATTENTION ==================")
+            print("You have requested asset naming.")
+            print("This requires and assumes that your media is stored")
+            print("in a hierarchy like this:")
+            print("└── TV Shows")
+            print("  └── 9-1-1 Lone Star")
+            print("      └── Season 01")
+            print("          ├── S01E01.mkv")
+            print("          ├── S01E02.mkv")
+            print("          └── S01E03.mkv")
+            print("Asset directory naming is built around an 'ASSET NAME'")
+            print("which is '9-1-1 Lone Star' in the above hierarchy.")
+            print("Other file hierarchies are incompatible with the")
+            print("KOMETA asset naming setup at this time.")
+            print("================== ATTENTION ==================")
+            print("To skip this in future runs, add this setting to config.yml:")
+            print("")
+            print("image_download:")
+            print("  where_to_put_it:")
+            print("    no_fs_warning: 1")
+            print("")
+            print("pausing for 15 seconds...")
+            time.sleep(15)
+
+    if not DELAY:
+        DELAY = 0
+
+    KEEP_JUNK = config.get_bool('image_download.what_to_grab.keep_junk', False)
+
+    SCRIPT_FILE = "get_images.sh"
+    SCRIPT_SEED = f"#!/bin/bash{os.linesep}{os.linesep}# SCRIPT TO GRAB IMAGES{os.linesep}{os.linesep}"
+
+    if IS_WINDOWS:
+        SCRIPT_FILE = "get_images.bat"
+        SCRIPT_SEED = f"@echo off{os.linesep}{os.linesep}"
+
+    SCRIPT_STRING = ""
+
+    if POSTER_DOWNLOAD:
+        SCRIPT_STRING = SCRIPT_SEED
+
+    RESET_LIBRARIES = config.get('image_download.general.reset_libraries', False)
+
+    if RESET_LIBRARIES:
+        RESET_ARRAY = [s.strip() for s in RESET_LIBRARIES.split(",")]
+    else:
+        RESET_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
+
+    RESET_COLLECTIONS = config.get('image_download.general.reset_collections', False)
+
+    if RESET_COLLECTIONS:
+        RESET_COLL_ARRAY = [s.strip() for s in RESET_COLLECTIONS.split(",")]
+    else:
+        RESET_COLL_ARRAY = ["PLACEHOLDER_VALUE_XYZZY"]
+
+
+    ONLY_THESE_COLLECTIONS = config.get('image_download.what_to_grab.only_these_collections', '')
+
+    if ONLY_THESE_COLLECTIONS:
+        COLLECTION_ARRAY = [s.strip() for s in ONLY_THESE_COLLECTIONS.split("|")]
+    else:
+        COLLECTION_ARRAY = []
+
+    THREADED_DOWNLOADS = config.get_bool('image_download.general.threaded_downloads', False)
+    plogger(f"Threaded downloads: {THREADED_DOWNLOADS}", "info", "a")
+
+    redaction_list = get_redaction_list()
+
+    plex = get_plex()
+
+    LIB_ARRAY = get_target_libraries(plex)
+
+
+    TOPLEVEL_TMID = ""
+    TOPLEVEL_TVID = ""
+
+
+    executor = ThreadPoolExecutor()
+    my_futures = []
+
+
+    for lib in LIB_ARRAY:
+
+        try:
+            highwater = 0
+            start_queue_length = len(my_futures)
+
+            if len(my_futures) > 0:
+                plogger(f"queue length: {len(my_futures)}", "info", "a")
+
+            plogger(f"Loading {lib} ...", "info", "a")
+            the_lib = plex.library.section(lib)
+            if lib_type_supported(the_lib):
+                the_uuid = the_lib.uuid
+                superchat(f"{the_lib.title} uuid {the_uuid}", "info", "a")
+
+                if the_lib.title in RESET_ARRAY or RESET_ARRAY[0] == "ALL_LIBRARIES":
                     plogger(
-                        f"no last run date for {the_lib.title}, using {fallback_date}",
+                        f"Resetting rundate for {the_lib.title} to {fallback_date}...",
                         "info",
                         "a",
                     )
                     last_run_lib = fallback_date
+                else:
+                    last_run_lib = get_last_run(the_uuid, the_lib.TYPE)
 
-            superchat(f"{the_lib.title} last run date: {last_run_lib}", "info", "a")
+                    if last_run_lib is None:
+                        plogger(
+                            f"no last run date for {the_lib.title}, using {fallback_date}",
+                            "info",
+                            "a",
+                        )
+                        last_run_lib = fallback_date
 
-            ID_ARRAY = []
-            the_title = the_lib.title
-            superchat(f"This library is called {the_title}", "info", "a")
-            title, msg = validate_filename(the_title)
-            status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
-            status_file = Path(status_file_name)
+                superchat(f"{the_lib.title} last run date: {last_run_lib}", "info", "a")
 
-            if TRACK_COMPLETION:
-                if status_file.is_file():
-                    superchat("There's an old-style completion file here", "info", "a")
-                    with open(status_file) as fp:
+                ID_ARRAY = []
+                the_title = the_lib.title
+                superchat(f"This library is called {the_title}", "info", "a")
+                title, msg = validate_filename(the_title)
+                status_file_name = f"ratingkeys-{title}-{the_uuid}-{POSTER_DEPTH}.txt"
+                status_file = Path(status_file_name)
+
+                if TRACK_COMPLETION:
+                    if status_file.is_file():
+                        superchat("There's an old-style completion file here", "info", "a")
+                        with open(status_file) as fp:
+                            idx = 0
+                            for line in fp:
+                                add_key(line.strip(), the_uuid, TRACK_COMPLETION)
+                                idx += 1
+                            logger(f"{idx} URls loaded and stored in the DB", "info", "a")
+
+                        superchat(f"DELETING {status_file}", "info", "a")
+                        status_file.unlink()
+
+                URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
+                url_file = Path(URL_FILE_NAME)
+
+                if url_file.is_file():
+                    logger(f"Reading URLs from {url_file.resolve()}", "info", "a")
+                    with open(url_file) as fp:
                         idx = 0
                         for line in fp:
-                            add_key(line.strip(), the_uuid, TRACK_COMPLETION)
+                            add_url(line.strip(), the_uuid, title)
                             idx += 1
                         logger(f"{idx} URls loaded and stored in the DB", "info", "a")
+                    superchat(f"DELETING {url_file}", "info", "a")
+                    url_file.unlink()
 
-                    superchat(f"DELETING {status_file}", "info", "a")
-                    status_file.unlink()
+                SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
 
-            URL_FILE_NAME = f"urls-{title}-{the_uuid}.txt"
-            url_file = Path(URL_FILE_NAME)
+                if INCLUDE_COLLECTION_ARTWORK:
+                    plogger(f"getting collections from [{lib}]...", "info", "a")
 
-            if url_file.is_file():
-                logger(f"Reading URLs from {url_file.resolve()}", "info", "a")
-                with open(url_file) as fp:
-                    idx = 0
-                    for line in fp:
-                        add_url(line.strip(), the_uuid, title)
-                        idx += 1
-                    logger(f"{idx} URls loaded and stored in the DB", "info", "a")
-                superchat(f"DELETING {url_file}", "info", "a")
-                url_file.unlink()
-
-            SOURCE_FILE_NAME = f"sources-{title}-{the_uuid}.txt"
-
-            if INCLUDE_COLLECTION_ARTWORK:
-                plogger(f"getting collections from [{lib}]...", "info", "a")
-
-                items = the_lib.collections()
-                item_total = len(items)
-                plogger(f"{item_total} collection(s) retrieved...", "info", "a")
-
-                tgt_ext = ".dat"
-
-                if item_total > 0:
-                    with alive_bar(
-                        item_total, dual_line=True, title="Grab Collection Posters"
-                    ) as bar:
-                        for item in items:
-                            superchat(
-                                f"This collection is called {item.title}", "info", "a"
-                            )
-
-                            # guid: 'collection://175b6fe6-fe95-480c-8bb2-2c5052b03b7e'
-                            if (
-                                len(COLLECTION_ARRAY) == 0
-                                or item.title in COLLECTION_ARRAY
-                            ):
-                                if not check_key(
-                                    item.ratingKey, the_uuid, TRACK_COMPLETION
-                                ):
-                                    logger(f"Starting {item.title}", "info", "a")
-
-                                    get_posters(lib, item, the_uuid, the_title)
-
-                                    bar()
-
-                                    add_key(item.ratingKey, the_uuid, TRACK_COMPLETION)
-
-                                else:
-                                    blogger(
-                                        f"SKIPPING {item.title}; status complete",
-                                        "info",
-                                        "a",
-                                        bar,
-                                    )
-                            else:
-                                blogger(
-                                    f"SKIPPING {item.title}; not in a targeted collection",
-                                    "info",
-                                    "a",
-                                    bar,
-                                )
-                                blogger(
-                                    f"either len(COLLECTION_ARRAY) == 0: {len(COLLECTION_ARRAY)} or {item.title} is not in {COLLECTION_ARRAY}",
-                                    "info",
-                                    "a",
-                                    bar,
-                                )
-
-            else:
-                plogger("Skipping collection artwork ...", "info", "a")
-
-            if not ONLY_COLLECTION_ARTWORK:
-                if len(COLLECTION_ARRAY) == 0:
-                    COLLECTION_ARRAY = ["placeholder_collection_name"]
-
-                for coll in COLLECTION_ARRAY:
-                    lib_key = f"{the_uuid}-{coll}"
-
-                    items = []
-
-                    if coll == "placeholder_collection_name":
-                        if last_run_lib is None:
-                            plogger(f"Loading {the_lib.TYPE}s  ...", "info", "a")
-                            item_count, items = get_all_from_library(
-                                the_lib, None, None
-                            )
-                        else:
-                            plogger(
-                                f"Loading {the_lib.TYPE}s new since {last_run_lib} ...",
-                                "info",
-                                "a",
-                            )
-                            item_count, items = get_all_from_library(
-                                the_lib, None, {"addedAt>>": last_run_lib}
-                            )
-                            last_run_lib = datetime.now()
-                        plogger(
-                            f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}",
-                            "info",
-                            "a",
-                        )
-
-                        if the_lib.TYPE == "show" and GRAB_SEASONS:
-                            if the_lib.title in RESET_ARRAY:
-                                plogger(
-                                    f"Resetting SEASON rundate for {the_lib.title} to {fallback_date}...",
-                                    "info",
-                                    "a",
-                                )
-                                last_run_season = fallback_date
-                            else:
-                                last_run_season = get_last_run(the_uuid, "season")
-
-                            if last_run_season is None and fallback_date is not None:
-                                last_run_season = fallback_date
-
-                            if last_run_season is None:
-                                plogger("Loading seasons ...", "info", "a")
-                                season_count, seasons = get_all_from_library(
-                                    the_lib, "season", None
-                                )
-                            else:
-                                plogger(
-                                    f"Loading seasons new since {last_run_season} ...",
-                                    "info",
-                                    "a",
-                                )
-                                season_count, seasons = get_all_from_library(
-                                    the_lib, "season", {"addedAt>>": last_run_season}
-                                )
-                                last_run_season = datetime.now()
-                            plogger(
-                                f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}",
-                                "info",
-                                "a",
-                            )
-                            items.extend(seasons)
-                            superchat(f"{len(items)} items to examine", "info", "a")
-
-                        if the_lib.TYPE == "show" and GRAB_EPISODES:
-                            if the_lib.title in RESET_ARRAY:
-                                plogger(
-                                    f"Resetting EPISODE rundate for {the_lib.title} to {fallback_date}...",
-                                    "info",
-                                    "a",
-                                )
-                                last_run_episode = fallback_date
-                            else:
-                                last_run_episode = get_last_run(the_uuid, "episode")
-
-                            if last_run_episode is None and fallback_date is not None:
-                                last_run_episode = fallback_date
-
-                            if last_run_episode is None:
-                                plogger("Loading episodes ...", "info", "a")
-                                episode_count, episodes = get_all_from_library(
-                                    the_lib, "episode", None
-                                )
-                            else:
-                                plogger(
-                                    f"Loading episodes new since {last_run_episode} ...",
-                                    "info",
-                                    "a",
-                                )
-                                episode_count, episodes = get_all_from_library(
-                                    the_lib, "episode", {"addedAt>>": last_run_episode}
-                                )
-                                last_run_episode = datetime.now()
-                            plogger(
-                                f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}",
-                                "info",
-                                "a",
-                            )
-                            items.extend(episodes)
-                            superchat(f"{len(items)} items to examine", "info", "a")
-
-                    else:
-                        plogger(
-                            f"Loading everything in collection {coll} ...", "info", "a"
-                        )
-                        item_count, items = get_all_from_library(
-                            the_lib, None, {"collection": coll}
-                        )
-                        plogger(
-                            f"Completed loading {len(items)} from collection {coll}",
-                            "info",
-                            "a",
-                        )
-
+                    items = the_lib.collections()
                     item_total = len(items)
+                    plogger(f"{item_total} collection(s) retrieved...", "info", "a")
+
+                    tgt_ext = ".dat"
+
                     if item_total > 0:
-                        logger(f"looping over {item_total} items...", "info", "a")
-                        item_count = 0
-
-                        plex_links = []
-                        external_links = []
-
                         with alive_bar(
-                            item_total,
-                            dual_line=True,
-                            title=f"Grab all posters {the_lib.title}",
+                            item_total, dual_line=True, title="Grab Collection Posters"
                         ) as bar:
                             for item in items:
-                                try:
+                                superchat(
+                                    f"This collection is called {item.title}", "info", "a"
+                                )
+
+                                # guid: 'collection://175b6fe6-fe95-480c-8bb2-2c5052b03b7e'
+                                if (
+                                    len(COLLECTION_ARRAY) == 0
+                                    or item.title in COLLECTION_ARRAY
+                                ):
                                     if not check_key(
                                         item.ratingKey, the_uuid, TRACK_COMPLETION
                                     ):
-                                        blogger(
-                                            f"Starting {item.TYPE}: {item.title}",
-                                            "info",
-                                            "a",
-                                            bar,
-                                        )
+                                        logger(f"Starting {item.title}", "info", "a")
 
                                         get_posters(lib, item, the_uuid, the_title)
 
-                                        add_key(
-                                            item.ratingKey, the_uuid, TRACK_COMPLETION
-                                        )
+                                        bar()
+
+                                        add_key(item.ratingKey, the_uuid, TRACK_COMPLETION)
+
                                     else:
                                         blogger(
                                             f"SKIPPING {item.title}; status complete",
@@ -1828,80 +1681,256 @@ for lib in LIB_ARRAY:
                                             "a",
                                             bar,
                                         )
+                                else:
+                                    blogger(
+                                        f"SKIPPING {item.title}; not in a targeted collection",
+                                        "info",
+                                        "a",
+                                        bar,
+                                    )
+                                    blogger(
+                                        f"either len(COLLECTION_ARRAY) == 0: {len(COLLECTION_ARRAY)} or {item.title} is not in {COLLECTION_ARRAY}",
+                                        "info",
+                                        "a",
+                                        bar,
+                                    )
 
-                                    item_count += 1
-                                except Exception as ex:
+                else:
+                    plogger("Skipping collection artwork ...", "info", "a")
+
+                if not ONLY_COLLECTION_ARTWORK:
+                    if len(COLLECTION_ARRAY) == 0:
+                        COLLECTION_ARRAY = ["placeholder_collection_name"]
+
+                    for coll in COLLECTION_ARRAY:
+                        lib_key = f"{the_uuid}-{coll}"
+
+                        items = []
+
+                        if coll == "placeholder_collection_name":
+                            if last_run_lib is None:
+                                plogger(f"Loading {the_lib.TYPE}s  ...", "info", "a")
+                                item_count, items = get_all_from_library(
+                                    the_lib, None, None
+                                )
+                            else:
+                                plogger(
+                                    f"Loading {the_lib.TYPE}s new since {last_run_lib} ...",
+                                    "info",
+                                    "a",
+                                )
+                                item_count, items = get_all_from_library(
+                                    the_lib, None, {"addedAt>>": last_run_lib}
+                                )
+                                last_run_lib = datetime.now()
+                            plogger(
+                                f"Completed loading {len(items)} of {item_count} {the_lib.TYPE}(s) from {the_lib.title}",
+                                "info",
+                                "a",
+                            )
+
+                            if the_lib.TYPE == "show" and GRAB_SEASONS:
+                                if the_lib.title in RESET_ARRAY:
                                     plogger(
-                                        f"Problem processing {item.title}; {ex}",
+                                        f"Resetting SEASON rundate for {the_lib.title} to {fallback_date}...",
                                         "info",
                                         "a",
                                     )
+                                    last_run_season = fallback_date
+                                else:
+                                    last_run_season = get_last_run(the_uuid, "season")
 
-                                bar()
+                                if last_run_season is None and fallback_date is not None:
+                                    last_run_season = fallback_date
 
-                                stop_file = Path(STOP_FILE_NAME)
-                                skip_file = Path(SKIP_FILE_NAME)
+                                if last_run_season is None:
+                                    plogger("Loading seasons ...", "info", "a")
+                                    season_count, seasons = get_all_from_library(
+                                        the_lib, "season", None
+                                    )
+                                else:
+                                    plogger(
+                                        f"Loading seasons new since {last_run_season} ...",
+                                        "info",
+                                        "a",
+                                    )
+                                    season_count, seasons = get_all_from_library(
+                                        the_lib, "season", {"addedAt>>": last_run_season}
+                                    )
+                                    last_run_season = datetime.now()
+                                plogger(
+                                    f"Completed loading {len(seasons)} of {season_count} season(s) from {the_lib.title}",
+                                    "info",
+                                    "a",
+                                )
+                                items.extend(seasons)
+                                superchat(f"{len(items)} items to examine", "info", "a")
 
-                                if stop_file.is_file() or skip_file.is_file():
-                                    raise StopIteration
+                            if the_lib.TYPE == "show" and GRAB_EPISODES:
+                                if the_lib.title in RESET_ARRAY:
+                                    plogger(
+                                        f"Resetting EPISODE rundate for {the_lib.title} to {fallback_date}...",
+                                        "info",
+                                        "a",
+                                    )
+                                    last_run_episode = fallback_date
+                                else:
+                                    last_run_episode = get_last_run(the_uuid, "episode")
 
-                        plogger(f"Processed {item_count} of {item_total}", "info", "a")
+                                if last_run_episode is None and fallback_date is not None:
+                                    last_run_episode = fallback_date
 
-            progress_str = "COMPLETE"
-            logger(progress_str, "info", "a")
+                                if last_run_episode is None:
+                                    plogger("Loading episodes ...", "info", "a")
+                                    episode_count, episodes = get_all_from_library(
+                                        the_lib, "episode", None
+                                    )
+                                else:
+                                    plogger(
+                                        f"Loading episodes new since {last_run_episode} ...",
+                                        "info",
+                                        "a",
+                                    )
+                                    episode_count, episodes = get_all_from_library(
+                                        the_lib, "episode", {"addedAt>>": last_run_episode}
+                                    )
+                                    last_run_episode = datetime.now()
+                                plogger(
+                                    f"Completed loading {len(episodes)} of {episode_count} episode(s) from {the_lib.title}",
+                                    "info",
+                                    "a",
+                                )
+                                items.extend(episodes)
+                                superchat(f"{len(items)} items to examine", "info", "a")
 
-            if last_run_lib is not None:
-                add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
-            if the_lib.TYPE == "show":
-                try:
-                    if GRAB_SEASONS and last_run_season is not None:
-                        add_last_run(the_uuid, the_lib.title, "season", last_run_season)
-                    if GRAB_EPISODES and last_run_episode is not None:
-                        add_last_run(
-                            the_uuid, the_lib.title, "episode", last_run_episode
-                        )
-                except NameError:
-                    logger("no last run date to record", "info", "a")
+                        else:
+                            plogger(
+                                f"Loading everything in collection {coll} ...", "info", "a"
+                            )
+                            item_count, items = get_all_from_library(
+                                the_lib, None, {"collection": coll}
+                            )
+                            plogger(
+                                f"Completed loading {len(items)} from collection {coll}",
+                                "info",
+                                "a",
+                            )
 
-            end_queue_length = len(my_futures)
+                        item_total = len(items)
+                        if item_total > 0:
+                            logger(f"looping over {item_total} items...", "info", "a")
+                            item_count = 0
 
-            # print(os.linesep)
-            if not POSTER_DOWNLOAD:
-                if len(SCRIPT_STRING) > 0:
-                    with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
-                        myfile.write(f"{SCRIPT_STRING}{os.linesep}")
+                            plex_links = []
+                            external_links = []
 
-    except StopIteration:
-        if stop_file.is_file():
-            progress_str = "stop file found, leaving loop"
-        if skip_file.is_file():
-            progress_str = "skip file found, skipping library"
+                            with alive_bar(
+                                item_total,
+                                dual_line=True,
+                                title=f"Grab all posters {the_lib.title}",
+                            ) as bar:
+                                for item in items:
+                                    try:
+                                        if not check_key(
+                                            item.ratingKey, the_uuid, TRACK_COMPLETION
+                                        ):
+                                            blogger(
+                                                f"Starting {item.TYPE}: {item.title}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
 
-        plogger(progress_str, "info", "a")
+                                            get_posters(lib, item, the_uuid, the_title)
 
-        if stop_file.is_file():
-            stop_file.unlink()
-            break
-        if skip_file.is_file():
-            skip_file.unlink()
+                                            add_key(
+                                                item.ratingKey, the_uuid, TRACK_COMPLETION
+                                            )
+                                        else:
+                                            blogger(
+                                                f"SKIPPING {item.title}; status complete",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
 
-    except Exception as ex:
-        progress_str = f"Problem processing {lib}; {ex}"
-        plogger(progress_str, "info", "a")
+                                        item_count += 1
+                                    except Exception as ex:
+                                        plogger(
+                                            f"Problem processing {item.title}; {ex}",
+                                            "info",
+                                            "a",
+                                        )
 
-idx = 1
-max = len(my_futures)
-if max > 0:
-    plogger(f"waiting on {max} downloads", "info", "a")
-# iterate over all submitted tasks and get results as they are available
+                                    bar()
 
-for future in as_completed(my_futures):
-    result = future.result()  # blocks
-    sys.stdout.write(f"\r{idx}/{max}       ")
-    sys.stdout.flush()
-    # TODO: write status file down here
-    idx += 1
+                                    stop_file = Path(STOP_FILE_NAME)
+                                    skip_file = Path(SKIP_FILE_NAME)
 
-plogger("Complete!", "info", "a")
-# shutdown the thread pool
-executor.shutdown()  # blocks
+                                    if stop_file.is_file() or skip_file.is_file():
+                                        raise StopIteration
+
+                            plogger(f"Processed {item_count} of {item_total}", "info", "a")
+
+                progress_str = "COMPLETE"
+                logger(progress_str, "info", "a")
+
+                if last_run_lib is not None:
+                    add_last_run(the_uuid, the_lib.title, the_lib.TYPE, last_run_lib)
+                if the_lib.TYPE == "show":
+                    try:
+                        if GRAB_SEASONS and last_run_season is not None:
+                            add_last_run(the_uuid, the_lib.title, "season", last_run_season)
+                        if GRAB_EPISODES and last_run_episode is not None:
+                            add_last_run(
+                                the_uuid, the_lib.title, "episode", last_run_episode
+                            )
+                    except NameError:
+                        logger("no last run date to record", "info", "a")
+
+                end_queue_length = len(my_futures)
+
+                # print(os.linesep)
+                if not POSTER_DOWNLOAD:
+                    if len(SCRIPT_STRING) > 0:
+                        with open(SCRIPT_FILE, "w", encoding="utf-8") as myfile:
+                            myfile.write(f"{SCRIPT_STRING}{os.linesep}")
+
+        except StopIteration:
+            if stop_file.is_file():
+                progress_str = "stop file found, leaving loop"
+            if skip_file.is_file():
+                progress_str = "skip file found, skipping library"
+
+            plogger(progress_str, "info", "a")
+
+            if stop_file.is_file():
+                stop_file.unlink()
+                break
+            if skip_file.is_file():
+                skip_file.unlink()
+
+        except Exception as ex:
+            progress_str = f"Problem processing {lib}; {ex}"
+            plogger(progress_str, "info", "a")
+
+    idx = 1
+    max = len(my_futures)
+    if max > 0:
+        plogger(f"waiting on {max} downloads", "info", "a")
+    # iterate over all submitted tasks and get results as they are available
+
+    for future in as_completed(my_futures):
+        result = future.result()  # blocks
+        sys.stdout.write(f"\r{idx}/{max}       ")
+        sys.stdout.flush()
+        # TODO: write status file down here
+        idx += 1
+
+    plogger("Complete!", "info", "a")
+    # shutdown the thread pool
+    executor.shutdown()  # blocks
+
+
+if __name__ == "__main__":
+    main()

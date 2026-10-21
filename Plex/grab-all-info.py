@@ -6,43 +6,13 @@ from pathlib import Path
 
 import sqlalchemy as db
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_all_from_library, get_ids, get_plex,
-                     get_target_libraries)
 from sqlalchemy.dialects.sqlite import insert
 
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-VERSION = "0.2.0"
-
-# 0.2.0 use config module for configuration
-
-logging.basicConfig(
-    filename=f"{SCRIPT_NAME}.log",
-    filemode="w",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-logging.info(f"Starting {SCRIPT_NAME}")
-print(f"Starting {SCRIPT_NAME}")
-
-config = Config('../config.yaml')
-
-NEW = []
-UPDATED = []
-
-CHANGE_FILE_NAME = "changes.txt"
-change_file = Path(CHANGE_FILE_NAME)
-# Delete any existing change file
-if change_file.is_file():
-    change_file.unlink()
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_ids, get_plex,  # noqa: E402
+                     get_target_libraries)
 
 
 def get_connection():
@@ -145,8 +115,10 @@ def get_diffs(payload):
             diffs["changes"]["imdb"] = payload["imdb"]
         if ResultSet[0]["tmdb"] != payload["tmdb"]:
             diffs["changes"]["tmdb"] = payload["tmdb"]
-        if ResultSet[0]["tmdb"] != payload["tmdb"]:
-            diffs["changes"]["tmdb"] = payload["tmdb"]
+        if ResultSet[0]["tvdb"] != payload["tvdb"]:
+            diffs["changes"]["tvdb"] = payload["tvdb"]
+        if ResultSet[0]["title"] != payload["title"]:
+            diffs["changes"]["title"] = payload["title"]
         if ResultSet[0]["year"] != payload["year"]:
             diffs["changes"]["year"] = payload["year"]
         diffs["updated"] = len(diffs["changes"]) > 0
@@ -154,15 +126,11 @@ def get_diffs(payload):
         diffs["new"] = True
         diffs["changes"]["imdb"] = payload["imdb"]
         diffs["changes"]["tmdb"] = payload["tmdb"]
-        diffs["changes"]["tmdb"] = payload["tmdb"]
+        diffs["changes"]["tvdb"] = payload["tvdb"]
+        diffs["changes"]["title"] = payload["title"]
         diffs["changes"]["year"] = payload["year"]
 
     return diffs
-
-
-plex = get_plex()
-
-LIB_ARRAY = get_target_libraries(plex)
 
 def get_IDs(type, item):
     imdbid = None
@@ -217,61 +185,109 @@ def get_IDs(type, item):
                     )
             else:
                 logging.info(f"{guid} already complete")
-        except:
+        except Exception:
             logging.info(f"No guid: {bits}")
 
+def main():
+    global now, RUNTIME_STR, SCRIPT_NAME, VERSION, config, NEW, UPDATED
+    global CHANGE_FILE_NAME, change_file, plex, LIB_ARRAY, COMPLETE_ARRAY, cf, lib
+    global completed_things, thing, the_lib, count, search_results, items, item_total
+    global item_count, plex_links, external_links, bar, item, progress_str
 
-COMPLETE_ARRAY = []
+    # current dateTime
+    now = datetime.now()
 
-with open(change_file, "a", encoding="utf-8") as cf:
-    cf.write(f"start: {get_count()} records{os.linesep}")
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-for lib in LIB_ARRAY:
-    completed_things = get_completed()
+    SCRIPT_NAME = Path(__file__).stem
 
-    for thing in completed_things:
-        COMPLETE_ARRAY.append(thing["guid"])
+    VERSION = "0.2.0"
 
-    try:
-        the_lib = plex.library.section(lib)
+    # 0.2.0 use config module for configuration
 
-        count = plex.library.section(lib).totalSize
-        print(f"getting {count} {the_lib.type}s from [{lib}]...")
-        logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
-        search_results = get_all_from_library(the_lib)
-        items = search_results[1]
-        item_total = len(items)
-        logging.info(f"looping over {item_total} items...")
-        item_count = 1
+    logging.basicConfig(
+        filename=f"{SCRIPT_NAME}.log",
+        filemode="w",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
 
-        plex_links = []
-        external_links = []
+    logging.info(f"Starting {SCRIPT_NAME}")
+    print(f"Starting {SCRIPT_NAME}")
 
-        with alive_bar(item_total, dual_line=True, title="Grab all IDs") as bar:
-            for item in items:
-                logging.info("================================")
-                logging.info(f"Starting {item.title}")
+    config = Config('../config.yaml')
 
-                get_IDs(the_lib.type, item)
+    NEW = []
+    UPDATED = []
 
-                bar()
+    CHANGE_FILE_NAME = "changes.txt"
+    change_file = Path(CHANGE_FILE_NAME)
+    # Delete any existing change file
+    if change_file.is_file():
+        change_file.unlink()
 
-        progress_str = "COMPLETE"
-        logging.info(progress_str)
 
-        bar.text = progress_str
+    plex = get_plex()
 
-        print(os.linesep)
+    LIB_ARRAY = get_target_libraries(plex)
 
-    except Exception as ex:
-        progress_str = f"Problem processing {lib}; {ex}"
-        logging.info(progress_str)
 
-        print(progress_str)
+    COMPLETE_ARRAY = []
 
-logging.info("================================")
-logging.info(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
-print(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+    with open(change_file, "a", encoding="utf-8") as cf:
+        cf.write(f"start: {get_count()} records{os.linesep}")
 
-with open(change_file, "a", encoding="utf-8") as cf:
-    cf.write(f"end: {get_count()} records{os.linesep}")
+    for lib in LIB_ARRAY:
+        completed_things = get_completed()
+
+        for thing in completed_things:
+            COMPLETE_ARRAY.append(thing["guid"])
+
+        try:
+            the_lib = plex.library.section(lib)
+
+            count = plex.library.section(lib).totalSize
+            print(f"getting {count} {the_lib.type}s from [{lib}]...")
+            logging.info(f"getting {count} {the_lib.type}s from [{lib}]...")
+            search_results = get_all_from_library(the_lib)
+            items = search_results[1]
+            item_total = len(items)
+            logging.info(f"looping over {item_total} items...")
+            item_count = 1
+
+            plex_links = []
+            external_links = []
+
+            with alive_bar(item_total, dual_line=True, title="Grab all IDs") as bar:
+                for item in items:
+                    logging.info("================================")
+                    logging.info(f"Starting {item.title}")
+
+                    get_IDs(the_lib.type, item)
+
+                    bar()
+
+            progress_str = "COMPLETE"
+            logging.info(progress_str)
+
+            bar.text = progress_str
+
+            print(os.linesep)
+
+        except Exception as ex:
+            progress_str = f"Problem processing {lib}; {ex}"
+            logging.info(progress_str)
+
+            print(progress_str)
+
+    logging.info("================================")
+    logging.info(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+    print(f"NEW: {len(NEW)}; UPDATED: {len(UPDATED)}")
+
+    with open(change_file, "a", encoding="utf-8") as cf:
+        cf.write(f"end: {get_count()} records{os.linesep}")
+
+
+if __name__ == "__main__":
+    main()

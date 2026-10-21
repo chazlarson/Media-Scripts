@@ -11,78 +11,14 @@ from timeit import default_timer as timer
 import requests
 import validators
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_all_from_library, get_ids, get_overlay_status,
-                     get_plex, get_target_libraries)
-from logs import blogger, logger, plogger, setup_logger
 from tmdbapis import TMDbAPIs
 
-start = timer()
-
-# current dateTime
-now = datetime.now()
-
-# convert to string
-RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
-
-SCRIPT_NAME = Path(__file__).stem
-
-# DONE 0.1.2 Batch remove labels
-
-VERSION = "0.1.2"
-
-ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
-setup_logger("activity_log", ACTIVITY_LOG)
-
-plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
-
-config = Config('../config.yaml')
-
-TARGET_LABELS = config.get('reset_posters.target_labels')
-
-if TARGET_LABELS == "this label, that label":
-    print(
-        "reset_posters.target_labels in the config.yaml must be empty or have a meaningful value.",
-        "a",
-    )
-    exit()
-
-TRACK_RESET_STATUS = config.get_bool("reset_posters.track_reset_status")
-CLEAR_RESET_STATUS = config.get_bool("reset_posters.clear_reset_status")
-
-REMOVE_LABELS = config.get_bool("reset_posters.remove_labels")
-RESET_SEASONS = config.get_bool("reset_posters.reset_seasons")
-RESET_EPISODES = config.get_bool("reset_posters.reset_episodes")
-RESET_SEASONS_WITH_SERIES = config.get_bool("reset_posters.reset_seasons_with_series")
-LOCAL_RESET_ARCHIVE = config.get_bool("reset_posters.local_reset_archive")
-DRY_RUN = config.get_bool("reset_posters.dry_run")
-OVERRIDE_OVERLAY_STATUS = config.get_bool("reset_posters.override_overlay_status")
-FLUSH_STATUS_AT_START = config.get_bool("reset_posters.flush_status_at_start")
-
-DELAY = 0
-try:
-    DELAY = config.get_int('general.delay')
-except:
-    DELAY = 0
-
-if TARGET_LABELS:
-    LBL_ARRAY = TARGET_LABELS.split(",")
-else:
-    LBL_ARRAY = ["xy22y1973"]
-
-IS_WINDOWS = platform.system() == "Windows"
-
-tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
-
-local_dir = os.path.join(os.getcwd(), "posters")
-
-os.makedirs(local_dir, exist_ok=True)
-
-show_dir = os.path.join(os.getcwd(), "shows")
-movie_dir = os.path.join(os.getcwd(), "movies")
-
-os.makedirs(show_dir, exist_ok=True)
-os.makedirs(movie_dir, exist_ok=True)
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, logger, plogger, setup_logger  # noqa: E402
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_ids, get_overlay_status,  # noqa: E402
+                     get_plex, get_target_libraries)
 
 
 def localFilePath(tgt_dir, rating_key):
@@ -91,17 +27,6 @@ def localFilePath(tgt_dir, rating_key):
         if os.path.exists(local_file):
             return local_file
     return None
-
-
-print("tmdb config...")
-
-base_url = tmdb.configuration().secure_base_image_url
-size_str = "original"
-
-plex = get_plex()
-
-
-LIB_ARRAY = get_target_libraries(plex)
 
 
 def sleep_for_a_while():
@@ -275,485 +200,582 @@ def track_completion(id_array, status_file, item_id):
         with open(status_file, "a", encoding="utf-8") as sf:
             sf.write(f"{item_id}{os.linesep}")
 
+def main():
+    global start, now, RUNTIME_STR, SCRIPT_NAME, VERSION, ACTIVITY_LOG, config
+    global TARGET_LABELS, TRACK_RESET_STATUS, CLEAR_RESET_STATUS, REMOVE_LABELS
+    global RESET_SEASONS, RESET_EPISODES, RESET_SEASONS_WITH_SERIES, LOCAL_RESET_ARCHIVE
+    global DRY_RUN, OVERRIDE_OVERLAY_STATUS, FLUSH_STATUS_AT_START, DELAY, LBL_ARRAY
+    global IS_WINDOWS, tmdb, local_dir, show_dir, movie_dir, base_url, size_str, plex
+    global LIB_ARRAY, item_count, lib, id_array, the_lib, status_file_name, status_file
+    global fp, line, lbl, library_search_result, library_items, item_total, bar
+    global library_item, item_key, item_title, imdbid, tmdb_id, tvdb_id, poster_path
+    global local_file, tmdb_item, tgt_dir, seriesPosterURL, dl_URL, plex_poster
+    global art_source, plex_seasons, tmdb_seasons, plex_season, plex_s_id, plex_s_key
+    global plex_s_found, tmdb_season, poster_url, posterURL, tmdb_episodes, episodes
+    global plex_ep, plex_e_id, plex_e_key, plex_e_found, tmdb_ep, tmdb_s_id, tmdb_e_id
+    global end, elapsed
 
-item_count = 1
+    start = timer()
 
-for lib in LIB_ARRAY:
-    id_array = []
-    the_lib = plex.library.section(lib)
-    status_file_name = the_lib.uuid + ".txt"
-    status_file = Path(status_file_name)
+    # current dateTime
+    now = datetime.now()
 
-    if get_overlay_status(the_lib) and not OVERRIDE_OVERLAY_STATUS:
-        print("==================== ATTENTION ====================")
-        print(f"Library: {lib}")
-        print("This library appears to have Kometa overlays applied.")
-        print("The artwork that this script sets will be overwritten")
-        print("by Kometa the next time it runs.")
-        print("This is probably not what you want.")
-        print("You should remove the 'Overlay' label from everything")
-        print("in the library before running Kometa again.")
-        print("For safety, the script will ignore this library.")
-        print("==================== ATTENTION ====================")
-        print("To ignore this warning and run this script anyway,")
-        print("add 'OVERRIDE_OVERLAY_STATUS=1' to .env")
-        continue
+    # convert to string
+    RUNTIME_STR = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    if status_file.is_file():
-        if FLUSH_STATUS_AT_START and not DRY_RUN:
-            status_file.unlink()
-        else:
-            with open(f"{status_file_name}") as fp:
-                for line in fp:
-                    id_array.append(line.strip())
+    SCRIPT_NAME = Path(__file__).stem
 
-    for lbl in LBL_ARRAY:
-        if lbl == "xy22y1973":
-            print(f"{os.linesep}getting all items from the library [{lib}]...")
-            library_search_result = get_all_from_library(the_lib)
-            REMOVE_LABELS = False
-        else:
-            print(
-                f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]..."
-            )
-            library_search_result = the_lib.search(label=lbl)
-        library_items = library_search_result[1]
-        item_total = len(library_items)
-        plogger(f"{item_total} item(s) retrieved...", "info", "a")
-        item_count = 1
-        with alive_bar(item_total, dual_line=True, title="Poster Reset - TMDB") as bar:
-            for library_item in library_items:
-                item_count = item_count + 1
-                item_key = library_item.ratingKey
-                item_title = library_item.title
-                imdbid, tmdb_id, tvdb_id = get_ids(library_item.guids)
-                logger(
-                    (
-                        f"{item_title}: ratingKey: {item_key} imdbid: {imdbid} tmdb_id: {tmdb_id} tvdb_id: {tvdb_id}"
-                    ),
-                    "info",
-                    "a",
+    # DONE 0.1.2 Batch remove labels
+
+    VERSION = "0.1.2"
+
+    ACTIVITY_LOG = f"{SCRIPT_NAME}.log"
+    setup_logger("activity_log", ACTIVITY_LOG)
+
+    plogger(f"Starting {SCRIPT_NAME} {VERSION} at {RUNTIME_STR}", "info", "a")
+
+    config = Config('../config.yaml')
+
+    TARGET_LABELS = config.get('reset_posters.target_labels')
+
+    if TARGET_LABELS == "this label, that label":
+        print(
+            "reset_posters.target_labels in the config.yaml must be empty or have a meaningful value.",
+            "a",
+        )
+        exit()
+
+    TRACK_RESET_STATUS = config.get_bool("reset_posters.track_reset_status")
+    CLEAR_RESET_STATUS = config.get_bool("reset_posters.clear_reset_status")
+
+    REMOVE_LABELS = config.get_bool("reset_posters.remove_labels")
+    RESET_SEASONS = config.get_bool("reset_posters.reset_seasons")
+    RESET_EPISODES = config.get_bool("reset_posters.reset_episodes")
+    RESET_SEASONS_WITH_SERIES = config.get_bool("reset_posters.reset_seasons_with_series")
+    LOCAL_RESET_ARCHIVE = config.get_bool("reset_posters.local_reset_archive")
+    DRY_RUN = config.get_bool("reset_posters.dry_run")
+    OVERRIDE_OVERLAY_STATUS = config.get_bool("reset_posters.override_overlay_status")
+    FLUSH_STATUS_AT_START = config.get_bool("reset_posters.flush_status_at_start")
+
+    DELAY = 0
+    try:
+        DELAY = config.get_int('general.delay')
+    except Exception:
+        DELAY = 0
+
+    if TARGET_LABELS:
+        LBL_ARRAY = TARGET_LABELS.split(",")
+    else:
+        LBL_ARRAY = ["xy22y1973"]
+
+    IS_WINDOWS = platform.system() == "Windows"
+
+    tmdb = TMDbAPIs(str(config.get("general.tmdb_key", "NO_KEY_SPECIFIED")), language="en")
+
+    local_dir = os.path.join(os.getcwd(), "posters")
+
+    os.makedirs(local_dir, exist_ok=True)
+
+    show_dir = os.path.join(os.getcwd(), "shows")
+    movie_dir = os.path.join(os.getcwd(), "movies")
+
+    os.makedirs(show_dir, exist_ok=True)
+    os.makedirs(movie_dir, exist_ok=True)
+
+
+    print("tmdb config...")
+
+    base_url = tmdb.configuration().secure_base_image_url
+    size_str = "original"
+
+    plex = get_plex()
+
+
+    LIB_ARRAY = get_target_libraries(plex)
+
+
+    item_count = 1
+
+    for lib in LIB_ARRAY:
+        id_array = []
+        the_lib = plex.library.section(lib)
+        status_file_name = the_lib.uuid + ".txt"
+        status_file = Path(status_file_name)
+
+        if get_overlay_status(the_lib) and not OVERRIDE_OVERLAY_STATUS:
+            print("==================== ATTENTION ====================")
+            print(f"Library: {lib}")
+            print("This library appears to have Kometa overlays applied.")
+            print("The artwork that this script sets will be overwritten")
+            print("by Kometa the next time it runs.")
+            print("This is probably not what you want.")
+            print("You should remove the 'Overlay' label from everything")
+            print("in the library before running Kometa again.")
+            print("For safety, the script will ignore this library.")
+            print("==================== ATTENTION ====================")
+            print("To ignore this warning and run this script anyway,")
+            print("add 'OVERRIDE_OVERLAY_STATUS=1' to .env")
+            continue
+
+        if status_file.is_file():
+            if FLUSH_STATUS_AT_START and not DRY_RUN:
+                status_file.unlink()
+            else:
+                with open(f"{status_file_name}") as fp:
+                    for line in fp:
+                        id_array.append(line.strip())
+
+        for lbl in LBL_ARRAY:
+            if lbl == "xy22y1973":
+                print(f"{os.linesep}getting all items from the library [{lib}]...")
+                library_search_result = get_all_from_library(the_lib)
+                REMOVE_LABELS = False
+            else:
+                print(
+                    f"{os.linesep}getting items from the library [{lib}] with the label [{lbl}]..."
                 )
-                try:
-                    blogger(f"-> starting: {item_title}", "info", "a", bar)
-                    poster_path = None
-                    local_file = None
-                    tmdb_item = get_tmdb_item(tmdb_id, tvdb_id)
+                library_search_result = the_lib.search(label=lbl)
+            library_items = library_search_result[1]
+            item_total = len(library_items)
+            plogger(f"{item_total} item(s) retrieved...", "info", "a")
+            item_count = 1
+            with alive_bar(item_total, dual_line=True, title="Poster Reset - TMDB") as bar:
+                for library_item in library_items:
+                    item_count = item_count + 1
+                    item_key = library_item.ratingKey
+                    item_title = library_item.title
+                    imdbid, tmdb_id, tvdb_id = get_ids(library_item.guids)
+                    logger(
+                        (
+                            f"{item_title}: ratingKey: {item_key} imdbid: {imdbid} tmdb_id: {tmdb_id} tvdb_id: {tvdb_id}"
+                        ),
+                        "info",
+                        "a",
+                    )
+                    try:
+                        blogger(f"-> starting: {item_title}", "info", "a", bar)
+                        poster_path = None
+                        local_file = None
+                        tmdb_item = get_tmdb_item(tmdb_id, tvdb_id)
 
-                    tgt_dir = show_dir if library_item.TYPE == "show" else movie_dir
+                        tgt_dir = show_dir if library_item.TYPE == "show" else movie_dir
 
-                    if LOCAL_RESET_ARCHIVE:
-                        local_file = localFilePath(tgt_dir, item_key)
-                        poster_path = local_file
+                        if LOCAL_RESET_ARCHIVE:
+                            local_file = localFilePath(tgt_dir, item_key)
+                            poster_path = local_file
 
-                    if local_file is None:
-                        poster_path = get_base_tmdb_image(item_title, tmdb_id)
+                        if local_file is None:
+                            poster_path = get_base_tmdb_image(item_title, tmdb_id)
 
-                    if poster_path is not None:
-                        seriesPosterURL = f"{base_url}{size_str}{poster_path}"
-                        logger(
-                            (f"top-level poster URL: {seriesPosterURL}"), "info", "a"
-                        )
-
-                        if id_array.count(f"{item_key}-top") == 0:
+                        if poster_path is not None:
+                            seriesPosterURL = f"{base_url}{size_str}{poster_path}"
                             logger(
-                                (f"{item_title}: haven't reset this yet"), "info", "a"
+                                (f"top-level poster URL: {seriesPosterURL}"), "info", "a"
                             )
 
-                            if poster_path is not None:
-                                dl_URL = seriesPosterURL
+                            if id_array.count(f"{item_key}-top") == 0:
+                                logger(
+                                    (f"{item_title}: haven't reset this yet"), "info", "a"
+                                )
 
-                                blogger(
-                                    f"-> checking if Plex knows about this image: {seriesPosterURL}",
-                                    "info",
-                                    "a",
-                                    bar,
-                                )
-                                plex_poster = plex_knows_this_image(
-                                    library_item, "tmdb", seriesPosterURL
-                                )
-                                if plex_poster is not None:
-                                    dl_URL = plex_poster.key
+                                if poster_path is not None:
+                                    dl_URL = seriesPosterURL
+
                                     blogger(
-                                        f"-> poster will come from plex: {dl_URL}",
+                                        f"-> checking if Plex knows about this image: {seriesPosterURL}",
                                         "info",
                                         "a",
                                         bar,
                                     )
-
-                                art_source = get_art_source(
-                                    bar, library_item, local_file, poster_path, dl_URL
-                                )
-
-                                set_or_upload_image(
-                                    bar, library_item, plex_poster, art_source
-                                )
-
-                                track_completion(
-                                    id_array, status_file, f"{item_key}-top"
-                                )
-
-                        else:
-                            blogger(
-                                f"Skipping {item_title}-{item_key}: already reset",
-                                "info",
-                                "a",
-                                bar,
-                            )
-
-                        if library_item.TYPE == "show" and tmdb_item is not None:
-                            if RESET_SEASONS:
-                                blogger(
-                                    f"Resetting seasons for {item_title}-{item_key}",
-                                    "info",
-                                    "a",
-                                    bar,
-                                )
-                                # get seasons
-                                plex_seasons = library_item.seasons()
-                                sleep_for_a_while()
-                                tmdb_seasons = tmdb_item.seasons
-
-                                # loop over all:
-                                for plex_season in plex_seasons:
-                                    plex_s_id = plex_season.seasonNumber
-                                    plex_s_key = plex_season.ratingKey
-                                    plex_s_found = False
-
-                                    blogger(
-                                        f"Processing {item_title}-{item_key} Season {plex_s_id}",
-                                        "info",
-                                        "a",
-                                        bar,
+                                    plex_poster = plex_knows_this_image(
+                                        library_item, "tmdb", seriesPosterURL
                                     )
-
-                                    for tmdb_season in tmdb_seasons:
-                                        tmdb_season.reload()
-
-                                        if (
-                                            tmdb_season.season_number == plex_s_id
-                                            and not plex_s_found
-                                        ):
-                                            blogger(
-                                                f"{item_title}-{item_key} Season {plex_s_id} found matching season at TMDB",
-                                                "info",
-                                                "a",
-                                                bar,
-                                            )
-                                            plex_s_found = True
-
-                                            if id_array.count(f"{plex_s_key}") == 0:
-                                                poster_path = tmdb_season.poster_path
-                                                poster_url = None
-
-                                                if (
-                                                    poster_path is None
-                                                    and RESET_SEASONS_WITH_SERIES
-                                                ):
-                                                    posterURL = seriesPosterURL
-                                                    poster_path = posterURL.rsplit(
-                                                        "/", 1
-                                                    )[-1]
-
-                                                if poster_path is not None:
-                                                    if poster_url is None:
-                                                        poster_url = f"{base_url}{size_str}{poster_path}"
-                                                    local_file = localFilePath(
-                                                        tgt_dir,
-                                                        f"{item_key}-S{plex_s_id}",
-                                                    )
-                                                    logger(
-                                                        (
-                                                            f"season poster_url: {poster_url}"
-                                                        ),
-                                                        "info",
-                                                        "a",
-                                                    )
-
-                                                    dl_URL = poster_url
-
-                                                    blogger(
-                                                        f"-> checking if Plex knows about this image: {poster_url}",
-                                                        "info",
-                                                        "a",
-                                                        bar,
-                                                    )
-                                                    plex_poster = plex_knows_this_image(
-                                                        plex_season, "tmdb", poster_url
-                                                    )
-
-                                                    if plex_poster is not None:
-                                                        dl_URL = plex_poster.key
-                                                        blogger(
-                                                            f"-> poster will come from plex: {dl_URL}",
-                                                            "info",
-                                                            "a",
-                                                            bar,
-                                                        )
-
-                                                    art_source = get_art_source(
-                                                        bar,
-                                                        plex_season,
-                                                        local_file,
-                                                        poster_path,
-                                                        dl_URL,
-                                                    )
-
-                                                    set_or_upload_image(
-                                                        bar,
-                                                        plex_season,
-                                                        plex_poster,
-                                                        art_source,
-                                                    )
-
-                                                    track_completion(
-                                                        id_array,
-                                                        status_file,
-                                                        f"{plex_s_key}",
-                                                    )
-
-                                                else:
-                                                    blogger(
-                                                        "NO SEASON POSTER ON TMDB and RESET_SEASONS_WITH_SERIES turned off; PLEX ART WILL NOT BE TOUCHED",
-                                                        "info",
-                                                        "a",
-                                                        bar,
-                                                    )
-
-                                            else:
-                                                blogger(
-                                                    f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key}: already reset",
-                                                    "info",
-                                                    "a",
-                                                    bar,
-                                                )
-
-                                            if REMOVE_LABELS:
-                                                blogger(
-                                                    f"-> removing label {lbl}: Season {plex_s_id}",
-                                                    "info",
-                                                    "a",
-                                                    bar,
-                                                )
-                                                plex_season.removeLabel(lbl, True)
-
-                                            if config.get_bool("reset.episodes"):
-                                                # get episodes
-                                                blogger(
-                                                    f"getting TMDB episodes for season: {tmdb_season.season_number}",
-                                                    "info",
-                                                    "a",
-                                                    bar,
-                                                )
-                                                tmdb_episodes = tmdb_season.episodes
-                                                blogger(
-                                                    f"getting Plex episodes for season: {plex_s_id}",
-                                                    "info",
-                                                    "a",
-                                                    bar,
-                                                )
-                                                episodes = plex_season.episodes()
-                                                sleep_for_a_while()
-
-                                                blogger(
-                                                    "Looping over Plex episodes:",
-                                                    "info",
-                                                    "a",
-                                                    bar,
-                                                )
-                                                for plex_ep in episodes:
-                                                    plex_e_id = plex_ep.episodeNumber
-                                                    plex_e_key = plex_ep.ratingKey
-                                                    plex_e_found = False
-                                                    if (
-                                                        id_array.count(f"{plex_e_key}")
-                                                        == 0
-                                                    ):
-                                                        blogger(
-                                                            "Looping over TMDB episodes:",
-                                                            "info",
-                                                            "a",
-                                                            bar,
-                                                        )
-                                                        for tmdb_ep in tmdb_episodes:
-                                                            tmdb_s_id = None
-                                                            tmdb_e_id = None
-                                                            try:
-                                                                tmdb_s_id = tmdb_ep.season_number
-                                                                tmdb_e_id = tmdb_ep.episode_number
-                                                            except Exception as ex:
-                                                                blogger(
-                                                                    f"-> EXCEPTION getting TMDB season or episode ID: {ex}",
-                                                                    "info",
-                                                                    "a",
-                                                                    bar,
-                                                                )
-
-                                                            if (
-                                                                tmdb_s_id is not None
-                                                                and tmdb_e_id
-                                                                is not None
-                                                            ):
-                                                                if (
-                                                                    not plex_e_found
-                                                                    and tmdb_s_id
-                                                                    == plex_s_id
-                                                                    and tmdb_e_id
-                                                                    == plex_e_id
-                                                                ):
-                                                                    blogger(
-                                                                        f"Found episode S{plex_s_id} E{plex_e_id}",
-                                                                        "info",
-                                                                        "a",
-                                                                        bar,
-                                                                    )
-                                                                    #  that's the one
-                                                                    plex_e_found = True
-                                                                    poster_path = tmdb_ep.still_path
-
-                                                                    if (
-                                                                        poster_path
-                                                                        is not None
-                                                                    ):
-                                                                        blogger(
-                                                                            f"-> poster_path: {poster_path}",
-                                                                            "info",
-                                                                            "a",
-                                                                            bar,
-                                                                        )
-                                                                        posterURL = f"{base_url}{size_str}{poster_path}"
-                                                                        local_file = localFilePath(
-                                                                            tgt_dir,
-                                                                            f"{item_key}-S{plex_s_id}E{plex_e_id}",
-                                                                        )
-
-                                                                        dl_URL = (
-                                                                            posterURL
-                                                                        )
-
-                                                                        blogger(
-                                                                            f"-> checking if Plex knows about this image: {posterURL}",
-                                                                            "info",
-                                                                            "a",
-                                                                            bar,
-                                                                        )
-                                                                        plex_poster = plex_knows_this_image(
-                                                                            plex_ep,
-                                                                            "tmdb",
-                                                                            posterURL,
-                                                                        )
-
-                                                                        art_source = get_art_source(
-                                                                            bar,
-                                                                            plex_ep,
-                                                                            local_file,
-                                                                            poster_path,
-                                                                            dl_URL,
-                                                                        )
-
-                                                                        set_or_upload_image(
-                                                                            bar,
-                                                                            plex_ep,
-                                                                            plex_poster,
-                                                                            art_source,
-                                                                        )
-
-                                                                        track_completion(
-                                                                            id_array,
-                                                                            status_file,
-                                                                            f"{plex_e_key}",
-                                                                        )
-
-                                                                        if REMOVE_LABELS:
-                                                                            blogger(
-                                                                                f"-> removing label {lbl}: Season {plex_s_id}",
-                                                                                "info",
-                                                                                "a",
-                                                                                bar,
-                                                                            )
-                                                                            plex_ep.removeLabel(
-                                                                                lbl,
-                                                                                True,
-                                                                            )
-
-                                                                    else:
-                                                                        blogger(
-                                                                            "NO EPISODE POSTER ON TMDB; PLEX ART WILL NOT BE TOUCHED",
-                                                                            "info",
-                                                                            "a",
-                                                                            bar,
-                                                                        )
-
-                                                            else:
-                                                                blogger(
-                                                                    "-> Couldn't get some episode details",
-                                                                    "info",
-                                                                    "a",
-                                                                    bar,
-                                                                )
-
-                                                        if not plex_e_found:
-                                                            blogger(
-                                                                f"NO TMDB match found for Plex episode {plex_s_id}-{plex_e_id}",
-                                                                "info",
-                                                                "a",
-                                                                bar,
-                                                            )
-
-                                                    else:
-                                                        blogger(
-                                                            f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key} Episode {plex_e_id}-{plex_e_key}: already reset",
-                                                            "info",
-                                                            "a",
-                                                            bar,
-                                                        )
-
-                                    if not plex_s_found:
+                                    if plex_poster is not None:
+                                        dl_URL = plex_poster.key
                                         blogger(
-                                            f"NO TMDB match found for Plex season {plex_s_id}",
+                                            f"-> poster will come from plex: {dl_URL}",
                                             "info",
                                             "a",
                                             bar,
                                         )
 
-                        if REMOVE_LABELS:
+                                    art_source = get_art_source(
+                                        bar, library_item, local_file, poster_path, dl_URL
+                                    )
+
+                                    set_or_upload_image(
+                                        bar, library_item, plex_poster, art_source
+                                    )
+
+                                    track_completion(
+                                        id_array, status_file, f"{item_key}-top"
+                                    )
+
+                            else:
+                                blogger(
+                                    f"Skipping {item_title}-{item_key}: already reset",
+                                    "info",
+                                    "a",
+                                    bar,
+                                )
+
+                            if library_item.TYPE == "show" and tmdb_item is not None:
+                                if RESET_SEASONS:
+                                    blogger(
+                                        f"Resetting seasons for {item_title}-{item_key}",
+                                        "info",
+                                        "a",
+                                        bar,
+                                    )
+                                    # get seasons
+                                    plex_seasons = library_item.seasons()
+                                    sleep_for_a_while()
+                                    tmdb_seasons = tmdb_item.seasons
+
+                                    # loop over all:
+                                    for plex_season in plex_seasons:
+                                        plex_s_id = plex_season.seasonNumber
+                                        plex_s_key = plex_season.ratingKey
+                                        plex_s_found = False
+
+                                        blogger(
+                                            f"Processing {item_title}-{item_key} Season {plex_s_id}",
+                                            "info",
+                                            "a",
+                                            bar,
+                                        )
+
+                                        for tmdb_season in tmdb_seasons:
+                                            tmdb_season.reload()
+
+                                            if (
+                                                tmdb_season.season_number == plex_s_id
+                                                and not plex_s_found
+                                            ):
+                                                blogger(
+                                                    f"{item_title}-{item_key} Season {plex_s_id} found matching season at TMDB",
+                                                    "info",
+                                                    "a",
+                                                    bar,
+                                                )
+                                                plex_s_found = True
+
+                                                if id_array.count(f"{plex_s_key}") == 0:
+                                                    poster_path = tmdb_season.poster_path
+                                                    poster_url = None
+
+                                                    if (
+                                                        poster_path is None
+                                                        and RESET_SEASONS_WITH_SERIES
+                                                    ):
+                                                        posterURL = seriesPosterURL
+                                                        poster_path = posterURL.rsplit(
+                                                            "/", 1
+                                                        )[-1]
+
+                                                    if poster_path is not None:
+                                                        if poster_url is None:
+                                                            poster_url = f"{base_url}{size_str}{poster_path}"
+                                                        local_file = localFilePath(
+                                                            tgt_dir,
+                                                            f"{item_key}-S{plex_s_id}",
+                                                        )
+                                                        logger(
+                                                            (
+                                                                f"season poster_url: {poster_url}"
+                                                            ),
+                                                            "info",
+                                                            "a",
+                                                        )
+
+                                                        dl_URL = poster_url
+
+                                                        blogger(
+                                                            f"-> checking if Plex knows about this image: {poster_url}",
+                                                            "info",
+                                                            "a",
+                                                            bar,
+                                                        )
+                                                        plex_poster = plex_knows_this_image(
+                                                            plex_season, "tmdb", poster_url
+                                                        )
+
+                                                        if plex_poster is not None:
+                                                            dl_URL = plex_poster.key
+                                                            blogger(
+                                                                f"-> poster will come from plex: {dl_URL}",
+                                                                "info",
+                                                                "a",
+                                                                bar,
+                                                            )
+
+                                                        art_source = get_art_source(
+                                                            bar,
+                                                            plex_season,
+                                                            local_file,
+                                                            poster_path,
+                                                            dl_URL,
+                                                        )
+
+                                                        set_or_upload_image(
+                                                            bar,
+                                                            plex_season,
+                                                            plex_poster,
+                                                            art_source,
+                                                        )
+
+                                                        track_completion(
+                                                            id_array,
+                                                            status_file,
+                                                            f"{plex_s_key}",
+                                                        )
+
+                                                    else:
+                                                        blogger(
+                                                            "NO SEASON POSTER ON TMDB and RESET_SEASONS_WITH_SERIES turned off; PLEX ART WILL NOT BE TOUCHED",
+                                                            "info",
+                                                            "a",
+                                                            bar,
+                                                        )
+
+                                                else:
+                                                    blogger(
+                                                        f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key}: already reset",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+
+                                                if REMOVE_LABELS:
+                                                    blogger(
+                                                        f"-> removing label {lbl}: Season {plex_s_id}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    plex_season.removeLabel(lbl, True)
+
+                                                if config.get_bool("reset.episodes"):
+                                                    # get episodes
+                                                    blogger(
+                                                        f"getting TMDB episodes for season: {tmdb_season.season_number}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    tmdb_episodes = tmdb_season.episodes
+                                                    blogger(
+                                                        f"getting Plex episodes for season: {plex_s_id}",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    episodes = plex_season.episodes()
+                                                    sleep_for_a_while()
+
+                                                    blogger(
+                                                        "Looping over Plex episodes:",
+                                                        "info",
+                                                        "a",
+                                                        bar,
+                                                    )
+                                                    for plex_ep in episodes:
+                                                        plex_e_id = plex_ep.episodeNumber
+                                                        plex_e_key = plex_ep.ratingKey
+                                                        plex_e_found = False
+                                                        if (
+                                                            id_array.count(f"{plex_e_key}")
+                                                            == 0
+                                                        ):
+                                                            blogger(
+                                                                "Looping over TMDB episodes:",
+                                                                "info",
+                                                                "a",
+                                                                bar,
+                                                            )
+                                                            for tmdb_ep in tmdb_episodes:
+                                                                tmdb_s_id = None
+                                                                tmdb_e_id = None
+                                                                try:
+                                                                    tmdb_s_id = tmdb_ep.season_number
+                                                                    tmdb_e_id = tmdb_ep.episode_number
+                                                                except Exception as ex:
+                                                                    blogger(
+                                                                        f"-> EXCEPTION getting TMDB season or episode ID: {ex}",
+                                                                        "info",
+                                                                        "a",
+                                                                        bar,
+                                                                    )
+
+                                                                if (
+                                                                    tmdb_s_id is not None
+                                                                    and tmdb_e_id
+                                                                    is not None
+                                                                ):
+                                                                    if (
+                                                                        not plex_e_found
+                                                                        and tmdb_s_id
+                                                                        == plex_s_id
+                                                                        and tmdb_e_id
+                                                                        == plex_e_id
+                                                                    ):
+                                                                        blogger(
+                                                                            f"Found episode S{plex_s_id} E{plex_e_id}",
+                                                                            "info",
+                                                                            "a",
+                                                                            bar,
+                                                                        )
+                                                                        #  that's the one
+                                                                        plex_e_found = True
+                                                                        poster_path = tmdb_ep.still_path
+
+                                                                        if (
+                                                                            poster_path
+                                                                            is not None
+                                                                        ):
+                                                                            blogger(
+                                                                                f"-> poster_path: {poster_path}",
+                                                                                "info",
+                                                                                "a",
+                                                                                bar,
+                                                                            )
+                                                                            posterURL = f"{base_url}{size_str}{poster_path}"
+                                                                            local_file = localFilePath(
+                                                                                tgt_dir,
+                                                                                f"{item_key}-S{plex_s_id}E{plex_e_id}",
+                                                                            )
+
+                                                                            dl_URL = (
+                                                                                posterURL
+                                                                            )
+
+                                                                            blogger(
+                                                                                f"-> checking if Plex knows about this image: {posterURL}",
+                                                                                "info",
+                                                                                "a",
+                                                                                bar,
+                                                                            )
+                                                                            plex_poster = plex_knows_this_image(
+                                                                                plex_ep,
+                                                                                "tmdb",
+                                                                                posterURL,
+                                                                            )
+
+                                                                            art_source = get_art_source(
+                                                                                bar,
+                                                                                plex_ep,
+                                                                                local_file,
+                                                                                poster_path,
+                                                                                dl_URL,
+                                                                            )
+
+                                                                            set_or_upload_image(
+                                                                                bar,
+                                                                                plex_ep,
+                                                                                plex_poster,
+                                                                                art_source,
+                                                                            )
+
+                                                                            track_completion(
+                                                                                id_array,
+                                                                                status_file,
+                                                                                f"{plex_e_key}",
+                                                                            )
+
+                                                                            if REMOVE_LABELS:
+                                                                                blogger(
+                                                                                    f"-> removing label {lbl}: Season {plex_s_id}",
+                                                                                    "info",
+                                                                                    "a",
+                                                                                    bar,
+                                                                                )
+                                                                                plex_ep.removeLabel(
+                                                                                    lbl,
+                                                                                    True,
+                                                                                )
+
+                                                                        else:
+                                                                            blogger(
+                                                                                "NO EPISODE POSTER ON TMDB; PLEX ART WILL NOT BE TOUCHED",
+                                                                                "info",
+                                                                                "a",
+                                                                                bar,
+                                                                            )
+
+                                                                else:
+                                                                    blogger(
+                                                                        "-> Couldn't get some episode details",
+                                                                        "info",
+                                                                        "a",
+                                                                        bar,
+                                                                    )
+
+                                                            if not plex_e_found:
+                                                                blogger(
+                                                                    f"NO TMDB match found for Plex episode {plex_s_id}-{plex_e_id}",
+                                                                    "info",
+                                                                    "a",
+                                                                    bar,
+                                                                )
+
+                                                        else:
+                                                            blogger(
+                                                                f"Skipping {item_title}-{item_key} Season {plex_s_id}-{plex_s_key} Episode {plex_e_id}-{plex_e_key}: already reset",
+                                                                "info",
+                                                                "a",
+                                                                bar,
+                                                            )
+
+                                        if not plex_s_found:
+                                            blogger(
+                                                f"NO TMDB match found for Plex season {plex_s_id}",
+                                                "info",
+                                                "a",
+                                                bar,
+                                            )
+
+                            if REMOVE_LABELS:
+                                blogger(
+                                    f"-> removing label {lbl}: {item_title}",
+                                    "info",
+                                    "a",
+                                    bar,
+                                )
+                                library_item.removeLabel(lbl, True)
+                        else:
                             blogger(
-                                f"-> removing label {lbl}: {item_title}",
+                                f"NO TMDB poster available for {item_title}",
                                 "info",
                                 "a",
                                 bar,
                             )
-                            library_item.removeLabel(lbl, True)
-                    else:
-                        blogger(
-                            f"NO TMDB poster available for {item_title}",
-                            "info",
-                            "a",
-                            bar,
-                        )
 
-                except Exception as ex:
-                    plogger(f'Exception processing "{item_title}": {ex}', "info", "a")
-                    # there's a 500 in the season poster upload
+                    except Exception as ex:
+                        plogger(f'Exception processing "{item_title}": {ex}', "info", "a")
+                        # there's a 500 in the season poster upload
 
-                bar()
+                    bar()
 
-                logger((f"COMPLETE processing on {item_title}"), "info", "a")
+                    logger((f"COMPLETE processing on {item_title}"), "info", "a")
 
-        if REMOVE_LABELS:
-            the_lib.batchMultiEdits(library_items)
-            the_lib.removeLabel(lbl)
-            the_lib.saveMultiEdits()
+            if REMOVE_LABELS:
+                the_lib.batchMultiEdits(library_items)
+                the_lib.removeLabel(lbl)
+                the_lib.saveMultiEdits()
 
-    # delete the status file
-    if not config.get_bool("retain.reset_status_file") and not DRY_RUN:
-        if status_file.is_file():
-            os.remove(status_file)
+        # delete the status file
+        if not config.get_bool("retain.reset_status_file") and not DRY_RUN:
+            if status_file.is_file():
+                os.remove(status_file)
 
-end = timer()
-elapsed = end - start
-plogger(
-    f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed:.2f} seconds.",
-    "info",
-    "a",
-)
+    end = timer()
+    elapsed = end - start
+    plogger(
+        f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed:.2f} seconds.",
+        "info",
+        "a",
+    )
+
+
+if __name__ == "__main__":
+    main()

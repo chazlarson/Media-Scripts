@@ -1,7 +1,6 @@
-from pytube import Channel
 import os
 
-def download_subtitles_from_channel(channel_url, output_path='.'):
+def download_subtitles_from_channel(channel_url, output_path="."):
     """
     Downloads subtitles for all videos from a YouTube channel.
 
@@ -9,6 +8,8 @@ def download_subtitles_from_channel(channel_url, output_path='.'):
         channel_url (str): The URL of the YouTube channel.
         output_path (str): The directory to save the subtitles.
     """
+    from pytube import Channel
+
     try:
         c = Channel(channel_url)
         print(f"Processing channel: {c.channel_name}")
@@ -59,9 +60,12 @@ def download_subtitles_from_channel(channel_url, output_path='.'):
     except Exception as e:
         print(f"An error occurred with the channel URL: {e}")
 
-# --- USAGE ---
-# Replace with the URL of the YouTube channel you want to download from
-CHANNEL_URL = 'https://www.youtube.com/@freecodecamp'
-OUTPUT_FOLDER = './youtube_captions'
+def main():
+    # Replace with the URL of the YouTube channel you want to download from
+    channel_url = "https://www.youtube.com/@freecodecamp"
+    output_folder = "./youtube_captions"
+    download_subtitles_from_channel(channel_url, output_folder)
 
-download_subtitles_from_channel(CHANNEL_URL, OUTPUT_FOLDER)
+
+if __name__ == "__main__":
+    main()

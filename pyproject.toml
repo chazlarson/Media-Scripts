@@ -7,7 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "alive-progress==2.4.1",
     "filetype",
-    "flask",
     "gitpython",
     "imdbpy",
     "num2words",
