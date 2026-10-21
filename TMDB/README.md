@@ -6,7 +6,7 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 See the top-level [README](../README.md) for setup instructions.
 
-All these scripts use the same `config.yaml` and requirements.
+All these scripts use the same `config.yaml` and the root uv environment.
 
 ### `config.yaml` contents
 

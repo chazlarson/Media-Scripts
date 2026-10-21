@@ -1,4 +1,0 @@
-Flask
-plexapi
-requests
-pylint[spelling]

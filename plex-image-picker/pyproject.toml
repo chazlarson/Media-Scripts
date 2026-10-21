@@ -1,0 +1,19 @@
+[project]
+name = "plex-image-picker"
+version = "0.0.0"
+description = "Web UI for choosing and downloading Plex artwork"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask",
+    "plexapi",
+    "requests",
+]
+
+[dependency-groups]
+dev = [
+    "pylint[spelling]",
+]
+
+[tool.uv]
+package = false
