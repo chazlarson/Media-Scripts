@@ -7,8 +7,8 @@
     <div class="col-md-6">
       <form method="get" class="d-flex gap-2">
         <input type="hidden" name="missing_only" value="{{ 1 if missing_only else '' }}">
-        <input type="text" name="q" class="form-control" placeholder="Rechercher un titre…" value="{{ search_query }}">
-        <button type="submit" class="btn btn-secondary text-nowrap">Rechercher</button>
+        <input type="text" name="q" class="form-control" placeholder="Search titles…" value="{{ search_query }}">
+        <button type="submit" class="btn btn-secondary text-nowrap">Search</button>
         {% if search_query %}
           <a href="{{ url_for('list_items', section_key=section.key, missing_only=1 if missing_only else none) }}" class="btn btn-outline-secondary text-nowrap">✕</a>
         {% endif %}
@@ -17,18 +17,18 @@
     <div class="col-md-6 text-md-end">
       <a href="{{ url_for('refresh_assets', section_key=section.key, page=page, letter=letter, q=search_query if search_query else none, missing_only=1 if missing_only else none) }}"
          class="btn btn-sm btn-outline-primary me-2">
-        🔄 Vérifier les posters/backgrounds
+        🔄 Check posters/backgrounds
       </a>
       {% if checked %}
         {% if missing_only %}
           <a href="{{ url_for('list_items', section_key=section.key, page=1, letter=letter, q=search_query if search_query else none) }}"
              class="btn btn-sm btn-warning">
-            ✕ Retirer le filtre "sans poster" ({{ missing_count }} manquant{{ 's' if missing_count != 1 else '' }})
+            ✕ Clear "missing poster" filter ({{ missing_count }} missing)
           </a>
         {% else %}
           <a href="{{ url_for('list_items', section_key=section.key, page=1, letter=letter, missing_only=1, q=search_query if search_query else none) }}"
              class="btn btn-sm btn-outline-warning">
-            Voir uniquement les items sans poster ({{ missing_count }})
+            Show only items without a poster ({{ missing_count }})
           </a>
         {% endif %}
       {% endif %}
@@ -37,7 +37,7 @@
 
   {% if not checked %}
     <div class="alert alert-secondary">
-      Aucune vérification n'a encore été faite — les posters/backgrounds ci-dessous sont marqués "?" jusqu'au premier clic sur "Vérifier".
+      No check has been run yet — posters/backgrounds below show "?" until you click "Check posters/backgrounds".
     </div>
   {% endif %}
 

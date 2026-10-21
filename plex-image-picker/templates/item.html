@@ -9,7 +9,7 @@
 <h2>
   <a href="{{ url_for('list_items', section_key=section.key, letter=item_letter, missing_only=1 if missing_only else none) }}">{{ section.title }}</a>: {{ item.title }}
   {% if plex_web_url %}
-    <a href="{{ plex_web_url }}" target="_blank" class="btn btn-sm btn-outline-primary align-middle">Voir dans Plex ↗</a>
+    <a href="{{ plex_web_url }}" target="_blank" class="btn btn-sm btn-outline-primary align-middle">View in Plex ↗</a>
   {% endif %}
   {% if imdb_url %}
     <a href="{{ imdb_url }}" target="_blank" class="btn btn-sm btn-outline-warning align-middle">IMDb ↗</a>
@@ -18,7 +18,7 @@
 
 {% if has_local_asset %}
   <div class="alert alert-warning">
-    Un fichier est déjà enregistré en local pour cet item — en attente du prochain passage de Kometa.
+    A local file is already saved for this item — waiting for the next Kometa run.
   </div>
 {% endif %}
 <div class="d-flex justify-content-between mb-3">
@@ -108,7 +108,7 @@
       <input type="hidden" name="art_type" value="{{ art_type }}">
       <input type="hidden" name="missing_only" value="{{ 1 if missing_only else '' }}">
       <input type="url" name="image_url" class="form-control" placeholder="https://.../image.jpg" required>
-      <button type="submit" class="btn btn-primary text-nowrap">Depuis une URL</button>
+      <button type="submit" class="btn btn-primary text-nowrap">From URL</button>
     </form>
   </div>
   <div class="col-md-6">
@@ -123,7 +123,7 @@
       <input type="hidden" name="art_type" value="{{ art_type }}">
       <input type="hidden" name="missing_only" value="{{ 1 if missing_only else '' }}">
       <input type="file" name="image_file" class="form-control" accept="image/*" required>
-      <button type="submit" class="btn btn-primary text-nowrap">Uploader</button>
+      <button type="submit" class="btn btn-primary text-nowrap">Upload</button>
     </form>
   </div>
 </div>
@@ -160,7 +160,7 @@
              onclick="showImagePreview('{{ img_url|e }}')">
         <div class="card-body text-center">
           {% if img.selected %}
-            <span class="badge bg-success mb-2">✓ Actuellement sélectionné</span><br>
+            <span class="badge bg-success mb-2">✓ Currently selected</span><br>
           {% endif %}
           <form action="{{ url_for('download') }}" method="post">
             <input type="hidden" name="rating_key" value="{{ item.ratingKey }}">

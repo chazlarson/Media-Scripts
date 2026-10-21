@@ -1,7 +1,11 @@
-import os
+import ipaddress
 import math
+import os
+import socket
 import string
 import time
+from urllib.parse import urlparse
+
 import requests
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from plexapi.server import PlexServer
@@ -13,20 +17,196 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 ALPHABET = list(string.ascii_uppercase)
 ALPHABET.insert(0, "0-9")
 
-# cache of non-empty asset folders, split between poster files and background
-# files, per media type. Scanning this means checking every item's folder on
-# disk, which is the expensive part of this app — unlike before, this is now
-# PURELY MANUAL: it is never recomputed automatically on a page view or after
-# a timeout. It is only (re)computed when the "🔄 Vérifier les posters" button
-# is used, or right after a download (a single, cheap, known-fresh update).
-# computed_at stays None until the first manual check ever happens.
-_ASSET_CACHE = {
-    "movie_posters": set(),
-    "movie_backgrounds": set(),
-    "series_posters": set(),
-    "series_backgrounds": set(),
-    "computed_at": None,
-}
+# Max bytes accepted for any server-side image fetch (URL upload or remote poster).
+MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024
+ALLOWED_IMAGE_SCHEMES = {"http", "https"}
+ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+
+# Per-(plex server, asset root) caches of non-empty asset folders, split between
+# poster files and background files, per media type. Scanning this means
+# checking every item's folder on disk, which is the expensive part of this
+# app — unlike before, this is now PURELY MANUAL: it is never recomputed
+# automatically on a page view or after a timeout. It is only (re)computed when
+# the "Refresh posters/backgrounds" button is used, or right after a download
+# (a single, cheap, known-fresh update). Each entry's computed_at stays None
+# until the first manual check for that key.
+_ASSET_CACHES = {}
+
+# cache of {cache_key: {section_key: {"keys": [...], "scanned_at": ...}}} —
+# ordered lists of items missing a poster, for the "missing only" nav mode.
+# Only rebuilt when older than the last manual asset check for that key.
+_MISSING_CACHES = {}
+
+
+def _empty_asset_cache():
+    return {
+        "movie_posters": set(),
+        "movie_backgrounds": set(),
+        "series_posters": set(),
+        "series_backgrounds": set(),
+        "computed_at": None,
+        "asset_root": None,
+        "base_url": None,
+    }
+
+
+def sanitize_asset_dir(raw):
+    """Normalize a user-supplied asset directory name/path.
+
+    Relative paths must resolve under the process cwd (blocks ``..`` escapes).
+    Absolute paths are allowed (Docker volume mounts) after realpath.
+    """
+    raw = (raw or "assets").strip() or "assets"
+    if "\x00" in raw:
+        return "assets"
+    if os.path.isabs(raw):
+        return os.path.realpath(raw)
+    candidate = os.path.realpath(os.path.join(os.getcwd(), raw))
+    cwd = os.path.realpath(os.getcwd())
+    if candidate != cwd and not candidate.startswith(cwd + os.sep):
+        return "assets"
+    # Keep a relative form when possible so joins with cwd stay stable.
+    try:
+        return os.path.relpath(candidate, cwd)
+    except ValueError:
+        return candidate
+
+
+def resolve_asset_root(asset_dir=None):
+    """Absolute path of the asset tree for the current session (or override)."""
+    raw = asset_dir if asset_dir is not None else session.get("asset_dir", "assets")
+    raw = (raw or "assets").strip() or "assets"
+    if os.path.isabs(raw):
+        return os.path.realpath(raw)
+    return os.path.realpath(os.path.join(os.getcwd(), raw))
+
+
+def _session_cache_key(asset_root=None, base_url=None):
+    """Key asset / missing caches by Plex server + asset tree."""
+    root = os.path.realpath(asset_root or resolve_asset_root())
+    url = (base_url if base_url is not None else session.get("base_url") or "").rstrip(
+        "/"
+    )
+    return f"{url}|{root}"
+
+
+def _is_blocked_ip(ip_str):
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return True
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
+
+
+def validate_outbound_image_url(url):
+    """Reject non-http(s) URLs and hosts that resolve to private/local addresses.
+
+    Raises ValueError when the URL must not be fetched server-side.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ALLOWED_IMAGE_SCHEMES:
+        raise ValueError("Only http and https image URLs are allowed")
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("URL must include a hostname")
+    # Block literal private IPs before DNS.
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        pass  # hostname is not an IP literal
+    else:
+        if _is_blocked_ip(hostname):
+            raise ValueError("URL host is a private or local address")
+
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        addrinfos = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ValueError(f"Cannot resolve host: {exc}") from exc
+    if not addrinfos:
+        raise ValueError("Cannot resolve host")
+    for info in addrinfos:
+        if _is_blocked_ip(info[4][0]):
+            raise ValueError("URL resolves to a private or local address")
+    return url
+
+
+def _read_response_bounded(resp):
+    content_length = resp.headers.get("Content-Length")
+    if content_length is not None:
+        try:
+            if int(content_length) > MAX_DOWNLOAD_BYTES:
+                raise ValueError("Remote file exceeds size limit")
+        except ValueError as exc:
+            if "size limit" in str(exc):
+                raise
+            # Non-numeric Content-Length — ignore and enforce while reading.
+    chunks = []
+    total = 0
+    for chunk in resp.iter_content(chunk_size=64 * 1024):
+        if not chunk:
+            continue
+        total += len(chunk)
+        if total > MAX_DOWNLOAD_BYTES:
+            raise ValueError("Remote file exceeds size limit")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def fetch_image_bytes(url, timeout=15):
+    """Fetch an arbitrary image URL with SSRF checks and a hard size cap."""
+    validate_outbound_image_url(url)
+    with requests.get(url, timeout=timeout, stream=True) as resp:
+        resp.raise_for_status()
+        return _read_response_bounded(resp)
+
+
+def fetch_plex_media(img_key, timeout=15):
+    """Fetch a relative Plex media path from the session's configured server.
+
+    Plex is often on a LAN address, so this path intentionally skips the
+    private-IP SSRF block used for arbitrary URL uploads. The request is still
+    size-bounded and locked to the session base_url host.
+    """
+    if not img_key.startswith("/"):
+        raise ValueError("Plex media path must start with /")
+    base = (session.get("base_url") or "").rstrip("/")
+    token = session.get("token") or ""
+    if not base or not token:
+        raise ValueError("Plex connection is not configured")
+    url = f"{base}{img_key}"
+    sep = "&" if "?" in url else "?"
+    if "X-Plex-Token=" not in url:
+        url = f"{url}{sep}X-Plex-Token={token}"
+
+    parsed = urlparse(url)
+    base_parsed = urlparse(base)
+    if (
+        parsed.scheme != base_parsed.scheme
+        or parsed.hostname != base_parsed.hostname
+        or parsed.port != base_parsed.port
+    ):
+        raise ValueError("Refusing to fetch outside the configured Plex server")
+
+    with requests.get(url, timeout=timeout, stream=True) as resp:
+        resp.raise_for_status()
+        return _read_response_bounded(resp)
+
+
+def safe_image_ext(path_or_url):
+    """Return a safe image extension from a path/URL, defaulting to .jpg."""
+    path = path_or_url.split("?", 1)[0]
+    ext = os.path.splitext(path)[1].lower()
+    if ext in ALLOWED_IMAGE_EXTS:
+        return ext
+    return ".jpg"
 
 
 def _scan_asset_folders(root):
@@ -57,26 +237,34 @@ def _scan_asset_folders(root):
     return posters, backgrounds
 
 
-def get_asset_folders(asset_root, force=False):
-    """Return the cached scan. Never scans on its own — pass force=True to
-    actually (re)do the disk scan (used by the manual refresh button and
-    right after a download)."""
+def get_asset_folders(asset_root=None, force=False):
+    """Return the cached scan for this session's Plex server + asset root.
+
+    Never scans on its own — pass force=True to actually (re)do the disk scan
+    (used by the manual refresh button and right after a download).
+    """
+    root = os.path.realpath(asset_root or resolve_asset_root())
+    key = _session_cache_key(root)
+    cache = _ASSET_CACHES.setdefault(key, _empty_asset_cache())
     if force:
-        _ASSET_CACHE["movie_posters"], _ASSET_CACHE["movie_backgrounds"] = _scan_asset_folders(
-            os.path.join(asset_root, "movies")
+        cache["movie_posters"], cache["movie_backgrounds"] = _scan_asset_folders(
+            os.path.join(root, "movies")
         )
-        _ASSET_CACHE["series_posters"], _ASSET_CACHE["series_backgrounds"] = _scan_asset_folders(
-            os.path.join(asset_root, "series")
+        cache["series_posters"], cache["series_backgrounds"] = _scan_asset_folders(
+            os.path.join(root, "series")
         )
-        _ASSET_CACHE["computed_at"] = time.time()
-    return _ASSET_CACHE
+        cache["computed_at"] = time.time()
+        cache["asset_root"] = root
+        cache["base_url"] = (session.get("base_url") or "").rstrip("/")
+    return cache
 
 
 def annotate_asset_flags(items):
     """Set item.has_poster / item.has_background for each item in the list,
-    from the cached scan. If no manual check has ever been run yet, both are
-    set to None (meaning "unknown / not checked"), never guessed as False."""
-    asset_root = os.path.join(os.getcwd(), session.get("asset_dir", "assets"))
+    from the cached scan. If no manual check has ever been run yet for this
+    session key, both are set to None (meaning "unknown / not checked"),
+    never guessed as False."""
+    asset_root = resolve_asset_root()
     cache = get_asset_folders(asset_root)  # force=False: just reads, never scans
     checked = cache["computed_at"] is not None
     for item in items:
@@ -100,33 +288,30 @@ def annotate_asset_flags(items):
     return items
 
 
-# cache of {section_key: {"keys": [ratingKey, ...], "scanned_at": ...}} — the
-# ordered list of items missing a poster, for the "missing only" nav mode.
-# Only rebuilt when it's older than the last manual asset check (i.e. right
-# after the button is used, or after a download), never on a timer.
-_MISSING_CACHE = {}
-
-
 def get_missing_rating_keys(section, force=False):
-    if _ASSET_CACHE["computed_at"] is None:
+    asset_root = resolve_asset_root()
+    cache_key = _session_cache_key(asset_root)
+    asset_cache = get_asset_folders(asset_root)
+    if asset_cache["computed_at"] is None:
         return None  # nothing has ever been checked — caller must handle this
+    section_map = _MISSING_CACHES.setdefault(cache_key, {})
     key = str(section.key)
-    entry = _MISSING_CACHE.get(key)
-    if force or not entry or entry["scanned_at"] < _ASSET_CACHE["computed_at"]:
+    entry = section_map.get(key)
+    if force or not entry or entry["scanned_at"] < asset_cache["computed_at"]:
         items = list(section.all())
         annotate_asset_flags(items)
         entry = {
             "keys": [i.ratingKey for i in items if not i.has_poster],
             "scanned_at": time.time(),
         }
-        _MISSING_CACHE[key] = entry
+        section_map[key] = entry
     return entry["keys"]
 
 
 def refresh_asset_check(plex, section_key=None):
     """Run a full manual check: rescan the asset folders on disk, then rebuild
     the missing-poster list for the given section (or all known sections)."""
-    asset_root = os.path.join(os.getcwd(), session.get("asset_dir", "assets"))
+    asset_root = resolve_asset_root()
     get_asset_folders(asset_root, force=True)
     if section_key:
         section = next(
@@ -144,20 +329,35 @@ def get_plex():
     return PlexServer(base_url, token)
 
 
+def _browse_redirect(ctx, flash_message=None):
+    if flash_message:
+        flash(flash_message)
+    return redirect(
+        url_for(
+            "browse",
+            section_key=ctx["section_key"],
+            page=ctx["item_page"],
+            art_type=ctx["art_type"],
+            season=ctx["season"],
+            episode=ctx["episode"],
+            art_page=ctx["art_page"],
+            missing_only=1 if ctx["missing_only"] else None,
+        )
+    )
+
+
 @app.route("/", methods=["GET", "POST"])
 def connect():
     if request.method == "POST":
         session["base_url"] = request.form["base_url"]
         session["token"] = request.form["token"]
-        session["asset_dir"] = (
-            "assets" if not request.form["asset_dir"] else request.form["asset_dir"]
-        )
+        session["asset_dir"] = sanitize_asset_dir(request.form.get("asset_dir"))
         return redirect(url_for("libraries"))
 
     # optional defaults from environment variables (set in docker-compose.yml)
     env_base_url = os.environ.get("PLEX_BASE_URL", "")
     env_token = os.environ.get("PLEX_TOKEN", "")
-    env_asset_dir = os.environ.get("PLEX_ASSET_DIR", "assets")
+    env_asset_dir = sanitize_asset_dir(os.environ.get("PLEX_ASSET_DIR", "assets"))
 
     # if both URL and token are provided via env, skip the form entirely
     if env_base_url and env_token and not session.get("base_url"):
@@ -211,7 +411,7 @@ def list_items(section_key):
     # check which items already have a downloaded poster / background —
     # purely from the last manual check, never scans the disk itself
     annotate_asset_flags(all_items_full)
-    checked = _ASSET_CACHE["computed_at"] is not None
+    checked = get_asset_folders()["computed_at"] is not None
 
     # separate index used when navigating within the "missing poster only" set,
     # so Next/Previous on the item page stay within that filtered subset instead
@@ -257,16 +457,16 @@ def list_items(section_key):
         items_filtered = [item for item in items_filtered if not item.has_poster]
 
     # pagination params (based on filtered set)
-    total    = len(items_filtered)
+    total = len(items_filtered)
     per_page = 20
-    pages    = math.ceil(total / per_page) if total else 1
+    pages = math.ceil(total / per_page) if total else 1
 
     # clamp page number
     page = int(request.args.get("page", 1))
     page = max(1, min(page, pages))
 
     # slice out this page from filtered items
-    start      = (page - 1) * per_page
+    start = (page - 1) * per_page
     page_items = items_filtered[start : start + per_page]
 
     return render_template(
@@ -281,7 +481,9 @@ def list_items(section_key):
         letter=letter,
         search_query=search_query,
         missing_only=missing_only,
-        missing_count=(len([i for i in all_items_full if not i.has_poster]) if checked else 0),
+        missing_count=(
+            len([i for i in all_items_full if not i.has_poster]) if checked else 0
+        ),
     )
 
 
@@ -292,7 +494,7 @@ def refresh_assets(section_key):
         return redirect(url_for("connect"))
 
     refresh_asset_check(plex, section_key)
-    flash("Vérification des posters/backgrounds effectuée.")
+    flash("Poster/background check complete.")
 
     # bounce back to wherever the person was (list or item page), keeping
     # whatever letter/search/page/missing_only state was already in the URL
@@ -338,11 +540,11 @@ def browse(section_key):
     if missing_only:
         missing_keys = get_missing_rating_keys(section)
         if missing_keys is None:
-            flash("Lance d'abord une vérification des posters avant d'utiliser ce filtre.")
+            flash("Run a poster check first before using this filter.")
             return redirect(url_for("list_items", section_key=section.key))
         pages = len(missing_keys)
         if not pages:
-            flash("Tous les items ont déjà un poster \u2014 filtre \u00absans poster\u00bb retiré.")
+            flash('Every item already has a poster — "missing poster" filter cleared.')
             return redirect(
                 url_for("list_items", section_key=section.key, missing_only=1)
             )
@@ -362,7 +564,7 @@ def browse(section_key):
     season = request.args.get("season")
     try:
         season_rating_key = item.season(int(season)).ratingKey
-    except:
+    except Exception:
         season_rating_key = None
 
     episode = request.args.get("episode")
@@ -376,7 +578,7 @@ def browse(section_key):
         else:
             asset_name = os.path.basename(item.locations[0])
         subfolder = "movies" if item.type == "movie" else "series"
-        asset_root = os.path.join(os.getcwd(), session.get("asset_dir", "assets"))
+        asset_root = resolve_asset_root()
         item_dir = os.path.join(asset_root, subfolder, asset_name)
         has_local_asset = os.path.isdir(item_dir) and any(os.scandir(item_dir))
     except Exception:
@@ -396,7 +598,9 @@ def browse(section_key):
     try:
         for guid in item.guids:
             if guid.id.startswith("imdb://"):
-                imdb_url = f"https://www.imdb.com/title/{guid.id.replace('imdb://', '')}/"
+                imdb_url = (
+                    f"https://www.imdb.com/title/{guid.id.replace('imdb://', '')}/"
+                )
                 break
     except Exception:
         pass
@@ -437,15 +641,24 @@ def compute_asset_base_dir(item, season_item):
     except Exception:
         asset_name = item.title
 
-    return os.path.join(
-        os.getcwd(),
-        session["asset_dir"],
+    # Basename-only: drop any path separators that could escape the asset tree.
+    asset_name = os.path.basename(str(asset_name).replace("\\", "/")) or "unknown"
+
+    base = os.path.join(
+        resolve_asset_root(),
         "movies" if item.type == "movie" else "series",
         asset_name,
     )
+    # Final guard: resolved path must stay under the asset root.
+    asset_root = resolve_asset_root()
+    real_base = os.path.realpath(base)
+    if not real_base.startswith(asset_root + os.sep) and real_base != asset_root:
+        real_base = os.path.join(asset_root, "movies" if item.type == "movie" else "series", "unknown")
+    return real_base
 
 
 def compute_asset_filename(item, art_type, season, episode, ext):
+    ext = safe_image_ext(ext if ext.startswith(".") else f".{ext}")
     if item.type == "show":
         if episode:
             s, e = int(season), int(episode)
@@ -467,7 +680,7 @@ def get_download_context(form):
     rating_key = int(form["rating_key"])
     try:
         season_rating_key = int(form["season_rating_key"])
-    except:
+    except Exception:
         season_rating_key = None
     return {
         "rating_key": rating_key,
@@ -480,6 +693,12 @@ def get_download_context(form):
         "art_page": form.get("art_page", 1),
         "missing_only": form.get("missing_only") == "1",
     }
+
+
+def _mark_asset_fresh(plex, section_key):
+    get_asset_folders(force=True)
+    if get_asset_folders()["computed_at"] is not None:
+        refresh_asset_check(plex, section_key)
 
 
 @app.route("/download", methods=["POST"])
@@ -499,39 +718,28 @@ def download():
     base_dir = compute_asset_base_dir(item, season_item)
     os.makedirs(base_dir, exist_ok=True)
 
-    ext = os.path.splitext(img_key)[1] or ".jpg"
-    filename = compute_asset_filename(item, ctx["art_type"], ctx["season"], ctx["episode"], ext)
+    ext = safe_image_ext(img_key)
+    filename = compute_asset_filename(
+        item, ctx["art_type"], ctx["season"], ctx["episode"], ext
+    )
 
-    if img_key.startswith("http"):
-        img_url = img_key
-    else:
-        img_url = f"{session['base_url']}{img_key}&X-Plex-Token={session['token']}"
+    try:
+        if img_key.startswith("http://") or img_key.startswith("https://"):
+            content = fetch_image_bytes(img_key)
+        elif img_key.startswith("/"):
+            content = fetch_plex_media(img_key)
+        else:
+            raise ValueError("Unsupported image key")
+    except Exception as exc:
+        return _browse_redirect(ctx, f"Download failed: {exc}")
 
-    resp = requests.get(img_url)
     with open(os.path.join(base_dir, filename), "wb") as f:
-        f.write(resp.content)
+        f.write(content)
 
-    # a new file just landed on disk — refresh the cached "has poster" sets right
-    # away instead of waiting for the TTL, so the badge is correct immediately
-    get_asset_folders(
-        os.path.join(os.getcwd(), session.get("asset_dir", "assets")), force=True
-    )
-    if _ASSET_CACHE["computed_at"] is not None:
-        refresh_asset_check(plex, ctx["section_key"])
+    # a new file just landed on disk — refresh the cached "has poster" sets
+    _mark_asset_fresh(plex, ctx["section_key"])
 
-    flash(f"Saved to {os.path.join(base_dir, filename)}")
-    return redirect(
-        url_for(
-            "browse",
-            section_key=ctx["section_key"],
-            page=ctx["item_page"],
-            art_type=ctx["art_type"],
-            season=ctx["season"],
-            episode=ctx["episode"],
-            art_page=ctx["art_page"],
-            missing_only=1 if ctx["missing_only"] else None,
-        )
-    )
+    return _browse_redirect(ctx, f"Saved to {os.path.join(base_dir, filename)}")
 
 
 @app.route("/upload_url", methods=["POST"])
@@ -544,19 +752,7 @@ def upload_url():
     image_url = request.form.get("image_url", "").strip()
 
     if not image_url:
-        flash("Aucune URL fournie.")
-        return redirect(
-            url_for(
-                "browse",
-                section_key=ctx["section_key"],
-                page=ctx["item_page"],
-                art_type=ctx["art_type"],
-                season=ctx["season"],
-                episode=ctx["episode"],
-                art_page=ctx["art_page"],
-            missing_only=1 if ctx["missing_only"] else None,
-            )
-        )
+        return _browse_redirect(ctx, "No URL provided.")
 
     item = plex.fetchItem(ctx["rating_key"])
     season_item = (
@@ -566,35 +762,19 @@ def upload_url():
     base_dir = compute_asset_base_dir(item, season_item)
     os.makedirs(base_dir, exist_ok=True)
 
-    ext = os.path.splitext(image_url.split("?")[0])[1] or ".jpg"
-    filename = compute_asset_filename(item, ctx["art_type"], ctx["season"], ctx["episode"], ext)
+    ext = safe_image_ext(image_url)
+    filename = compute_asset_filename(
+        item, ctx["art_type"], ctx["season"], ctx["episode"], ext
+    )
 
     try:
-        resp = requests.get(image_url, timeout=15)
-        resp.raise_for_status()
+        content = fetch_image_bytes(image_url)
         with open(os.path.join(base_dir, filename), "wb") as f:
-            f.write(resp.content)
-        get_asset_folders(
-            os.path.join(os.getcwd(), session.get("asset_dir", "assets")), force=True
-        )
-        if _ASSET_CACHE["computed_at"] is not None:
-            refresh_asset_check(plex, ctx["section_key"])
-        flash(f"Saved to {os.path.join(base_dir, filename)}")
-    except Exception as e:
-        flash(f"Échec du téléchargement depuis l'URL : {e}")
-
-    return redirect(
-        url_for(
-            "browse",
-            section_key=ctx["section_key"],
-            page=ctx["item_page"],
-            art_type=ctx["art_type"],
-            season=ctx["season"],
-            episode=ctx["episode"],
-            art_page=ctx["art_page"],
-            missing_only=1 if ctx["missing_only"] else None,
-        )
-    )
+            f.write(content)
+        _mark_asset_fresh(plex, ctx["section_key"])
+        return _browse_redirect(ctx, f"Saved to {os.path.join(base_dir, filename)}")
+    except Exception as exc:
+        return _browse_redirect(ctx, f"Failed to download from URL: {exc}")
 
 
 @app.route("/upload_file", methods=["POST"])
@@ -607,19 +787,7 @@ def upload_file():
     uploaded = request.files.get("image_file")
 
     if not uploaded or uploaded.filename == "":
-        flash("Aucun fichier sélectionné.")
-        return redirect(
-            url_for(
-                "browse",
-                section_key=ctx["section_key"],
-                page=ctx["item_page"],
-                art_type=ctx["art_type"],
-                season=ctx["season"],
-                episode=ctx["episode"],
-                art_page=ctx["art_page"],
-            missing_only=1 if ctx["missing_only"] else None,
-            )
-        )
+        return _browse_redirect(ctx, "No file selected.")
 
     item = plex.fetchItem(ctx["rating_key"])
     season_item = (
@@ -629,30 +797,16 @@ def upload_file():
     base_dir = compute_asset_base_dir(item, season_item)
     os.makedirs(base_dir, exist_ok=True)
 
-    ext = os.path.splitext(uploaded.filename)[1] or ".jpg"
-    filename = compute_asset_filename(item, ctx["art_type"], ctx["season"], ctx["episode"], ext)
-
-    uploaded.save(os.path.join(base_dir, filename))
-
-    get_asset_folders(
-        os.path.join(os.getcwd(), session.get("asset_dir", "assets")), force=True
+    ext = safe_image_ext(uploaded.filename)
+    filename = compute_asset_filename(
+        item, ctx["art_type"], ctx["season"], ctx["episode"], ext
     )
-    if _ASSET_CACHE["computed_at"] is not None:
-        refresh_asset_check(plex, ctx["section_key"])
-    flash(f"Saved to {os.path.join(base_dir, filename)}")
 
-    return redirect(
-        url_for(
-            "browse",
-            section_key=ctx["section_key"],
-            page=ctx["item_page"],
-            art_type=ctx["art_type"],
-            season=ctx["season"],
-            episode=ctx["episode"],
-            art_page=ctx["art_page"],
-            missing_only=1 if ctx["missing_only"] else None,
-        )
-    )
+    dest = os.path.join(base_dir, filename)
+    uploaded.save(dest)
+
+    _mark_asset_fresh(plex, ctx["section_key"])
+    return _browse_redirect(ctx, f"Saved to {dest}")
 
 
 if __name__ == "__main__":
