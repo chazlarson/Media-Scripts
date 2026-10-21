@@ -25,7 +25,7 @@ A live Plex server was not part of the request. `docker build` is the unchecked 
 - One mount, `/config`. The image sets `MEDIA_SCRIPTS_CONFIG_DIR=/config`.
 - First run copies `config.template.yaml` to `/config/config.yaml` only when that file is missing, and creates `/config/plex`, `/config/kometa`, and `/config/tmdb`.
 - Scripts run with cwd `/config/<category>`, so `../config.yaml` and relative writes stay on the mount. Local runs leave the env var unset and still use the script directory plus repo-root `config.yaml`.
-- The Plex Image Picker is excluded. Its app and `Plex Image Picker/Dockerfile` stay. `.dockerignore` excludes that directory. `orchestrator.py picker` exits 2. `menu.py` has no picker item.
+- The Plex Image Picker is excluded. Its app and `plex-image-picker/Dockerfile` stay. `.dockerignore` excludes that directory. `orchestrator.py picker` exits 2. `menu.py` has no picker item.
 - `kometa.config_dir` is an external Kometa install path. The image does not create it. `originals-to-assets` needs that path mounted separately.
 - Config migration is done. Do not revive `.env` or `python-dotenv`. Do not rewrite git history for the old GitGuardian sample-key finding. Do not rotate keys unless asked.
 

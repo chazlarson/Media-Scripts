@@ -109,7 +109,7 @@ See the [TMDB Scripts README](TMDB/README.md) for details.
 
 This presents a web UI that lets you scroll through the images that Plex provides for each item [movie, show, season, episode], selecting the one you want by clicking a button, which downloads it to an asset directory
 
-See the [Plex Image Picker README](Plex%20Image%20Picker/README.md) for details.
+See the [Plex Image Picker README](plex-image-picker/README.md) for details.
 
 ## Entry point
 

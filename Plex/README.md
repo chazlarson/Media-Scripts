@@ -22,7 +22,7 @@ The `config.yaml` template can be viewed here: [../config.template.yaml](../conf
 1. [reset-posters-plex.py](#reset-posters-plexpy) - reset all artwork in a library to Plex default
 1. [grab-all-IDs.py](#grab-all-IDspy) - grab [into a sqlite DB] ratingKey, IMDB ID, TMDB ID, TVDB ID for everything in a library from plex
 1. [grab-all-posters.py](#grab-all-posterspy) - grab some or all of the artwork for a library from plex
-1. [image_picker.py](#image_pickerpy) - Replaced by [Plex Image Picker](../Plex%20Image%20Picker/)
+1. [image_picker.py](#image_pickerpy) - Replaced by [Plex Image Picker](../plex-image-picker/)
 1. [grab-all-status.py](#grab-all-statuspy) - grab watch status for all users all libraries from plex
 1. [apply-all-status.py](#apply-all-statuspy) - apply watch status for all users all libraries to plex from the file emitted by the previous script
 1. [show-all-playlists.py](#show-all-playlistspy) - Show contents of all user playlists
@@ -560,7 +560,7 @@ assets
 
 ## image_picker.py
 
-Replaced with [Plex Image Picker](../Plex%20Image%20Picker/).
+Replaced with [Plex Image Picker](../plex-image-picker/).
 
 ## grab-all-status.py
 
