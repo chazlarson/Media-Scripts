@@ -10,6 +10,8 @@
 **/*.pickle
 **/*.sqlite
 **/.python-version
+!/.python-version
+!/plex-image-picker/.python-version
 
 config.yaml
 

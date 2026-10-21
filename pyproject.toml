@@ -1,0 +1,40 @@
+[project]
+name = "media-scripts"
+version = "0.0.0"
+description = "Scripts and tools for Plex, Kometa, and TMDB"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alive-progress==2.4.1",
+    "filetype",
+    "flask",
+    "gitpython",
+    "imdbpy",
+    "num2words",
+    "pathvalidate",
+    "piexif",
+    "pillow",
+    "plexapi>=4.16.1",
+    "pyopenssl",
+    "pyyaml",
+    "requests",
+    "retrying",
+    "ruamel.yaml",
+    "setuptools",
+    "sqlalchemy<2.0",
+    "tabulate",
+    "tmdbapis",
+    "tmdbsimple",
+    "tmdbv3api",
+    "tvdb-v4-official",
+    "validators",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "ruff",
+]
+
+[tool.uv]
+package = false

@@ -12,25 +12,19 @@ This script does not use anything from the `.env`, but it does make some assumpt
 
 ## Requirements
 
-1. A system that can run Python 3.7 [or newer]
-1. Python 3.7 [or newer] installed on that system
-
-   One of the requirements of these scripts is alive-progress 2.4.1, which requires Python 3.7.
+1. A system that can run Python 3.12 or newer
+1. [uv](https://docs.astral.sh/uv/) installed
 1. A basic knowledge of how to run Python scripts.
 1. You can run a web server on the machine that listens on port 5000
 
 ## Setup
 
-### if you use [`direnv`](https://github.com/direnv/direnv) and [`pyenv`](https://github.com/pyenv/pyenv):
+### if you use [`direnv`](https://github.com/direnv/direnv):
 1. clone the repo
 1. cd into the repo dir
 1. cd into the app directory [`cd plex-image-picker`]
 1. run `direnv allow` as the prompt will tell you to
-1. direnv will build the virtual env and keep requirements up to date
-
-### if you don't use [`direnv`](https://github.com/direnv/direnv) and [`pyenv`](https://github.com/pyenv/pyenv):
-1. install direnv and pyenv
-2. go to the previous section
+1. direnv runs `uv sync` and activates `.venv`
 
 Ha ha only serious.
 
@@ -50,10 +44,8 @@ To set it up without those things:
    ```
    cd plex-image-picker
    ```
-1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-
-   Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Kometa wiki.
-1. Run with `flask run`
+1. Install the locked dependencies with `uv sync`
+1. Run with `uv run flask run`
 1. Go to one of the URLs presented.
 
 #### Docker

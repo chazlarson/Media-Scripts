@@ -4,10 +4,10 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 
 ## Requirements
 
-1. A system that can run Python 3.7 [or newer]
-1. Python 3.7 [or newer] installed on that system
+1. A system that can run Python 3.12 or newer
+1. [uv](https://docs.astral.sh/uv/) installed
 
-   One of the requirements of these scripts is alive-progress 2.4.1, which requires Python 3.7.
+   uv installs the Python from `.python-version` and the packages in `uv.lock`.
 
 1. A basic knowledge of how to run Python scripts.
 
@@ -17,15 +17,9 @@ Misc scripts and tools. Undocumented scripts probably do what I need them to but
 1. clone the repo
 1. cd into the repo dir
 1. run `direnv allow` as the prompt will tell you to
-1. direnv will build the virtual env and keep requirements up to date
+1. direnv runs `uv sync` and activates `.venv`
 
-### if you don't use [`direnv`](https://github.com/direnv/direnv):
-1. install direnv
-2. go to the previous section
-
-ok not really
-
-### if you don't use [`direnv`](https://github.com/direnv/direnv):
+### without direnv:
 
 1. clone repo
    ```
@@ -35,12 +29,17 @@ ok not really
    ```
    cd Media-Scripts
    ```
-1. Install requirements with `python3 -m pip install -r requirements.txt` [I'd suggest doing this in a virtual environment]
-
-   Creating a virtual environment is described [here](https://docs.python.org/3/library/venv.html); there's also a step-by-step in the local walkthrough in the Kometa wiki.
+1. Install the locked dependencies
+   ```
+   uv sync
+   ```
+1. Run a script with the environment uv created
+   ```
+   uv run python orchestrator.py list
+   ```
 
 ### After you've done one of the above:
-Once you have the requirements installed via whatever means, you are ready to set up the script-specific stuff.
+Once the environment is installed, you are ready to set up the script-specific stuff.
 
 1. Copy `config.template.yaml` to `config.yaml`
 
@@ -65,7 +64,7 @@ Once you have the requirements installed via whatever means, you are ready to se
 1. Run the desired script.
 
 
-All these scripts use the same `config.yaml` and requirements.
+All these scripts use the same `config.yaml` and the root uv environment.
 
 ## Plex scripts:
 
