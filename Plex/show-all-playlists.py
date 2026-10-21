@@ -3,8 +3,11 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from config import Config
-from helpers import get_plex
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import get_plex  # noqa: E402
+
 
 def main():
     global now, RUNTIME_STR, SCRIPT_NAME, VERSION, config, PLEX_OWNER, plex, PMI

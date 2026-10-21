@@ -5,10 +5,13 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from config import Config
 from database import (get_completed, get_count, get_diffs, insert_record,
                       update_record)
-from helpers import (get_all_from_library, get_ids, get_plex,
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_ids, get_plex,  # noqa: E402
                      get_target_libraries)
 
 

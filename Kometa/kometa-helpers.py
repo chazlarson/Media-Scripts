@@ -4,11 +4,14 @@ from pathlib import Path
 
 import plexapi
 import requests
-from config import Config
 from pathvalidate import is_valid_filename, sanitize_filename
 from PIL import Image
 from plexapi.exceptions import Unauthorized
 from plexapi.server import PlexServer
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
 
 
 def has_overlay(image_path):

@@ -3,8 +3,11 @@ from timeit import default_timer as timer
 
 import requests
 from alive_progress import alive_bar
-from config import Config
 from tmdbapis import TMDbAPIs
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
 
 start = timer()
 

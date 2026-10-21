@@ -4,10 +4,13 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_all_from_library, get_ids, get_plex,
-                     get_target_libraries, get_redaction_list)
 from logs import logger, plogger, setup_logger
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_ids, get_plex,  # noqa: E402
+                     get_target_libraries, get_redaction_list)
 
 
 def superchat(msg, level, logfile):

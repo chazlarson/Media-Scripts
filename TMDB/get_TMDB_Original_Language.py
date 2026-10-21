@@ -6,9 +6,11 @@ import time
 from pathlib import Path
 from timeit import default_timer as timer
 
-from config import Config
 from plexapi.server import PlexServer
 from tmdbapis import TMDbAPIs
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
 
 # import tvdb_v4_official
 

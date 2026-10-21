@@ -3,9 +3,13 @@ import time
 from datetime import datetime
 
 from alive_progress import alive_bar
-from config import Config
-from helpers import get_plex
 from tabulate import tabulate
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import get_plex  # noqa: E402
 
 def main():
     global config, now, RUNTIME_STR, DELAY, plex, coll_obj, sections, item_total, table

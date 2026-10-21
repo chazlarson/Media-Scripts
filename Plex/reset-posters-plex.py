@@ -8,10 +8,13 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_all_from_library, get_overlay_status, get_plex,
-                     get_target_libraries)
 from logs import blogger, plogger, setup_logger
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_overlay_status, get_plex,  # noqa: E402
+                     get_target_libraries)
 
 def sleep_for_a_while():
     sleeptime = DELAY
@@ -89,7 +92,7 @@ def main():
 
     SCRIPT_NAME = Path(__file__).stem
 
-    # DONE 0.1.1 added a couple booler
+    # DONE 0.1.1 read boolean settings with Config.get_bool
     # DONE 0.1.2 Require a meaningful value for TARGET_LABELS
     # DONE 0.1.3 Batch remove labels
 

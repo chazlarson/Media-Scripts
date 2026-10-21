@@ -5,10 +5,13 @@ from datetime import datetime
 from pathlib import Path, PurePath
 
 from alive_progress import alive_bar
-from config import Config
-from helpers import (get_all_from_library, get_plex, get_redaction_list,
-                     get_target_libraries, validate_filename)
 from logs import logger, plogger, setup_logger
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import (get_all_from_library, get_plex, get_redaction_list,  # noqa: E402
+                     get_target_libraries, validate_filename)
 
 config = Config('../config.yaml')
 

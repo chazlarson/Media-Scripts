@@ -2,9 +2,12 @@ import sys
 import textwrap
 from collections import Counter
 
-from config import Config
-from helpers import get_ids, get_plex, get_target_libraries
 from tmdbapis import TMDbAPIs
+
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import get_ids, get_plex, get_target_libraries  # noqa: E402
 
 
 def progress(count, total, status=""):

@@ -7,8 +7,10 @@ from datetime import datetime
 from pathlib import Path
 
 import imdb
-from config import Config
-from helpers import get_ids, get_plex, get_target_libraries
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.config import Config  # noqa: E402
+from mediascripts.helpers import get_ids, get_plex, get_target_libraries  # noqa: E402
 
 
 def progress(count, total, status=""):
