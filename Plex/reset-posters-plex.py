@@ -8,10 +8,10 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from alive_progress import alive_bar
-from logs import blogger, plogger, setup_logger
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, plogger, setup_logger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import (get_all_from_library, get_overlay_status, get_plex,  # noqa: E402
                      get_target_libraries)

@@ -179,7 +179,12 @@ def do_login(timeout, session):
     return plex
 
 
-def get_plex():
+def get_plex(user_token=None):
+    """Connect to the configured Plex server.
+
+    user_token connects as that managed user. The owner path is unchanged:
+    plexapi config, then a saved login, then an interactive login.
+    """
     plex = None
     config = Config('../config.yaml')
     os.environ['PLEXAPI_HEADER_IDENTIFIER'] = f"{config.get('plex_api.header_identifier')}"
@@ -193,6 +198,19 @@ def get_plex():
     os.environ['PLEXAPI_LOG_ROTATE_BYTES'] = f"{config.get('plex_api.log.rotate_bytes')}"
     os.environ['PLEXAPI_LOG_SHOW_SECRETS'] = f"{config.get('plex_api.log.show_secrets')}"
     os.environ['PLEXAPI_SKIP_VERIFYSSL'] = f"{config.get('plex_api.skip_verify_ssl')}"                     # ignore self signed certificate errors
+
+    if user_token is not None:
+        print("creating plex with user token")
+        try:
+            plex = PlexServer(token=user_token)
+            print(f"connected to {plex.friendlyName}")
+        except Unauthorized:
+            print("Plex Error: Plex token is invalid")
+            raise
+        except Exception as ex:
+            print(f"Plex Error: {ex}")
+            raise
+        return plex
 
     try:
         print("creating plex with plexapi config")

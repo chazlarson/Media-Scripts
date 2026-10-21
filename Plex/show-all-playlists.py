@@ -12,7 +12,7 @@ from mediascripts.helpers import get_plex  # noqa: E402
 def main():
     global now, RUNTIME_STR, SCRIPT_NAME, VERSION, config, PLEX_OWNER, plex, PMI
     global account, all_users, item, user_ct, user_idx, plex_user, user_acct, user_plex
-    global playlists, pl, items, typestr, output, handle_this_silently
+    global playlists, pl, items, typestr, output
 
     # current dateTime
     now = datetime.now()
@@ -72,8 +72,8 @@ def main():
                                 f"{item.grandparentTitle} {item.seasonEpisode} {item.title}"
                             )
                         print(f"{typestr} - {output}")
-        except Exception:
-            handle_this_silently = "please"
+        except Exception as ex:
+            print(f"Could not read playlists for {plex_user.title}: {ex}")
 
 
 if __name__ == "__main__":

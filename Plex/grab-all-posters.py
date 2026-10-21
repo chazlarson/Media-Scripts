@@ -13,12 +13,12 @@ import filetype
 from alive_progress import alive_bar
 from database import (add_key, add_last_run, add_url, check_key, check_url,
                       get_last_run)
-from logs import blogger, logger, plogger, setup_logger
 from pathvalidate import sanitize_filename
 from plexapi.utils import download
 import plexapi
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, logger, plogger, setup_logger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import (check_for_images, get_all_from_library, get_ids,  # noqa: E402
                      get_letter_dir, get_plex, get_redaction_list,

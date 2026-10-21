@@ -6,10 +6,10 @@ from os.path import isfile, join
 from pathlib import Path
 
 from alive_progress import alive_bar
-from logs import blogger, logger, plogger, setup_logger
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, logger, plogger, setup_logger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import (get_all_from_library, get_plex, get_redaction_list,  # noqa: E402
                      get_target_libraries)

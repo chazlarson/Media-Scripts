@@ -4,12 +4,12 @@ from datetime import datetime
 from pathlib import Path
 
 from alive_progress import alive_bar
-from logs import plogger, setup_logger
 from plexapi.utils import download
 from ruamel import yaml
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import plogger, setup_logger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import get_plex, get_target_libraries  # noqa: E402
 

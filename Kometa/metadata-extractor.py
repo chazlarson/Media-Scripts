@@ -10,11 +10,11 @@ from timeit import default_timer as timer
 
 import yaml
 from alive_progress import alive_bar
-from logs import blogger, plogger
 from plexapi.utils import download
 from tmdbapis import TMDbAPIs
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import blogger, plogger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import get_ids, get_plex, get_target_libraries  # noqa: E402
 

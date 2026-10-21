@@ -9,34 +9,6 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from mediascripts.config import Config  # noqa: E402
 
-start = timer()
-
-config = Config("../config.yaml")
-
-TMDB_KEY = config.get("general.tmdb_key")
-POSTER_DIR = config.get("tmdb_people.poster_dir", "people_posters")
-try:
-    PERSON_DEPTH = int(config.get("tmdb_people.person_depth", 0))
-except (TypeError, ValueError):
-    PERSON_DEPTH = 0
-
-
-TMDb = TMDbAPIs(TMDB_KEY, language="en")
-
-image_path = POSTER_DIR
-people_name_file = "people_list.txt"
-
-items = []
-
-people_file = Path(people_name_file)
-
-if people_file.is_file():
-    with open(people_name_file, encoding="utf-8") as fp:
-        for line in fp:
-            items.append(line.strip())
-
-idx = 1
-
 
 def save_image(person, idx, UPPER):
     file_root = f"{person.name}-{person.id}"
@@ -53,42 +25,79 @@ def save_image(person, idx, UPPER):
     #     print(f"no profile image for {person.name} #{idx} of {UPPER}")
 
 
-item_total = len(items)
-print(f"{item_total} item(s) retrieved...")
-item_count = 1
-with alive_bar(item_total, dual_line=True, title="TMDB people") as bar:
-    for item in items:
-        bar.text = f"->   starting: {item}"
-        item_count = item_count + 1
 
-        try:
-            person = TMDb.person(int(item))
-            bar.text = f"-> retrieving: {item}"
-            save_image(person, 0, 1)
+def main():
+    global image_path, start
 
-        except ValueError:
+    start = timer()
+
+    config = Config("../config.yaml")
+
+    TMDB_KEY = config.get("general.tmdb_key")
+    POSTER_DIR = config.get("tmdb_people.poster_dir", "people_posters")
+    try:
+        PERSON_DEPTH = int(config.get("tmdb_people.person_depth", 0))
+    except (TypeError, ValueError):
+        PERSON_DEPTH = 0
+
+
+    TMDb = TMDbAPIs(TMDB_KEY, language="en")
+
+    image_path = POSTER_DIR
+    people_name_file = "people_list.txt"
+
+    items = []
+
+    people_file = Path(people_name_file)
+
+    if people_file.is_file():
+        with open(people_name_file, encoding="utf-8") as fp:
+            for line in fp:
+                items.append(line.strip())
+
+    idx = 1
+
+
+    item_total = len(items)
+    print(f"{item_total} item(s) retrieved...")
+    item_count = 1
+    with alive_bar(item_total, dual_line=True, title="TMDB people") as bar:
+        for item in items:
+            bar.text = f"->   starting: {item}"
+            item_count = item_count + 1
+
             try:
-                results = TMDb.people_search(str(item))
-                if not results:
-                    bar.text = f"->  NOT FOUND: {item}"
-                    continue
+                person = TMDb.person(int(item))
+                bar.text = f"-> retrieving: {item}"
+                save_image(person, 0, 1)
 
-                idx = 0
-                UPPER = PERSON_DEPTH
+            except ValueError:
+                try:
+                    results = TMDb.people_search(str(item))
+                    if not results:
+                        bar.text = f"->  NOT FOUND: {item}"
+                        continue
 
-                if len(results) < PERSON_DEPTH:
-                    UPPER = len(results)
+                    idx = 0
+                    UPPER = PERSON_DEPTH
 
-                for i in range(0, UPPER):
-                    try:
-                        person = results[i]
-                        idx = idx + 1
-                        bar.text = f"-> retrieving: {idx}-{item}"
-                        save_image(person, idx, UPPER)
+                    if len(results) < PERSON_DEPTH:
+                        UPPER = len(results)
 
-                    except Exception as ex:
-                        print(f"->  exception: {item} - {ex.args[0]}")
-            except Exception as ex:
-                print(f"->  exception: {item} - {ex.args[0]}")
+                    for i in range(0, UPPER):
+                        try:
+                            person = results[i]
+                            idx = idx + 1
+                            bar.text = f"-> retrieving: {idx}-{item}"
+                            save_image(person, idx, UPPER)
 
-            bar()
+                        except Exception as ex:
+                            print(f"->  exception: {item} - {ex.args[0]}")
+                except Exception as ex:
+                    print(f"->  exception: {item} - {ex.args[0]}")
+
+                bar()
+
+
+if __name__ == "__main__":
+    main()

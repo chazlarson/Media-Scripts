@@ -12,54 +12,6 @@ from tmdbapis import TMDbAPIs
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from mediascripts.config import Config  # noqa: E402
 
-# import tvdb_v4_official
-
-start = timer()
-
-config = Config("../config.yaml")
-
-PLEX_URL = config.get("plex_api.auth_server.base_url")
-PLEX_TOKEN = config.get("plex_api.auth_server.token")
-INPUT_FILES = config.get("original_language.input_files", "")
-LIBRARY_NAMES = config.get("general.library_names", "")
-TMDB_KEY = config.get("general.tmdb_key")
-DELAY = config.get_int("general.delay", 0)
-
-if not DELAY:
-    DELAY = 0
-
-if LIBRARY_NAMES:
-    lib_array = [name.strip() for name in LIBRARY_NAMES.split(",") if name.strip()]
-else:
-    lib_array = []
-
-if INPUT_FILES:
-    file_array = [name.strip() for name in INPUT_FILES.split(",") if name.strip()]
-else:
-    file_array = []
-
-delim = "\t"
-
-# Commented out until this doesn't throw a 400
-# tvdb = tvdb_v4_official.TVDB(config.get("general.tvdb_key"))
-
-tmdb = TMDbAPIs(TMDB_KEY, language="en")
-
-tmdb_str = "tmdb://"
-tvdb_str = "tvdb://"
-imdb_str = "imdb://"
-
-local_dir = f"{os.getcwd()}/posters"
-
-os.makedirs(local_dir, exist_ok=True)
-
-show_dir = f"{local_dir}/shows"
-movie_dir = f"{local_dir}/movies"
-
-os.makedirs(show_dir, exist_ok=True)
-os.makedirs(movie_dir, exist_ok=True)
-
-
 class Plex_item:
     def __init__(
         self,
@@ -291,115 +243,170 @@ def progress(count, total, status=""):
     sys.stdout.flush()
 
 
-print("tmdb config...")
 
-base_url = tmdb.configuration().secure_base_image_url
-size_str = "original"
+def main():
+    global base_url, delim, imdb_str, item, size_str, tmdb, tmdb_id, tmdb_str, tmpDict
+    global tvdb_str
 
-item_count = 1
-plex_items = []
+    start = timer()
 
-if len(file_array) > 0:
-    for fn in file_array:
-        print(f"{os.linesep}getting items from [{fn}]...")
-        item_total = sum(1 for i in open(fn, "rb"))
-        print(f"looping over {item_total} items...")
-        with open(fn) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter="\t")
-            item_count = 0
-            for row in csv_reader:
-                if item_count == 0:
-                    item_count += 1
-                else:
-                    fName = row[0]
-                    fPath = row[1]
-                    title = row[2]
-                    countries = row[3].split("%")
-                    audioStreams = row[4].split("%")
-                    audioStreamTitles = row[5].split("%")
-                    imdb_id = row[6]
-                    tmdb_id = row[7]
-                    tvdb_id = row[8]
+    config = Config("../config.yaml")
 
-                    pi = getPlexItem(
-                        fName,
-                        fPath,
-                        title,
-                        countries,
-                        audioStreams,
-                        audioStreamTitles,
-                        imdb_id,
-                        tmdb_id,
-                        tvdb_id,
-                    )
+    PLEX_URL = config.get("plex_api.auth_server.base_url")
+    PLEX_TOKEN = config.get("plex_api.auth_server.token")
+    INPUT_FILES = config.get("original_language.input_files", "")
+    LIBRARY_NAMES = config.get("general.library_names", "")
+    TMDB_KEY = config.get("general.tmdb_key")
+    DELAY = config.get_int("general.delay", 0)
 
-                    item_count += 1
+    if not DELAY:
+        DELAY = 0
 
-                    plex_items.append(pi)
+    if LIBRARY_NAMES:
+        lib_array = [name.strip() for name in LIBRARY_NAMES.split(",") if name.strip()]
+    else:
+        lib_array = []
 
-                    progress(item_count, item_total, pi.Title)
+    if INPUT_FILES:
+        file_array = [name.strip() for name in INPUT_FILES.split(",") if name.strip()]
+    else:
+        file_array = []
 
-        writeResults(plex_items, Path(fn).stem)
+    delim = "\t"
 
-else:
-    for lib in lib_array:
-        print(f"connecting to {PLEX_URL}...")
-        plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+    # Commented out until this doesn't throw a 400
+    # tvdb = tvdb_v4_official.TVDB(config.get("general.tvdb_key"))
 
-        print(f"{os.linesep}getting items from [{lib}]...")
-        items = plex.library.section(lib).all()
-        item_total = len(items)
-        print(f"looping over {item_total} items...")
+    tmdb = TMDbAPIs(TMDB_KEY, language="en")
 
-        for item in items:
-            tmpDict = {}
-            countries = []
-            audioStreams = []
-            audioStreamTitles = []
-            if len(item.guids) > 0:
-                tmdb_id, tvdb_id, imdb_id = getTID(item.guids)
-                item_count = item_count + 1
-                title = item.title
-                if item.originalTitle is not None:
-                    title = item.originalTitle
+    tmdb_str = "tmdb://"
+    tvdb_str = "tvdb://"
+    imdb_str = "imdb://"
 
-                try:
-                    for country in item.countries:
-                        countries.append(country.tag)
-                    media_item = item.media[0]
-                    media_part = media_item.parts[0]
-                    filePath = media_part.file
+    local_dir = f"{os.getcwd()}/posters"
 
-                    streams = media_part.streams
-                    for stream in streams:
-                        if stream.STREAMTYPE == 2:
-                            audioStreams.append(stream.language)
-                            audioStreamTitles.append(stream.displayTitle)
+    os.makedirs(local_dir, exist_ok=True)
 
-                    pi = getPlexItem(
-                        Path(filePath).name,
-                        filePath,
-                        title,
-                        countries,
-                        audioStreams,
-                        audioStreamTitles,
-                        imdb_id,
-                        tmdb_id,
-                        tvdb_id,
-                    )
+    show_dir = f"{local_dir}/shows"
+    movie_dir = f"{local_dir}/movies"
 
-                    plex_items.append(pi)
+    os.makedirs(show_dir, exist_ok=True)
+    os.makedirs(movie_dir, exist_ok=True)
 
-                    progress(item_count, item_total, pi.title)
 
-                except Exception as ex:
-                    progress(item_count, item_total, f"EX: {ex} {item.title}")
+    print("tmdb config...")
 
-                # Wait between items in case hammering the Plex server turns out badly.
-                time.sleep(DELAY)
+    base_url = tmdb.configuration().secure_base_image_url
+    size_str = "original"
 
-    writeResults(plex_items, lib)
+    item_count = 1
+    plex_items = []
 
-end = timer()
-elapsed = end - start
-print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+    if len(file_array) > 0:
+        for fn in file_array:
+            print(f"{os.linesep}getting items from [{fn}]...")
+            item_total = sum(1 for i in open(fn, "rb"))
+            print(f"looping over {item_total} items...")
+            with open(fn) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter="\t")
+                item_count = 0
+                for row in csv_reader:
+                    if item_count == 0:
+                        item_count += 1
+                    else:
+                        fName = row[0]
+                        fPath = row[1]
+                        title = row[2]
+                        countries = row[3].split("%")
+                        audioStreams = row[4].split("%")
+                        audioStreamTitles = row[5].split("%")
+                        imdb_id = row[6]
+                        tmdb_id = row[7]
+                        tvdb_id = row[8]
+
+                        pi = getPlexItem(
+                            fName,
+                            fPath,
+                            title,
+                            countries,
+                            audioStreams,
+                            audioStreamTitles,
+                            imdb_id,
+                            tmdb_id,
+                            tvdb_id,
+                        )
+
+                        item_count += 1
+
+                        plex_items.append(pi)
+
+                        progress(item_count, item_total, pi.Title)
+
+            writeResults(plex_items, Path(fn).stem)
+
+    else:
+        for lib in lib_array:
+            print(f"connecting to {PLEX_URL}...")
+            plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+
+            print(f"{os.linesep}getting items from [{lib}]...")
+            items = plex.library.section(lib).all()
+            item_total = len(items)
+            print(f"looping over {item_total} items...")
+
+            for item in items:
+                tmpDict = {}
+                countries = []
+                audioStreams = []
+                audioStreamTitles = []
+                if len(item.guids) > 0:
+                    tmdb_id, tvdb_id, imdb_id = getTID(item.guids)
+                    item_count = item_count + 1
+                    title = item.title
+                    if item.originalTitle is not None:
+                        title = item.originalTitle
+
+                    try:
+                        for country in item.countries:
+                            countries.append(country.tag)
+                        media_item = item.media[0]
+                        media_part = media_item.parts[0]
+                        filePath = media_part.file
+
+                        streams = media_part.streams
+                        for stream in streams:
+                            if stream.STREAMTYPE == 2:
+                                audioStreams.append(stream.language)
+                                audioStreamTitles.append(stream.displayTitle)
+
+                        pi = getPlexItem(
+                            Path(filePath).name,
+                            filePath,
+                            title,
+                            countries,
+                            audioStreams,
+                            audioStreamTitles,
+                            imdb_id,
+                            tmdb_id,
+                            tvdb_id,
+                        )
+
+                        plex_items.append(pi)
+
+                        progress(item_count, item_total, pi.title)
+
+                    except Exception as ex:
+                        progress(item_count, item_total, f"EX: {ex} {item.title}")
+
+                    # Wait between items in case hammering the Plex server turns out badly.
+                    time.sleep(DELAY)
+
+        writeResults(plex_items, lib)
+
+    end = timer()
+    elapsed = end - start
+    print(f"{os.linesep}{os.linesep}processed {item_count - 1} items in {elapsed} seconds.")
+
+
+if __name__ == "__main__":
+    main()

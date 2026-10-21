@@ -28,8 +28,6 @@ SKIP_NAMES = {
     "config.py",
     "database.py",
     "helpers.py",
-    "kometa-helpers.py",
-    "logs.py",
 }
 
 # These scripts prompt for their own credentials and do not read config.yaml.

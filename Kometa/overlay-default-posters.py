@@ -5,35 +5,6 @@ from alive_progress import alive_bar
 from git.repo.base import Repo
 from PIL import Image
 
-IMAGE_REPO = "https://github.com/Kometa-Team/Default-Images"
-LOCAL_FOLDER = "Kometa-Images"
-OVERLAID_FOLDER = "Kometa-Images-Overlaid"
-OVERLAY_SOURCE_FOLDER = "default_collection_overlays"
-OVERLAY_BASE_IMAGE = "overlay-template.png"
-
-theRepo = None
-theRepoPath = Path(LOCAL_FOLDER)
-theTargetPath = Path(OVERLAID_FOLDER)
-
-if not theRepoPath.exists():
-    print(f"Cloning {IMAGE_REPO}")
-    print("This may take some time with no display")
-    theRepo = Repo.clone_from(IMAGE_REPO, LOCAL_FOLDER)
-else:
-    print(f"Fetch/Pull on {LOCAL_FOLDER}")
-    theRepo = Repo(LOCAL_FOLDER)
-    theRepo.remotes.origin.fetch()
-    theRepo.remotes.origin.pull()
-
-global_overlay = Path(f"{OVERLAY_SOURCE_FOLDER}/{OVERLAY_BASE_IMAGE}")
-global_overlay_im = None
-
-if global_overlay.exists():
-    print(f"Using {global_overlay} as global overlay")
-    global_overlay_im = Image.open(f"{global_overlay}")
-    global_overlay_im = global_overlay_im.resize((2000, 3000), Image.Resampling.LANCZOS)
-
-
 def skip_this(path):
     ret_val = False
     ret_val = ret_val or ".git" in path.parts
@@ -57,37 +28,68 @@ def skip_this(path):
     return ret_val
 
 
-target_paths = []
+def main():
+    image_repo = "https://github.com/Kometa-Team/Default-Images"
+    local_folder = "Kometa-Images"
+    overlaid_folder = "Kometa-Images-Overlaid"
+    overlay_source_folder = "default_collection_overlays"
+    overlay_base_image = "overlay-template.png"
 
-print("building list of targets")
-for path in pathlib.Path(LOCAL_FOLDER).glob("**/*"):
-    if not skip_this(path):
-        target_paths.append(path)
+    the_repo_path = Path(local_folder)
 
-item_total = len(target_paths)
+    if not the_repo_path.exists():
+        print(f"Cloning {image_repo}")
+        print("This may take some time with no display")
+        Repo.clone_from(image_repo, local_folder)
+    else:
+        print(f"Fetch/Pull on {local_folder}")
+        the_repo = Repo(local_folder)
+        the_repo.remotes.origin.fetch()
+        the_repo.remotes.origin.pull()
 
-with alive_bar(item_total, dual_line=True, title="Applying overlays") as bar:
-    for path in target_paths:
-        bar.text(path)
+    global_overlay = Path(f"{overlay_source_folder}/{overlay_base_image}")
+    global_overlay_im = None
 
-        source_path = Path(path)
-        target_path = Path(f"{path}".replace(LOCAL_FOLDER, OVERLAID_FOLDER))
-        target_path.parent.mkdir(parents=True, exist_ok=True)
+    if global_overlay.exists():
+        print(f"Using {global_overlay} as global overlay")
+        global_overlay_im = Image.open(f"{global_overlay}")
+        global_overlay_im = global_overlay_im.resize((2000, 3000), Image.Resampling.LANCZOS)
 
-        target_group = path.parts[1]
+    target_paths = []
 
-        try:
-            local_overlay = f"{OVERLAY_SOURCE_FOLDER}/{target_group}.png"
-            local_overlay_im = Image.open(local_overlay)
-            local_overlay_im = local_overlay_im.resize(
-                (2000, 3000), Image.Resampling.LANCZOS
-            )
-        except Exception:
-            local_overlay_im = global_overlay_im
+    print("building list of targets")
+    for path in pathlib.Path(local_folder).glob("**/*"):
+        if not skip_this(path):
+            target_paths.append(path)
 
-        source_image = Image.open(source_path)
+    item_total = len(target_paths)
 
-        source_image.paste(local_overlay_im, (0, 0), local_overlay_im)
-        source_image.save(target_path)
+    with alive_bar(item_total, dual_line=True, title="Applying overlays") as bar:
+        for path in target_paths:
+            bar.text(path)
 
-        bar()
+            source_path = Path(path)
+            target_path = Path(f"{path}".replace(local_folder, overlaid_folder))
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+            target_group = path.parts[1]
+
+            try:
+                local_overlay = f"{overlay_source_folder}/{target_group}.png"
+                local_overlay_im = Image.open(local_overlay)
+                local_overlay_im = local_overlay_im.resize(
+                    (2000, 3000), Image.Resampling.LANCZOS
+                )
+            except Exception:
+                local_overlay_im = global_overlay_im
+
+            source_image = Image.open(source_path)
+
+            source_image.paste(local_overlay_im, (0, 0), local_overlay_im)
+            source_image.save(target_path)
+
+            bar()
+
+
+if __name__ == "__main__":
+    main()

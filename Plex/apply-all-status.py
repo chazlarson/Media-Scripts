@@ -7,9 +7,9 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
-from logs import plogger, setup_logger
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from mediascripts.logs import plogger, setup_logger  # noqa: E402
 from mediascripts.config import Config  # noqa: E402
 from mediascripts.helpers import get_plex  # noqa: E402
 
